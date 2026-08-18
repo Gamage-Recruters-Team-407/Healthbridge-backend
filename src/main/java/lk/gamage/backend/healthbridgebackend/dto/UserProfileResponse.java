@@ -1,62 +1,50 @@
-package lk.gamage.backend.healthbridgebackend.model;
+package lk.gamage.backend.healthbridgebackend.dto;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lk.gamage.backend.healthbridgebackend.model.AuthProvider;
+import lk.gamage.backend.healthbridgebackend.model.Role;
+import lk.gamage.backend.healthbridgebackend.model.User;
 
 import java.time.LocalDateTime;
 
-@Document(collection = "users")
-public class User {
+public class UserProfileResponse {
 
-    @Id
     private String id;
-
     private String fullName;
-
-    @Indexed(unique = true)
     private String email;
-
     private String phoneNumber;
-
-    private String password;
-
-    private Role role = Role.PATIENT;
-
-    private AuthProvider provider = AuthProvider.LOCAL;
-
+    private Role role;
+    private AuthProvider provider;
     private String googleId;
-
     private String picture;
-
     private String dateOfBirth;
-
     private String gender;
-
     private String bloodGroup;
-
     private String address;
-
     private String emergencyContact;
-
     private String medicalHistory;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    private LocalDateTime updatedAt = LocalDateTime.now();
-
-    public User() {
+    public UserProfileResponse() {
     }
 
-    public User(String fullName, String email, String phoneNumber, String password, Role role, AuthProvider provider) {
-        this.fullName = fullName;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.password = password;
-        this.role = role != null ? role : Role.PATIENT;
-        this.provider = provider != null ? provider : AuthProvider.LOCAL;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+    public UserProfileResponse(User user) {
+        this.id = user.getId();
+        this.fullName = user.getFullName();
+        this.email = user.getEmail();
+        this.phoneNumber = user.getPhoneNumber();
+        this.role = user.getRole();
+        this.provider = user.getProvider();
+        this.googleId = user.getGoogleId();
+        this.picture = user.getPicture();
+        this.dateOfBirth = user.getDateOfBirth();
+        this.gender = user.getGender();
+        this.bloodGroup = user.getBloodGroup();
+        this.address = user.getAddress();
+        this.emergencyContact = user.getEmergencyContact();
+        this.medicalHistory = user.getMedicalHistory();
+        this.createdAt = user.getCreatedAt();
+        this.updatedAt = user.getUpdatedAt();
     }
 
     public String getId() {
@@ -89,14 +77,6 @@ public class User {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public Role getRole() {
@@ -195,4 +175,3 @@ public class User {
         this.updatedAt = updatedAt;
     }
 }
-

@@ -59,7 +59,8 @@ public class EmailService {
             log.info("OTP email successfully dispatched to {}", toEmail);
 
         } catch (Exception e) {
-            log.error("Failed to send OTP email via SMTP to {}: {}. OTP is: {}", toEmail, e.getMessage(), otp);
+            log.error("Failed to send OTP email via SMTP to {}. OTP is: {}", toEmail, otp, e);
         }
     }
 }
+

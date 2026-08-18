@@ -9,7 +9,8 @@ import java.util.Optional;
 
 @Repository
 public interface OtpTokenRepository extends MongoRepository<OtpToken, String> {
-    Optional<OtpToken> findTopByEmailAndUsedFalseOrderByCreatedAtDesc(String email);
-    Optional<OtpToken> findByEmailAndOtpAndUsedFalse(String email, String otp);
-    List<OtpToken> findAllByEmailAndUsedFalse(String email);
+    Optional<OtpToken> findTopByEmailIgnoreCaseAndUsedFalseOrderByCreatedAtDesc(String email);
+    Optional<OtpToken> findByEmailIgnoreCaseAndOtpAndUsedFalse(String email, String otp);
+    List<OtpToken> findAllByEmailIgnoreCaseAndUsedFalse(String email);
 }
+
