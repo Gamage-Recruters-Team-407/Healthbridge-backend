@@ -27,6 +27,20 @@ public class User {
 
     private String googleId;
 
+    private String picture;
+
+    private String dateOfBirth;
+
+    private String gender;
+
+    private String bloodGroup;
+
+    private String address;
+
+    private String emergencyContact;
+
+    private String medicalHistory;
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     private LocalDateTime updatedAt = LocalDateTime.now();
@@ -107,6 +121,62 @@ public class User {
 
     public void setGoogleId(String googleId) {
         this.googleId = googleId;
+    }
+
+    public String getPicture() {
+        return picture;
+    }
+
+    public void setPicture(String picture) {
+        this.picture = picture;
+    }
+
+    public String getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(String dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public String getBloodGroup() {
+        return bloodGroup;
+    }
+
+    public void setBloodGroup(String bloodGroup) {
+        this.bloodGroup = bloodGroup;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getEmergencyContact() {
+        return emergencyContact;
+    }
+
+    public void setEmergencyContact(String emergencyContact) {
+        this.emergencyContact = emergencyContact;
+    }
+
+    public String getMedicalHistory() {
+        return medicalHistory;
+    }
+
+    public void setMedicalHistory(String medicalHistory) {
+        this.medicalHistory = medicalHistory;
     }
 
     public LocalDateTime getCreatedAt() {
