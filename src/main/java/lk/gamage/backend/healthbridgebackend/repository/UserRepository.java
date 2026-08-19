@@ -1,4 +1,13 @@
 package lk.gamage.backend.healthbridgebackend.repository;
 
-public class UserRepository {
+import lk.gamage.backend.healthbridgebackend.model.User;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+import java.util.Optional;
+
+public interface UserRepository extends MongoRepository<User, String> {
+
+    Optional<User> findByEmail(String email);
+
+    boolean existsByEmail(String email);
 }
