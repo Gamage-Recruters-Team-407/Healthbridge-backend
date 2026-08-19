@@ -1,4 +1,32 @@
 package lk.gamage.backend.healthbridgebackend.service;
 
-public class MedicalRecordService {
+import lk.gamage.backend.healthbridgebackend.dto.request.MedicalRecordRequest;
+import lk.gamage.backend.healthbridgebackend.dto.response.MedicalRecordResponse;
+
+import java.util.List;
+
+public interface MedicalRecordService {
+
+    MedicalRecordResponse createMedicalRecord(
+            MedicalRecordRequest request
+    );
+
+    List<MedicalRecordResponse> getAllMedicalRecords();
+
+    MedicalRecordResponse getMedicalRecordById(
+            String id
+    );
+
+    List<MedicalRecordResponse> getMedicalRecordsByPatientId(
+            String patientId
+    );
+
+    List<MedicalRecordResponse> getMedicalRecordsByDoctorId(
+            String doctorId
+    );
+
+    MedicalRecordResponse updateMedicalRecord(
+            String id,
+            MedicalRecordRequest request
+    );
 }
