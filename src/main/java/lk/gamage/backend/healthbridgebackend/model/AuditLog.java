@@ -15,11 +15,14 @@ import java.time.LocalDateTime;
 public class AuditLog {
     @Id
     private String id;
-    private String userId;
-    private String userRole;
-    private String eventCategory;
-    private String actionDescription;
-    private String ipAddress;
-    private String status;
     private LocalDateTime timestamp;
+    private String user;
+    private String role;
+    private String event;
+    private String module;
+    private String actionDetails;
+    private String refId;
+    private String ipDevice;
+    private String status;
+    private String severity;
 }
