@@ -1,6 +1,5 @@
-package lk.gamage.backend.healthbridgebackend.dto;
+package lk.gamage.backend.healthbridgebackend.dto.response;
 
-import lk.gamage.backend.healthbridgebackend.model.ContactMethod;
 import lk.gamage.backend.healthbridgebackend.model.TicketCategory;
 import lk.gamage.backend.healthbridgebackend.model.TicketPriority;
 import lk.gamage.backend.healthbridgebackend.model.TicketStatus;
@@ -10,13 +9,17 @@ import java.time.LocalDateTime;
 public class SupportTicketResponse {
 
     private String id;
-    private Long patientId;
+    private String patientId;
     private String subject;
     private TicketCategory category;
     private String description;
     private TicketPriority priority;
-    private ContactMethod preferredContactMethod;
+    private String mobileNumber;
     private TicketStatus status;
+
+    private String attachmentUrl;
+    private String attachmentPublicId;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -28,11 +31,11 @@ public class SupportTicketResponse {
         this.id = id;
     }
 
-    public Long getPatientId() {
+    public String getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(Long patientId) {
+    public void setPatientId(String patientId) {
         this.patientId = patientId;
     }
 
@@ -68,12 +71,12 @@ public class SupportTicketResponse {
         this.priority = priority;
     }
 
-    public ContactMethod getPreferredContactMethod() {
-        return preferredContactMethod;
+    public String getMobileNumber() {
+        return mobileNumber;
     }
 
-    public void setPreferredContactMethod(ContactMethod preferredContactMethod) {
-        this.preferredContactMethod = preferredContactMethod;
+    public void setMobileNumber(String mobileNumber) {
+        this.mobileNumber = mobileNumber;
     }
 
     public TicketStatus getStatus() {
@@ -82,6 +85,22 @@ public class SupportTicketResponse {
 
     public void setStatus(TicketStatus status) {
         this.status = status;
+    }
+
+    public String getAttachmentUrl() {
+        return attachmentUrl;
+    }
+
+    public void setAttachmentUrl(String attachmentUrl) {
+        this.attachmentUrl = attachmentUrl;
+    }
+
+    public String getAttachmentPublicId() {
+        return attachmentPublicId;
+    }
+
+    public void setAttachmentPublicId(String attachmentPublicId) {
+        this.attachmentPublicId = attachmentPublicId;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -134,7 +134,11 @@ public class AuthService {
         List<OtpToken> oldTokens = otpTokenRepository.findAllByEmailIgnoreCaseAndUsedFalse(normalizedEmail);
         for (OtpToken token : oldTokens) {
             token.setUsed(true);
+        }
+        otpTokenRepository.saveAll(oldTokens);
+
         // Generate 6-digit OTP
+        int otpCode = 100000 + secureRandom.nextInt(900000);
         String otpString = String.valueOf(otpCode);
 
         OtpToken otpToken = new OtpToken(
@@ -144,7 +148,10 @@ public class AuthService {
         );
         otpTokenRepository.save(otpToken);
         log.info("[Forgot Password] Generated OTP: {} for email: {}, expiresAt: {}", otpString, normalizedEmail, otpToken.getExpiresAt());
+
+        // Dispatch Email
         emailService.sendOtpEmail(normalizedEmail, otpString);
+    }
 
     public boolean verifyOtp(OtpVerifyRequest request) {
         String normalizedEmail = request.getEmail().toLowerCase().trim();
@@ -214,6 +221,7 @@ public class AuthService {
         String jwtToken = jwtService.generateToken(userDetails, user.getRole(), user.getFullName(), user.getId());
 
         return new AuthResponse(
+
                 jwtToken,
                 user.getId(),
                 user.getFullName(),

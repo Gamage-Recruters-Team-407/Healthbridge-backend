@@ -11,7 +11,7 @@ public class SupportTicket {
     @Id
     private String id;
 
-    private Long patientId;
+    private String patientId;
 
     private String subject;
 
@@ -21,9 +21,13 @@ public class SupportTicket {
 
     private TicketPriority priority;
 
-    private ContactMethod preferredContactMethod;
+    private String mobileNumber;
 
     private TicketStatus status;
+
+    private String attachmentUrl;
+
+    private String attachmentPublicId;
 
     private LocalDateTime createdAt;
 
@@ -36,11 +40,11 @@ public class SupportTicket {
         return id;
     }
 
-    public Long getPatientId() {
+    public String getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(Long patientId) {
+    public void setPatientId(String patientId) {
         this.patientId = patientId;
     }
 
@@ -76,13 +80,12 @@ public class SupportTicket {
         this.priority = priority;
     }
 
-    public ContactMethod getPreferredContactMethod() {
-        return preferredContactMethod;
+    public String getMobileNumber() {
+        return mobileNumber;
     }
 
-    public void setPreferredContactMethod(
-            ContactMethod preferredContactMethod) {
-        this.preferredContactMethod = preferredContactMethod;
+    public void setMobileNumber(String mobileNumber) {
+        this.mobileNumber = mobileNumber;
     }
 
     public TicketStatus getStatus() {
@@ -91,6 +94,22 @@ public class SupportTicket {
 
     public void setStatus(TicketStatus status) {
         this.status = status;
+    }
+
+    public String getAttachmentUrl() {
+        return attachmentUrl;
+    }
+
+    public void setAttachmentUrl(String attachmentUrl) {
+        this.attachmentUrl = attachmentUrl;
+    }
+
+    public String getAttachmentPublicId() {
+        return attachmentPublicId;
+    }
+
+    public void setAttachmentPublicId(String attachmentPublicId) {
+        this.attachmentPublicId = attachmentPublicId;
     }
 
     public LocalDateTime getCreatedAt() {

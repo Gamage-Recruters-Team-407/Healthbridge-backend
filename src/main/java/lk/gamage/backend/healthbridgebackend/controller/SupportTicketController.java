@@ -1,12 +1,13 @@
 package lk.gamage.backend.healthbridgebackend.controller;
 
 import jakarta.validation.Valid;
-import lk.gamage.backend.healthbridgebackend.dto.CreateSupportTicketRequest;
-import lk.gamage.backend.healthbridgebackend.dto.SupportTicketResponse;
+import lk.gamage.backend.healthbridgebackend.dto.request.CreateSupportTicketRequest;
+import lk.gamage.backend.healthbridgebackend.dto.response.SupportTicketResponse;
 import lk.gamage.backend.healthbridgebackend.service.SupportTicketService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -22,13 +23,17 @@ public class SupportTicketController {
         this.service = service;
     }
 
-    @PostMapping
+    @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<SupportTicketResponse> createTicket(
-            @Valid @RequestBody CreateSupportTicketRequest request
+            @Valid @ModelAttribute CreateSupportTicketRequest request,
+            @RequestPart(
+                    value = "file",
+                    required = false
+            ) MultipartFile file
     ) {
 
         SupportTicketResponse response =
-                service.createTicket(request);
+                service.createTicket(request, file);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -45,15 +50,15 @@ public class SupportTicketController {
         );
     }
 
-    @GetMapping("/patient/{patientId}")
-    public ResponseEntity<List<SupportTicketResponse>> getPatientTickets(
-            @PathVariable Long patientId
-    ) {
+ @GetMapping("/patient/{patientId}")
+public ResponseEntity<List<SupportTicketResponse>> getPatientTickets(
+        @PathVariable String patientId
+) {
 
-        return ResponseEntity.ok(
-                service.getPatientTickets(patientId)
-        );
-    }
+    return ResponseEntity.ok(
+            service.getPatientTickets(patientId)
+    );
+}
 
     @GetMapping
     public ResponseEntity<List<SupportTicketResponse>> getAllTickets() {

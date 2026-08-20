@@ -9,11 +9,11 @@ import java.util.List;
 public interface SupportTicketRepository
         extends MongoRepository<SupportTicket, String> {
 
-    List<SupportTicket> findByPatientId(Long patientId);
+    List<SupportTicket> findByPatientId(String patientId);
 
     List<SupportTicket> findByStatus(TicketStatus status);
 
     List<SupportTicket> findByPatientIdOrderByCreatedAtDesc(
-            Long patientId
+            String patientId
     );
 }

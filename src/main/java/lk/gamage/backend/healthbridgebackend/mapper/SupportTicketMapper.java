@@ -1,7 +1,7 @@
 package lk.gamage.backend.healthbridgebackend.mapper;
 
-import lk.gamage.backend.healthbridgebackend.dto.CreateSupportTicketRequest;
-import lk.gamage.backend.healthbridgebackend.dto.SupportTicketResponse;
+import lk.gamage.backend.healthbridgebackend.dto.request.CreateSupportTicketRequest;
+import lk.gamage.backend.healthbridgebackend.dto.response.SupportTicketResponse;
 import lk.gamage.backend.healthbridgebackend.model.SupportTicket;
 import lk.gamage.backend.healthbridgebackend.model.TicketStatus;
 import org.springframework.stereotype.Component;
@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class SupportTicketMapper {
 
-    public SupportTicket toEntity(CreateSupportTicketRequest request) {
+    public SupportTicket toEntity(
+            CreateSupportTicketRequest request
+    ) {
 
         SupportTicket ticket = new SupportTicket();
 
@@ -18,15 +20,15 @@ public class SupportTicketMapper {
         ticket.setCategory(request.getCategory());
         ticket.setDescription(request.getDescription());
         ticket.setPriority(request.getPriority());
-        ticket.setPreferredContactMethod(
-                request.getPreferredContactMethod()
-        );
+        ticket.setMobileNumber(request.getMobileNumber());
         ticket.setStatus(TicketStatus.OPEN);
 
         return ticket;
     }
 
-    public SupportTicketResponse toResponse(SupportTicket ticket) {
+    public SupportTicketResponse toResponse(
+            SupportTicket ticket
+    ) {
 
         SupportTicketResponse response =
                 new SupportTicketResponse();
@@ -37,12 +39,24 @@ public class SupportTicketMapper {
         response.setCategory(ticket.getCategory());
         response.setDescription(ticket.getDescription());
         response.setPriority(ticket.getPriority());
-        response.setPreferredContactMethod(
-                ticket.getPreferredContactMethod()
-        );
+        response.setMobileNumber(ticket.getMobileNumber());
         response.setStatus(ticket.getStatus());
-        response.setCreatedAt(ticket.getCreatedAt());
-        response.setUpdatedAt(ticket.getUpdatedAt());
+
+        response.setAttachmentUrl(
+                ticket.getAttachmentUrl()
+        );
+
+        response.setAttachmentPublicId(
+                ticket.getAttachmentPublicId()
+        );
+
+        response.setCreatedAt(
+                ticket.getCreatedAt()
+        );
+
+        response.setUpdatedAt(
+                ticket.getUpdatedAt()
+        );
 
         return response;
     }

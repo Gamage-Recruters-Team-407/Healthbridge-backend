@@ -1,15 +1,14 @@
-package lk.gamage.backend.healthbridgebackend.dto;
+package lk.gamage.backend.healthbridgebackend.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lk.gamage.backend.healthbridgebackend.model.ContactMethod;
 import lk.gamage.backend.healthbridgebackend.model.TicketCategory;
 import lk.gamage.backend.healthbridgebackend.model.TicketPriority;
 
 public class CreateSupportTicketRequest {
 
     @NotNull
-    private Long patientId;
+    private String patientId;
 
     @NotBlank
     private String subject;
@@ -23,14 +22,14 @@ public class CreateSupportTicketRequest {
     @NotNull
     private TicketPriority priority;
 
-    @NotNull
-    private ContactMethod preferredContactMethod;
+    @NotBlank
+    private String mobileNumber;
 
-    public Long getPatientId() {
+    public String getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(Long patientId) {
+    public void setPatientId(String patientId) {
         this.patientId = patientId;
     }
 
@@ -66,11 +65,11 @@ public class CreateSupportTicketRequest {
         this.priority = priority;
     }
 
-    public ContactMethod getPreferredContactMethod() {
-        return preferredContactMethod;
+    public String getMobileNumber() {
+        return mobileNumber;
     }
 
-    public void setPreferredContactMethod(ContactMethod preferredContactMethod) {
-        this.preferredContactMethod = preferredContactMethod;
+    public void setMobileNumber(String mobileNumber) {
+        this.mobileNumber = mobileNumber;
     }
 }
