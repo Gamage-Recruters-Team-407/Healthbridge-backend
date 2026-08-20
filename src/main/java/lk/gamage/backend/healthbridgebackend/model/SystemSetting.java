@@ -20,5 +20,6 @@ public class SystemSetting {
     private String settingValue;
     private String description;
     private String lastModifiedBy;
+    private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
