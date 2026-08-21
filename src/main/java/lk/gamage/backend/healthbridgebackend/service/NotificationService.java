@@ -2,6 +2,7 @@ package lk.gamage.backend.healthbridgebackend.service;
 
 import lk.gamage.backend.healthbridgebackend.model.EmergencyContact;
 import lk.gamage.backend.healthbridgebackend.model.NotificationLog;
+import lk.gamage.backend.healthbridgebackend.model.LabResult;
 import lk.gamage.backend.healthbridgebackend.repository.NotificationLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,5 +41,15 @@ public class NotificationService {
         for (EmergencyContact contact : contacts) {
             log.info("Sending Cancellation SMS to {} at {}", contact.getName(), contact.getPhone());
         }
+    }
+
+    public void sendCriticalResultAlert(LabResult saved) {
+        // TODO: implement actual notification logic (email/SMS/push)
+        System.out.println("CRITICAL ALERT: Result " + saved.getId() + " is critical for patient " + saved.getPatientId());
+    }
+
+    public void notifyResultAvailable(LabResult saved) {
+        // TODO: implement actual notification logic
+        System.out.println("Result published for patient " + saved.getPatientId());
     }
 }
