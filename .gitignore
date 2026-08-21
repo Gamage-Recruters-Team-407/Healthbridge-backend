@@ -30,4 +30,9 @@ build/
 !**/src/test/**/build/
 
 ### VS Code ###
-.vscode/
+
+# Environment files
+!.env.example
+
+config.bat
+node_modules
