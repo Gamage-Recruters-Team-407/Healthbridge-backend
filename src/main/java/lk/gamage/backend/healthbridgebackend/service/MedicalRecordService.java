@@ -29,4 +29,18 @@ public interface MedicalRecordService {
             String id,
             MedicalRecordRequest request
     );
+
+    MedicalRecordResponse archiveMedicalRecord(
+            String id
+    );
+
+    MedicalRecordResponse restoreMedicalRecord(
+            String id
+    );
+
+    List<MedicalRecordResponse> getArchivedMedicalRecords();
+
+    void deleteMedicalRecordPermanently(
+            String id
+    );
 }

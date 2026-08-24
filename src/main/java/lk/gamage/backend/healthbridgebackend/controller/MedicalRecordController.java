@@ -6,13 +6,7 @@ import lk.gamage.backend.healthbridgebackend.dto.response.MedicalRecordResponse;
 import lk.gamage.backend.healthbridgebackend.service.MedicalRecordService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -98,6 +92,16 @@ public class MedicalRecordController {
         );
     }
 
+    @GetMapping("/archived")
+    public ResponseEntity<List<MedicalRecordResponse>>
+    getArchivedMedicalRecords() {
+
+        return ResponseEntity.ok(
+                medicalRecordService
+                        .getArchivedMedicalRecords()
+        );
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<MedicalRecordResponse>
     updateMedicalRecord(
@@ -116,5 +120,46 @@ public class MedicalRecordController {
                                 request
                         )
         );
+    }
+
+    @PatchMapping("/{id}/archive")
+    public ResponseEntity<MedicalRecordResponse>
+    archiveMedicalRecord(
+            @PathVariable
+            String id
+    ) {
+
+        return ResponseEntity.ok(
+                medicalRecordService
+                        .archiveMedicalRecord(id)
+        );
+    }
+
+    @PatchMapping("/{id}/restore")
+    public ResponseEntity<MedicalRecordResponse>
+    restoreMedicalRecord(
+            @PathVariable
+            String id
+    ) {
+
+        return ResponseEntity.ok(
+                medicalRecordService
+                        .restoreMedicalRecord(id)
+        );
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void>
+    deleteMedicalRecordPermanently(
+            @PathVariable
+            String id
+    ) {
+
+        medicalRecordService
+                .deleteMedicalRecordPermanently(id);
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

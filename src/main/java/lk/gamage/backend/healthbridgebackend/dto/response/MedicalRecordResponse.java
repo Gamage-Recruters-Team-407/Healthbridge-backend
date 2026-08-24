@@ -38,6 +38,10 @@ public class MedicalRecordResponse {
 
     private LocalDateTime updatedAt;
 
+    private Boolean archived;
+
+    private LocalDateTime archivedAt;
+
     public MedicalRecordResponse() {
     }
 
@@ -167,5 +171,21 @@ public class MedicalRecordResponse {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getArchived() {
+        return archived;
+    }
+
+    public void setArchived(Boolean archived) {
+        this.archived = archived;
+    }
+
+    public LocalDateTime getArchivedAt() {
+        return archivedAt;
+    }
+
+    public void setArchivedAt(LocalDateTime archivedAt) {
+        this.archivedAt = archivedAt;
     }
 }
