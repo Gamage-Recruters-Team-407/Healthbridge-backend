@@ -37,4 +37,4 @@ public class UserController {
     public UserResponse reactivateAccount(@PathVariable String userId) {
         return userService.reactivateAccount(userId);
     }
-}
+}  
