@@ -9,18 +9,38 @@ import java.time.LocalDateTime;
 public class SupportTicketResponse {
 
     private String id;
+
     private String patientId;
+
+    private String patientName;
+
     private String subject;
+
     private TicketCategory category;
+
     private String description;
+
     private TicketPriority priority;
+
     private String mobileNumber;
+
     private TicketStatus status;
 
     private String attachmentUrl;
+
     private String attachmentPublicId;
 
+    // Admin reply
+    private String adminReply;
+
+    // Admin user ID who replied
+    private String repliedBy;
+
+    // Date/time of admin reply
+    private LocalDateTime repliedAt;
+
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
 
     public String getId() {
@@ -37,6 +57,14 @@ public class SupportTicketResponse {
 
     public void setPatientId(String patientId) {
         this.patientId = patientId;
+    }
+
+    public String getPatientName() {
+        return patientName;
+    }
+
+    public void setPatientName(String patientName) {
+        this.patientName = patientName;
     }
 
     public String getSubject() {
@@ -101,6 +129,30 @@ public class SupportTicketResponse {
 
     public void setAttachmentPublicId(String attachmentPublicId) {
         this.attachmentPublicId = attachmentPublicId;
+    }
+
+    public String getAdminReply() {
+        return adminReply;
+    }
+
+    public void setAdminReply(String adminReply) {
+        this.adminReply = adminReply;
+    }
+
+    public String getRepliedBy() {
+        return repliedBy;
+    }
+
+    public void setRepliedBy(String repliedBy) {
+        this.repliedBy = repliedBy;
+    }
+
+    public LocalDateTime getRepliedAt() {
+        return repliedAt;
+    }
+
+    public void setRepliedAt(LocalDateTime repliedAt) {
+        this.repliedAt = repliedAt;
     }
 
     public LocalDateTime getCreatedAt() {

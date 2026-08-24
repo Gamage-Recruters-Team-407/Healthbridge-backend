@@ -15,12 +15,16 @@ public class SupportTicketMapper {
 
         SupportTicket ticket = new SupportTicket();
 
-        ticket.setPatientId(request.getPatientId());
+        // Patient ID and patient name are NOT taken from request.
+        // They will be added from the logged-in user in SupportTicketService.
+
         ticket.setSubject(request.getSubject());
         ticket.setCategory(request.getCategory());
         ticket.setDescription(request.getDescription());
         ticket.setPriority(request.getPriority());
         ticket.setMobileNumber(request.getMobileNumber());
+
+        // New ticket starts as OPEN
         ticket.setStatus(TicketStatus.OPEN);
 
         return ticket;
@@ -34,7 +38,12 @@ public class SupportTicketMapper {
                 new SupportTicketResponse();
 
         response.setId(ticket.getId());
+
+        // Patient information
         response.setPatientId(ticket.getPatientId());
+        response.setPatientName(ticket.getPatientName());
+
+        // Ticket information
         response.setSubject(ticket.getSubject());
         response.setCategory(ticket.getCategory());
         response.setDescription(ticket.getDescription());
@@ -42,6 +51,7 @@ public class SupportTicketMapper {
         response.setMobileNumber(ticket.getMobileNumber());
         response.setStatus(ticket.getStatus());
 
+        // Attachment
         response.setAttachmentUrl(
                 ticket.getAttachmentUrl()
         );
@@ -50,6 +60,20 @@ public class SupportTicketMapper {
                 ticket.getAttachmentPublicId()
         );
 
+        // Admin reply information
+        response.setAdminReply(
+                ticket.getAdminReply()
+        );
+
+        response.setRepliedBy(
+                ticket.getRepliedBy()
+        );
+
+        response.setRepliedAt(
+                ticket.getRepliedAt()
+        );
+
+        // Dates
         response.setCreatedAt(
                 ticket.getCreatedAt()
         );
