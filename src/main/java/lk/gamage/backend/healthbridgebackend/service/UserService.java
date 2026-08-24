@@ -61,4 +61,22 @@ public class UserService {
 
         return new UserProfileResponse(savedUser);
     }
+
+    public UserProfileResponse deactivateAccount(String email) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setAccountStatus("Inactive");
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse reactivateAccount(String email) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setAccountStatus("Active");
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
 }
