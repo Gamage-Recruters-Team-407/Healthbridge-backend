@@ -1,9 +1,20 @@
 package lk.gamage.backend.healthbridgebackend.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Document(collection = "users")
 public class User {
 
@@ -11,101 +22,41 @@ public class User {
     private String id;
 
     private String fullName;
+    private String firstName;
+    private String lastName;
+
+    @Indexed(unique = true)
     private String email;
 
-    @Field("phoneNumber")
     private String phoneNumber;
+    private String phone; // Added for SOS compatibility
 
     private String password;
-    private String role;
-    private String provider;
+
+    private Role role = Role.PATIENT;
+
+    private AuthProvider provider = AuthProvider.LOCAL;
+
     private String googleId;
 
-    @Field("picture")
-    private String profileImageUrl;
+    private String picture;
 
-    private String accountStatus;
+    private String dateOfBirth;
 
-    public User() {
-    }
+    private String gender;
 
-    public String getId() {
-        return id;
-    }
+    private String bloodGroup;
+    private String bloodType; // Added for SOS compatibility
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    private String address;
 
-    public String getFullName() {
-        return fullName;
-    }
+    private String emergencyContact;
 
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
+    private String medicalHistory;
+    private List<String> allergies;
+    private List<String> conditions;
 
-    public String getEmail() {
-        return email;
-    }
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public String getProvider() {
-        return provider;
-    }
-
-    public void setProvider(String provider) {
-        this.provider = provider;
-    }
-
-    public String getGoogleId() {
-        return googleId;
-    }
-
-    public void setGoogleId(String googleId) {
-        this.googleId = googleId;
-    }
-
-    public String getProfileImageUrl() {
-        return profileImageUrl;
-    }
-
-    public void setProfileImageUrl(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
-    }
-
-    public String getAccountStatus() {
-        return accountStatus;
-    }
-
-    public void setAccountStatus(String accountStatus) {
-        this.accountStatus = accountStatus;
-    }
+    private LocalDateTime updatedAt = LocalDateTime.now();
 }
