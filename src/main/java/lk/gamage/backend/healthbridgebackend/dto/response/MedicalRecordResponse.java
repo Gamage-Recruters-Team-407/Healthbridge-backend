@@ -1,17 +1,11 @@
-package lk.gamage.backend.healthbridgebackend.model;
-
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+package lk.gamage.backend.healthbridgebackend.dto.response;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
-@Document(collection = "medical_records")
-public class MedicalRecord {
+public class MedicalRecordResponse {
 
-    @Id
     private String id;
 
     private String patientId;
@@ -30,9 +24,9 @@ public class MedicalRecord {
 
     private String clinicalSummary;
 
-    private List<String> symptoms = new ArrayList<>();
+    private List<String> symptoms;
 
-    private List<String> treatmentPlan = new ArrayList<>();
+    private List<String> treatmentPlan;
 
     private String consultationNotes;
 
@@ -44,12 +38,11 @@ public class MedicalRecord {
 
     private LocalDateTime updatedAt;
 
-    // Soft delete / archive fields
-    private Boolean archived = false;
+    private Boolean archived;
 
     private LocalDateTime archivedAt;
 
-    public MedicalRecord() {
+    public MedicalRecordResponse() {
     }
 
     public String getId() {
