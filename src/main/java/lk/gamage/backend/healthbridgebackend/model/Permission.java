@@ -6,8 +6,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,7 +14,11 @@ public class Permission {
     @Id
     private String id;
     private String moduleName;
-    private String action;
-    private String description;
-    private LocalDateTime createdAt;
+    private boolean canView;
+    private boolean canCreate;
+    private boolean canEdit;
+    private boolean canDelete;
+    private boolean canApprove;
+    private boolean canExport;
+    private boolean canManage;
 }
