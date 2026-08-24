@@ -46,4 +46,15 @@ public class AuditLogService {
     public List<AuditLog> getLogsBySeverity(String severity) {
         return repository.findBySeverity(severity);
     }
+
+    public java.util.Map<String, Long> getTodaySummary() {
+        return java.util.Map.of(
+            "totalToday", 0L,
+            "authEvents", 0L,
+            "adminActions", 0L,
+            "recordAccess", 0L,
+            "securityEvents", 0L,
+            "failedActions", 0L
+        );
+    }
 }
