@@ -56,6 +56,8 @@ public class User {
     private List<String> allergies;
     private List<String> conditions;
 
+    private String accountStatus = "Active";
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     private LocalDateTime updatedAt = LocalDateTime.now();

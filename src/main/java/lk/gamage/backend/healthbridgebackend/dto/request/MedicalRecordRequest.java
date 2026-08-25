@@ -1,63 +1,46 @@
-package lk.gamage.backend.healthbridgebackend.model;
+package lk.gamage.backend.healthbridgebackend.dto.request;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
-@Document(collection = "medical_records")
-public class MedicalRecord {
+public class MedicalRecordRequest {
 
-    @Id
-    private String id;
-
+    @NotBlank(message = "Patient ID is required")
     private String patientId;
 
+    @NotBlank(message = "Doctor ID is required")
     private String doctorId;
 
+    @NotBlank(message = "Doctor name is required")
     private String doctorName;
 
+    @NotBlank(message = "Hospital name is required")
     private String hospitalName;
 
+    @NotNull(message = "Visit date is required")
     private LocalDate visitDate;
 
+    @NotBlank(message = "Record type is required")
     private String recordType;
 
+    @NotBlank(message = "Diagnosis is required")
     private String diagnosis;
 
+    @NotBlank(message = "Clinical summary is required")
     private String clinicalSummary;
 
-    private List<String> symptoms = new ArrayList<>();
+    private List<String> symptoms;
 
-    private List<String> treatmentPlan = new ArrayList<>();
+    private List<String> treatmentPlan;
 
     private String consultationNotes;
 
     private String status;
 
-    private int version;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
-    // Soft delete / archive fields
-    private Boolean archived = false;
-
-    private LocalDateTime archivedAt;
-
-    public MedicalRecord() {
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    public MedicalRecordRequest() {
     }
 
     public String getPatientId() {
@@ -154,45 +137,5 @@ public class MedicalRecord {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public int getVersion() {
-        return version;
-    }
-
-    public void setVersion(int version) {
-        this.version = version;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public Boolean getArchived() {
-        return archived;
-    }
-
-    public void setArchived(Boolean archived) {
-        this.archived = archived;
-    }
-
-    public LocalDateTime getArchivedAt() {
-        return archivedAt;
-    }
-
-    public void setArchivedAt(LocalDateTime archivedAt) {
-        this.archivedAt = archivedAt;
     }
 }
