@@ -2,7 +2,7 @@ package lk.gamage.backend.healthbridgebackend.controller;
 
 import lk.gamage.backend.healthbridgebackend.dto.request.AddContactRequest;
 import lk.gamage.backend.healthbridgebackend.model.EmergencyContact;
-import lk.gamage.backend.healthbridgebackend.service.ContactService;
+import lk.gamage.backend.healthbridgebackend.service.SOSService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,11 +16,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ContactController {
 
-    private final ContactService contactService;
+    private final SOSService sosService;
 
     @GetMapping
     public ResponseEntity<Map<String, List<EmergencyContact>>> getContacts(@RequestParam String userId) {
-        List<EmergencyContact> contacts = contactService.getContacts(userId);
+        List<EmergencyContact> contacts = sosService.getContacts(userId);
         
         Map<String, List<EmergencyContact>> response = new HashMap<>();
         response.put("contacts", contacts);
@@ -31,7 +31,7 @@ public class ContactController {
     @PostMapping
     public ResponseEntity<Map<String, String>> addContact(@RequestBody AddContactRequest request,
                                                           @RequestParam String userId) {
-        EmergencyContact contact = contactService.addContact(userId, request);
+        EmergencyContact contact = sosService.addContact(userId, request);
         
         Map<String, String> response = new HashMap<>();
         response.put("id", contact.getId());
@@ -43,7 +43,7 @@ public class ContactController {
     @PutMapping("/{contactId}")
     public ResponseEntity<Map<String, String>> updateContact(@PathVariable String contactId,
                                                              @RequestBody AddContactRequest request) {
-        contactService.updateContact(contactId, request);
+        sosService.updateContact(contactId, request);
         
         Map<String, String> response = new HashMap<>();
         response.put("message", "Contact updated successfully!");
@@ -53,7 +53,7 @@ public class ContactController {
 
     @DeleteMapping("/{contactId}")
     public ResponseEntity<Map<String, String>> deleteContact(@PathVariable String contactId) {
-        contactService.deleteContact(contactId);
+        sosService.deleteContact(contactId);
         
         Map<String, String> response = new HashMap<>();
         response.put("message", "Contact removed successfully!");
