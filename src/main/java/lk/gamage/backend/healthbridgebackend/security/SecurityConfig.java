@@ -38,8 +38,10 @@ public class SecurityConfig {
                                 "/api/departments/**",
                                 "/api/hospital-admin/**",
                                 "/error",
+                                "/api/medical-records/**",
                                 "/v3/api-docs/**",
-                                "/swagger-ui/**"
+                                "/swagger-ui/**",
+                                "/api/diagnoses/**"
                         ).permitAll()
                         .requestMatchers("/api/lab/**").hasAnyRole("LAB_OFFICER", "ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated()
