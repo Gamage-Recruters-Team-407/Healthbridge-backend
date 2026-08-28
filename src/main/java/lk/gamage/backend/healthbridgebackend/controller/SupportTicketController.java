@@ -1,127 +1,75 @@
 package lk.gamage.backend.healthbridgebackend.controller;
 
-import jakarta.validation.Valid;
-import lk.gamage.backend.healthbridgebackend.dto.request.CreateSupportTicketRequest;
-import lk.gamage.backend.healthbridgebackend.dto.request.ReplySupportTicketRequest;
-import lk.gamage.backend.healthbridgebackend.dto.response.SupportTicketResponse;
-import lk.gamage.backend.healthbridgebackend.model.TicketStatus;
 import lk.gamage.backend.healthbridgebackend.service.SupportTicketService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/support/tickets")
+@RequestMapping("/api/tickets")
 public class SupportTicketController {
 
-    private final SupportTicketService service;
-
-    public SupportTicketController(
-            SupportTicketService service
-    ) {
-        this.service = service;
-    }
-
-    // ============================================================
-    // PATIENT - CREATE TICKET
-    // ============================================================
+    @Autowired
+    private SupportTicketService supportTicketService;
 
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<SupportTicketResponse> createTicket(
-
-            @Valid @ModelAttribute CreateSupportTicketRequest request,
-
-            @RequestPart(
-                    value = "file",
-                    required = false
-            ) MultipartFile file
-
-    ) {
-
-        SupportTicketResponse response =
-                service.createTicket(request, file);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(response);
+    public ResponseEntity<?> createTicket(
+            @RequestParam("subject") String subject,
+            @RequestParam("description") String description,
+            @RequestParam(value = "attachment", required = false) MultipartFile attachment) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(supportTicketService.createTicket(subject, description, attachment));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error creating ticket: " + e.getMessage()));
+        }
     }
-
-    // ============================================================
-    // PATIENT - GET MY TICKETS
-    // ============================================================
-
-    @GetMapping("/my")
-    public ResponseEntity<List<SupportTicketResponse>> getMyTickets() {
-
-        return ResponseEntity.ok(
-                service.getMyTickets()
-        );
-    }
-
-    // ============================================================
-    // GET SINGLE TICKET
-    // PATIENT -> OWN TICKET
-    // ADMIN  -> ANY TICKET
-    // ============================================================
-
-    @GetMapping("/{id}")
-    public ResponseEntity<SupportTicketResponse> getTicket(
-            @PathVariable String id
-    ) {
-
-        return ResponseEntity.ok(
-                service.getTicket(id)
-        );
-    }
-
-    // ============================================================
-    // ADMIN - GET ALL TICKETS
-    // ============================================================
 
     @GetMapping
-    public ResponseEntity<List<SupportTicketResponse>> getAllTickets() {
-
-        return ResponseEntity.ok(
-                service.getAllTickets()
-        );
+    public ResponseEntity<?> getMyTickets() {
+        try {
+            return ResponseEntity.ok(supportTicketService.getMyTickets());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error retrieving tickets: " + e.getMessage()));
+        }
     }
 
-    // ============================================================
-    // ADMIN - REPLY TO TICKET
-    // ============================================================
-
-    @PutMapping("/{id}/reply")
-    public ResponseEntity<SupportTicketResponse> replyToTicket(
-
-            @PathVariable String id,
-
-            @Valid @RequestBody ReplySupportTicketRequest request
-
-    ) {
-
-        return ResponseEntity.ok(
-                service.replyToTicket(id, request)
-        );
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getMyTicketById(@PathVariable String id) {
+        try {
+            return ResponseEntity.ok(supportTicketService.getMyTicketById(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error retrieving ticket: " + e.getMessage()));
+        }
     }
 
-    // ============================================================
-    // ADMIN - UPDATE TICKET STATUS
-    // ============================================================
-
-    @PutMapping("/{id}/status")
-    public ResponseEntity<SupportTicketResponse> updateStatus(
-
+    @PostMapping(value = "/{id}/reply", consumes = "multipart/form-data")
+    public ResponseEntity<?> reply(
             @PathVariable String id,
-
-            @RequestParam TicketStatus status
-
-    ) {
-
-        return ResponseEntity.ok(
-                service.updateStatus(id, status)
-        );
+            @RequestParam(value = "message", required = false) String message,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
+        try {
+            return ResponseEntity.ok(supportTicketService.addUserReply(id, message, image));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error adding reply: " + e.getMessage()));
+        }
     }
 }

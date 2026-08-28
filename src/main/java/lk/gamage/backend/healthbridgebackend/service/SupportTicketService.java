@@ -1,16 +1,14 @@
 package lk.gamage.backend.healthbridgebackend.service;
 
-import com.cloudinary.Cloudinary;
-import lk.gamage.backend.healthbridgebackend.dto.request.CreateSupportTicketRequest;
-import lk.gamage.backend.healthbridgebackend.dto.request.ReplySupportTicketRequest;
-import lk.gamage.backend.healthbridgebackend.dto.response.SupportTicketResponse;
-import lk.gamage.backend.healthbridgebackend.mapper.SupportTicketMapper;
+import lk.gamage.backend.healthbridgebackend.dto.response.TicketResponse;
+import lk.gamage.backend.healthbridgebackend.dto.response.TicketSummaryResponse;
 import lk.gamage.backend.healthbridgebackend.model.SupportTicket;
+import lk.gamage.backend.healthbridgebackend.model.TicketReply;
 import lk.gamage.backend.healthbridgebackend.model.TicketStatus;
-import lk.gamage.backend.healthbridgebackend.security.CustomUserDetails;
+import lk.gamage.backend.healthbridgebackend.model.User;
 import lk.gamage.backend.healthbridgebackend.repository.SupportTicketRepository;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
+import lk.gamage.backend.healthbridgebackend.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,258 +16,150 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class SupportTicketService {
 
-    private final SupportTicketRepository repository;
-    private final SupportTicketMapper mapper;
-    private final CloudinaryService cloudinaryService;
+    @Autowired
+    private SupportTicketRepository ticketRepository;
 
-    public SupportTicketService(
-            SupportTicketRepository repository,
-            SupportTicketMapper mapper,
-            CloudinaryService cloudinaryService
-    ) {
-        this.repository = repository;
-        this.mapper = mapper;
-        this.cloudinaryService = cloudinaryService;
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
     }
 
-    // ============================================================
-    // CREATE TICKET
-    // ============================================================
+    public TicketResponse createTicket(String subject, String description, MultipartFile attachment) {
+        User user = getCurrentUser();
 
-    public SupportTicketResponse createTicket(
-            CreateSupportTicketRequest request,
-            MultipartFile file
-    ) {
-
-        // Get currently logged-in user
-        CustomUserDetails user = getLoggedInUser();
-
-        // Convert request to ticket
-        SupportTicket ticket = mapper.toEntity(request);
-
-        // IMPORTANT:
-        // Patient ID and patient name come from authentication,
-        // NOT from the frontend request.
-        ticket.setPatientId(user.getId());
-        ticket.setPatientName(user.getFullName());
-
-        // Upload attachment if provided
-        if (file != null && !file.isEmpty()) {
-
-            Map<String, Object> uploadResult =
-                    cloudinaryService.uploadFile(file);
-
-            ticket.setAttachmentUrl(
-                    (String) uploadResult.get("secure_url")
-            );
-
-            ticket.setAttachmentPublicId(
-                    (String) uploadResult.get("public_id")
-            );
+        if (subject == null || subject.isBlank()) {
+            throw new IllegalArgumentException("Subject is required");
+        }
+        if (description == null || description.isBlank()) {
+            throw new IllegalArgumentException("Description is required");
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        SupportTicket.SupportTicketBuilder builder = SupportTicket.builder()
+                .userId(user.getId())
+                .userName(user.getFullName())
+                .userEmail(user.getEmail())
+                .subject(subject.trim())
+                .description(description.trim())
+                .status(TicketStatus.OPEN);
 
-        ticket.setCreatedAt(now);
-        ticket.setUpdatedAt(now);
+        if (attachment != null && !attachment.isEmpty()) {
+            Map<String, String> uploaded = cloudinaryService.uploadFile(attachment, "support-tickets/attachments");
+            builder.attachmentUrl(uploaded.get("url"))
+                   .attachmentPublicId(uploaded.get("publicId"));
+        }
 
-        SupportTicket savedTicket =
-                repository.save(ticket);
-
-        return mapper.toResponse(savedTicket);
+        SupportTicket saved = ticketRepository.save(builder.build());
+        return new TicketResponse(saved);
     }
 
-    // ============================================================
-    // GET SINGLE TICKET
-    // ============================================================
-
-    public SupportTicketResponse getTicket(String id) {
-
-        SupportTicket ticket = repository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Support ticket not found: " + id
-                        )
-                );
-
-        CustomUserDetails user = getLoggedInUser();
-
-        // Admin can see any ticket
-        if (isAdmin(user)) {
-            return mapper.toResponse(ticket);
-        }
-
-        // Patient can only see their own ticket
-        if (!ticket.getPatientId().equals(user.getId())) {
-            throw new AccessDeniedException(
-                    "You are not allowed to view this ticket"
-            );
-        }
-
-        return mapper.toResponse(ticket);
+    public List<TicketSummaryResponse> getMyTickets() {
+        User user = getCurrentUser();
+        return ticketRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
+                .stream().map(TicketSummaryResponse::new).collect(Collectors.toList());
     }
 
-    // ============================================================
-    // GET MY TICKETS
-    // ============================================================
+    public TicketResponse getMyTicketById(String ticketId) {
+        User user = getCurrentUser();
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
 
-    public List<SupportTicketResponse> getMyTickets() {
-
-        CustomUserDetails user = getLoggedInUser();
-
-        return repository
-                .findByPatientIdOrderByCreatedAtDesc(user.getId())
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
+        if (!ticket.getUserId().equals(user.getId())) {
+            throw new SecurityException("You are not allowed to view this ticket");
+        }
+        return new TicketResponse(ticket);
     }
 
-    // ============================================================
-    // GET ALL TICKETS - ADMIN
-    // ============================================================
+    public TicketResponse addUserReply(String ticketId, String message, MultipartFile image) {
+        User user = getCurrentUser();
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
 
-    public List<SupportTicketResponse> getAllTickets() {
-
-        CustomUserDetails user = getLoggedInUser();
-
-        // Only admin can see all tickets
-        if (!isAdmin(user)) {
-            throw new AccessDeniedException(
-                    "Only administrators can view all support tickets"
-            );
+        if (!ticket.getUserId().equals(user.getId())) {
+            throw new SecurityException("You are not allowed to reply to this ticket");
         }
 
-        return repository
-                .findAllByOrderByCreatedAtDesc()
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
-    }
-
-    // ============================================================
-    // ADMIN REPLY
-    // ============================================================
-
-    public SupportTicketResponse replyToTicket(
-            String ticketId,
-            ReplySupportTicketRequest request
-    ) {
-
-        CustomUserDetails admin = getLoggedInUser();
-
-        // Check admin role
-        if (!isAdmin(admin)) {
-            throw new AccessDeniedException(
-                    "Only administrators can reply to support tickets"
-            );
-        }
-
-        SupportTicket ticket = repository.findById(ticketId)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Support ticket not found: " + ticketId
-                        )
-                );
-
-        // Store admin reply
-        ticket.setAdminReply(request.getReply());
-
-        // Store admin's existing user ID
-        ticket.setRepliedBy(admin.getId());
-
-        // Store reply time
-        ticket.setRepliedAt(LocalDateTime.now());
-
-        // Update ticket status
-        ticket.setStatus(TicketStatus.IN_PROGRESS);
-
+        TicketReply reply = buildReply(user.getId(), user.getFullName(), "USER", message, image);
+        ticket.getReplies().add(reply);
         ticket.setUpdatedAt(LocalDateTime.now());
 
-        SupportTicket updatedTicket =
-                repository.save(ticket);
-
-        return mapper.toResponse(updatedTicket);
+        return new TicketResponse(ticketRepository.save(ticket));
     }
 
-    // ============================================================
-    // UPDATE TICKET STATUS - ADMIN
-    // ============================================================
+    // ---------- Admin ----------
 
-    public SupportTicketResponse updateStatus(
-            String ticketId,
-            TicketStatus status
-    ) {
+    public List<TicketSummaryResponse> getAllTickets() {
+        return ticketRepository.findAllByOrderByCreatedAtDesc()
+                .stream().map(TicketSummaryResponse::new).collect(Collectors.toList());
+    }
 
-        CustomUserDetails admin = getLoggedInUser();
+    public TicketResponse getTicketByIdForAdmin(String ticketId) {
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
+        return new TicketResponse(ticket);
+    }
 
-        if (!isAdmin(admin)) {
-            throw new AccessDeniedException(
-                    "Only administrators can update ticket status"
-            );
+    public TicketResponse updateStatus(String ticketId, TicketStatus status) {
+        if (status == null) {
+            throw new IllegalArgumentException("Status is required");
         }
-
-        SupportTicket ticket = repository.findById(ticketId)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Support ticket not found: " + ticketId
-                        )
-                );
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
 
         ticket.setStatus(status);
         ticket.setUpdatedAt(LocalDateTime.now());
-
-        SupportTicket updatedTicket =
-                repository.save(ticket);
-
-        return mapper.toResponse(updatedTicket);
+        return new TicketResponse(ticketRepository.save(ticket));
     }
 
-    // ============================================================
-    // GET LOGGED-IN USER
-    // ============================================================
+    public TicketResponse addAdminReply(String ticketId, String message, MultipartFile image) {
+        User admin = getCurrentUser();
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
 
-    private CustomUserDetails getLoggedInUser() {
+        TicketReply reply = buildReply(admin.getId(), admin.getFullName(), "ADMIN", message, image);
+        ticket.getReplies().add(reply);
 
-        Authentication authentication =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication();
-
-        if (authentication == null ||
-                !authentication.isAuthenticated()) {
-
-            throw new AccessDeniedException(
-                    "User is not authenticated"
-            );
+        // Auto move OPEN -> PROCESSING when admin engages, if still open
+        if (ticket.getStatus() == TicketStatus.OPEN) {
+            ticket.setStatus(TicketStatus.PROCESSING);
         }
+        ticket.setUpdatedAt(LocalDateTime.now());
 
-        Object principal = authentication.getPrincipal();
-
-        if (!(principal instanceof CustomUserDetails)) {
-
-            throw new AccessDeniedException(
-                    "Invalid authenticated user"
-            );
-        }
-
-        return (CustomUserDetails) principal;
+        return new TicketResponse(ticketRepository.save(ticket));
     }
 
-    // ============================================================
-    // CHECK ADMIN
-    // ============================================================
+    private TicketReply buildReply(String senderId, String senderName, String senderRole,
+                                    String message, MultipartFile image) {
+        if ((message == null || message.isBlank()) && (image == null || image.isEmpty())) {
+            throw new IllegalArgumentException("Reply must contain a message or an image");
+        }
 
-    private boolean isAdmin(CustomUserDetails user) {
+        String imageUrl = null;
+        if (image != null && !image.isEmpty()) {
+            Map<String, String> uploaded = cloudinaryService.uploadFile(image, "support-tickets/replies");
+            imageUrl = uploaded.get("url");
+        }
 
-        return user.getAuthorities()
-                .stream()
-                .anyMatch(authority ->
-                        authority.getAuthority().equals("ROLE_ADMIN") ||
-                        authority.getAuthority().equals("ROLE_SUPER_ADMIN")
-                );
+        return TicketReply.builder()
+                .id(UUID.randomUUID().toString())
+                .senderId(senderId)
+                .senderName(senderName)
+                .senderRole(senderRole)
+                .message(message == null ? null : message.trim())
+                .imageUrl(imageUrl)
+                .createdAt(LocalDateTime.now())
+                .build();
     }
 }
