@@ -67,4 +67,40 @@ public class UserController {
                     .body(Map.of("message", "Error retrieving profile: " + e.getMessage()));
         }
     }
+
+    @PutMapping("/profile/deactivate")
+    public ResponseEntity<?> deactivateMyAccount() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || auth.getName() == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "User not authenticated"));
+            }
+            String email = auth.getName();
+            UserProfileResponse updated = userService.deactivateAccount(email);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error deactivating account: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/profile/reactivate")
+    public ResponseEntity<?> reactivateMyAccount() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || auth.getName() == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "User not authenticated"));
+            }
+            String email = auth.getName();
+            UserProfileResponse updated = userService.reactivateAccount(email);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error reactivating account: " + e.getMessage()));
+        }
+    }
 }
