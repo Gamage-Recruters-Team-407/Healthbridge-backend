@@ -1,4 +1,11 @@
 package lk.gamage.backend.healthbridgebackend.dto.response;
 
-public class AppointmentResponse {
-}
+import lk.gamage.backend.healthbridgebackend.enums.AppointmentStatus;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+public record AppointmentResponse(String id, String patientId, String doctorId, String doctorName,
+                                  String doctorSpecialization, String hospital, LocalDate appointmentDate,
+                                  String appointmentTime, String appointmentType, String reason,
+                                  AppointmentStatus status, String cancellationReason,
+                                  LocalDateTime createdAt, LocalDateTime updatedAt) { }

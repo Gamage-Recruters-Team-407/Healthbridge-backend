@@ -1,4 +1,7 @@
 package lk.gamage.backend.healthbridgebackend.enums;
 
-public class AppointmentStatus {
+public enum AppointmentStatus {
+    UPCOMING,
+    COMPLETED,
+    CANCELLED
 }
