@@ -3,8 +3,12 @@ package lk.gamage.backend.healthbridgebackend.model;
 import lk.gamage.backend.healthbridgebackend.enums.AppointmentStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
+@Document(collection = "appointments")
 public class Appointment {
+    @Id
     private String id;
     private String patientId;
     private String doctorId;
