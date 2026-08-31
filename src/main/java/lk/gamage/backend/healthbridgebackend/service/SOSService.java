@@ -1,13 +1,17 @@
 package lk.gamage.backend.healthbridgebackend.service;
 
+import lk.gamage.backend.healthbridgebackend.dto.request.AddContactRequest;
 import lk.gamage.backend.healthbridgebackend.dto.request.TriggerSOSRequest;
 import lk.gamage.backend.healthbridgebackend.model.EmergencyContact;
+import lk.gamage.backend.healthbridgebackend.model.NotificationLog;
 import lk.gamage.backend.healthbridgebackend.model.SOSAlert;
 import lk.gamage.backend.healthbridgebackend.model.User;
 import lk.gamage.backend.healthbridgebackend.repository.ContactRepository;
+import lk.gamage.backend.healthbridgebackend.repository.NotificationLogRepository;
 import lk.gamage.backend.healthbridgebackend.repository.SOSRepository;
 import lk.gamage.backend.healthbridgebackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +19,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SOSService {
@@ -22,9 +27,12 @@ public class SOSService {
     private final SOSRepository sosRepository;
     private final UserRepository userRepository;
     private final ContactRepository contactRepository;
-    private final NotificationService notificationService;
+    private final NotificationLogRepository notificationLogRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
+    // ========================================================================
+    // CORE SOS ALERT LOGIC
+    // ========================================================================
     public SOSAlert triggerSOS(String userId, TriggerSOSRequest request) {
         // Mock user if not found (since we skip auth for this prototype)
         User user = userRepository.findById(userId).orElseGet(() -> {
@@ -65,7 +73,7 @@ public class SOSService {
 
         // Notify contacts
         List<EmergencyContact> contacts = contactRepository.findByUserId(userId);
-        notificationService.notifyContacts(alert.getId(), contacts);
+        notifyContacts(alert.getId(), contacts);
 
         // Broadcast to WebSocket clients (e.g., admin dashboard)
         messagingTemplate.convertAndSend("/topic/alerts", alert);
@@ -83,7 +91,7 @@ public class SOSService {
                 alert = sosRepository.save(alert);
                 
                 List<EmergencyContact> contacts = contactRepository.findByUserId(alert.getUserId());
-                notificationService.notifyCancellation(alertId, contacts);
+                notifyCancellation(alertId, contacts);
                 
                 messagingTemplate.convertAndSend("/topic/alerts/cancel", alert);
                 return alert;
@@ -100,4 +108,71 @@ public class SOSService {
     public List<SOSAlert> getHistory(String userId) {
         return sosRepository.findByUserId(userId);
     }
+
+    // ========================================================================
+    // NOTIFICATION LOGIC
+    // ========================================================================
+    private void notifyContacts(String alertId, List<EmergencyContact> contacts) {
+        for (EmergencyContact contact : contacts) {
+            // Mock sending SMS
+            log.info("Sending SMS to {} at {}", contact.getName(), contact.getPhone());
+            
+            NotificationLog nLog = NotificationLog.builder()
+                    .alertId(alertId)
+                    .contactId(contact.getId())
+                    .contactName(contact.getName())
+                    .contactPhone(contact.getPhone())
+                    .notificationType("SMS")
+                    .status("SENT")
+                    .sentAt(Instant.now())
+                    .build();
+                    
+            notificationLogRepository.save(nLog);
+        }
+    }
+
+    private void notifyCancellation(String alertId, List<EmergencyContact> contacts) {
+        for (EmergencyContact contact : contacts) {
+            log.info("Sending Cancellation SMS to {} at {}", contact.getName(), contact.getPhone());
+        }
+    }
+
+    // ========================================================================
+    // EMERGENCY CONTACTS MANAGEMENT
+    // ========================================================================
+    public List<EmergencyContact> getContacts(String userId) {
+        return contactRepository.findByUserId(userId);
+    }
+
+    public EmergencyContact addContact(String userId, AddContactRequest request) {
+        EmergencyContact contact = EmergencyContact.builder()
+                .userId(userId)
+                .name(request.getName())
+                .relationship(request.getRelationship())
+                .phone(request.getPhone())
+                .email(request.getEmail())
+                .isPrimary(request.isPrimary())
+                .createdAt(Instant.now())
+                .build();
+        return contactRepository.save(contact);
+    }
+
+    public EmergencyContact updateContact(String contactId, AddContactRequest request) {
+        Optional<EmergencyContact> optContact = contactRepository.findById(contactId);
+        if (optContact.isPresent()) {
+            EmergencyContact contact = optContact.get();
+            contact.setName(request.getName());
+            contact.setPhone(request.getPhone());
+            contact.setRelationship(request.getRelationship());
+            contact.setEmail(request.getEmail());
+            contact.setPrimary(request.isPrimary());
+            return contactRepository.save(contact);
+        }
+        throw new RuntimeException("Contact not found");
+    }
+
+    public void deleteContact(String contactId) {
+        contactRepository.deleteById(contactId);
+    }
+
 }
