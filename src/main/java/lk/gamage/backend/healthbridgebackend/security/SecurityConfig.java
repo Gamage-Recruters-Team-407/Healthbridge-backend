@@ -42,7 +42,9 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/api/diagnoses/**",
-                                "/api/treatments/**"
+                                "/api/treatments/**",
+                                "/api/contacts/**",
+                                "/api/sos/**"
                         ).permitAll()
                         .requestMatchers("/api/lab/**").hasAnyRole("LAB_OFFICER", "ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated()
