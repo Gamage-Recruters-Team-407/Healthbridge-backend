@@ -7,9 +7,6 @@ import lk.gamage.backend.healthbridgebackend.model.TicketPriority;
 
 public class CreateSupportTicketRequest {
 
-    @NotNull
-    private String patientId;
-
     @NotBlank
     private String subject;
 
@@ -24,14 +21,6 @@ public class CreateSupportTicketRequest {
 
     @NotBlank
     private String mobileNumber;
-
-    public String getPatientId() {
-        return patientId;
-    }
-
-    public void setPatientId(String patientId) {
-        this.patientId = patientId;
-    }
 
     public String getSubject() {
         return subject;
