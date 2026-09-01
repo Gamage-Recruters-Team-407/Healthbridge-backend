@@ -24,75 +24,29 @@ public class BedServiceImpl implements BedService {
 
     @PostConstruct
     public void seedInitialData() {
-        if (bedRepository.count() == 0) {
-            List<Bed> initialBeds = Arrays.asList(
-                    Bed.builder()
-                            .bedId("ICU-101").code("101").ward("ICU").status("Occupied").bedType("ICU Standard")
-                            .patient(PatientInfo.builder().id("PID-10482").firstName("Alex").lastName("Fernando").dob("15 Mar 1978").age(46).gender("Male").assignedDoctor("Dr. Nimal Perera").admissionDate("2026-08-10").expDischarge("2026-08-22").admissionNotes("Post-cardiac bypass recovery and monitoring required.").currentWard("ICU").currentBedId("ICU-101").build())
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                    Bed.builder()
-                            .bedId("ICU-102").code("102").ward("ICU").status("Available").bedType("ICU Standard")
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                    Bed.builder()
-                            .bedId("ICU-103").code("103").ward("ICU").status("Reserved").bedType("ICU Standard")
-                            .patient(PatientInfo.builder().id("PID-10499").firstName("Samantha").lastName("Wickramasinghe").dob("22 Nov 1985").age(40).gender("Female").assignedDoctor("Dr. Sarah Fernando").eta("14:00").admissionNotes("Transfer from Emergency Ward pending ICU clearance.").currentWard("ICU").currentBedId("ICU-103").build())
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                    Bed.builder()
-                            .bedId("ICU-104").code("104").ward("ICU").status("Occupied").bedType("ICU Standard")
-                            .patient(PatientInfo.builder().id("PID-10311").firstName("Jane").lastName("Doe").dob("12 May 1968").age(55).gender("Female").assignedDoctor("Dr. Smith").admissionDate("2026-08-12").expDischarge("2026-08-25").admissionNotes("Acute respiratory distress observation.").currentWard("ICU").currentBedId("ICU-104").build())
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                    Bed.builder()
-                            .bedId("ICU-105").code("105").ward("ICU").status("Maintenance").bedType("Electric ICU")
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                    Bed.builder()
-                            .bedId("ICU-106").code("106").ward("ICU").status("Cleaning").bedType("ICU Standard")
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
+        bedRepository.deleteAll();
+        List<Bed> initialBeds = Arrays.asList(
+                Bed.builder()
+                        .bedId("ICU-101").code("101").ward("ICU").status("Occupied").bedType("ICU Standard")
+                        .patient(PatientInfo.builder().id("PID-10482").firstName("Alex").lastName("Fernando").dob("15 Mar 1978").age(46).gender("Male").assignedDoctor("Dr. Nimal Perera").admissionDate("2026-08-10").expDischarge("2026-08-22").admissionNotes("Post-cardiac bypass recovery and monitoring required.").currentWard("ICU").currentBedId("ICU-101").build())
+                        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
+                Bed.builder()
+                        .bedId("ICU-102").code("102").ward("ICU").status("Available").bedType("ICU Standard")
+                        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
+                Bed.builder()
+                        .bedId("GEN-201").code("201").ward("General Ward").status("Occupied").bedType("General Electric")
+                        .patient(PatientInfo.builder().id("PID-10204").firstName("Kamal").lastName("Gunaratne").dob("04 Jan 1962").age(64).gender("Male").assignedDoctor("Dr. Ruwan Bandara").admissionDate("2026-08-15").currentWard("General Ward").currentBedId("GEN-201").build())
+                        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
+                Bed.builder()
+                        .bedId("GEN-202").code("202").ward("General Ward").status("Available").bedType("General Standard")
+                        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
+                Bed.builder()
+                        .bedId("EMG-301").code("301").ward("Emergency Ward").status("Occupied").bedType("Emergency Trauma")
+                        .patient(PatientInfo.builder().id("PID-10501").firstName("Sunil").lastName("De Silva").dob("19 Aug 1990").age(34).gender("Male").assignedDoctor("Dr. Champa Wickramasinghe").currentWard("Emergency Ward").currentBedId("EMG-301").build())
+                        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build()
+        );
 
-                    Bed.builder()
-                            .bedId("GEN-201").code("201").ward("General Ward").status("Occupied").bedType("General Electric")
-                            .patient(PatientInfo.builder().id("PID-10204").firstName("Kamal").lastName("Gunaratne").dob("04 Jan 1962").age(64).gender("Male").assignedDoctor("Dr. Ruwan Bandara").admissionDate("2026-08-15").currentWard("General Ward").currentBedId("GEN-201").build())
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                    Bed.builder()
-                            .bedId("GEN-202").code("202").ward("General Ward").status("Available").bedType("General Electric")
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                    Bed.builder()
-                            .bedId("GEN-203").code("203").ward("General Ward").status("Available").bedType("General Standard")
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-
-                    Bed.builder()
-                            .bedId("EMG-301").code("301").ward("Emergency Ward").status("Occupied").bedType("Emergency Trauma")
-                            .patient(PatientInfo.builder().id("PID-10501").firstName("Sunil").lastName("De Silva").dob("19 Aug 1990").age(34).gender("Male").assignedDoctor("Dr. Champa Wickramasinghe").currentWard("Emergency Ward").currentBedId("EMG-301").build())
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                    Bed.builder()
-                            .bedId("EMG-302").code("302").ward("Emergency Ward").status("Available").bedType("Emergency Standard")
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-
-                    Bed.builder()
-                            .bedId("CARD-401").code("401").ward("Cardiology").status("Available").bedType("Cardiac Monitor")
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                    Bed.builder()
-                            .bedId("CARD-402").code("402").ward("Cardiology").status("Occupied").bedType("Cardiac Monitor")
-                            .patient(PatientInfo.builder().id("PID-10515").firstName("Kusum").lastName("Perera").dob("08 Dec 1955").age(70).gender("Female").assignedDoctor("Dr. Nimal Perera").admissionDate("2026-08-18").currentWard("Cardiology").currentBedId("CARD-402").build())
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-
-                    Bed.builder()
-                            .bedId("PED-501").code("501").ward("Pediatrics").status("Occupied").bedType("Pediatric Bed")
-                            .patient(PatientInfo.builder().id("PID-10520").firstName("Nipuni").lastName("Perera").dob("10 Jun 2018").age(8).gender("Female").assignedDoctor("Dr. Ayesha Silva").currentWard("Pediatrics").currentBedId("PED-501").build())
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                    Bed.builder()
-                            .bedId("PED-502").code("502").ward("Pediatrics").status("Available").bedType("Pediatric Bed")
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-
-                    Bed.builder()
-                            .bedId("MAT-601").code("601").ward("Maternity").status("Available").bedType("Maternity Bed")
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                    Bed.builder()
-                            .bedId("MAT-602").code("602").ward("Maternity").status("Available").bedType("Maternity Bed")
-                            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build()
-            );
-
-            bedRepository.saveAll(initialBeds);
-        }
+        bedRepository.saveAll(initialBeds);
     }
 
     @Override
@@ -281,9 +235,7 @@ public class BedServiceImpl implements BedService {
     public BedStatsDto getBedStats() {
         List<Bed> beds = bedRepository.findAll();
 
-        long dbCount = beds.size();
-        // Hospital total capacity calculation
-        long totalBeds = Math.max(dbCount + 200, 240);
+        long totalBeds = beds.size();
 
         long dbOccupied = beds.stream().filter(b -> "Occupied".equalsIgnoreCase(b.getStatus())).count();
         long dbAvailable = beds.stream().filter(b -> "Available".equalsIgnoreCase(b.getStatus())).count();
@@ -291,17 +243,14 @@ public class BedServiceImpl implements BedService {
         long dbCleaning = beds.stream().filter(b -> "Cleaning".equalsIgnoreCase(b.getStatus())).count();
         long dbReserved = beds.stream().filter(b -> "Reserved".equalsIgnoreCase(b.getStatus())).count();
 
-        long occupiedBeds = dbOccupied + 185;
-        long availableBeds = dbAvailable + 30;
-        long maintenanceBeds = dbMaintenance + 8;
-        int occupiedPercentage = (int) Math.round(((double) occupiedBeds / totalBeds) * 100);
+        int occupiedPercentage = totalBeds > 0 ? (int) Math.round(((double) dbOccupied / totalBeds) * 100) : 0;
 
         return BedStatsDto.builder()
                 .totalBeds(totalBeds)
-                .occupiedBeds(occupiedBeds)
+                .occupiedBeds(dbOccupied)
                 .occupiedPercentage(occupiedPercentage)
-                .availableBeds(availableBeds)
-                .maintenanceBeds(maintenanceBeds)
+                .availableBeds(dbAvailable)
+                .maintenanceBeds(dbMaintenance)
                 .cleaningBeds(dbCleaning)
                 .reservedBeds(dbReserved)
                 .build();
@@ -320,25 +269,11 @@ public class BedServiceImpl implements BedService {
 
         List<DepartmentOccupancyDto> result = new ArrayList<>();
 
-        Map<String, Integer> presetOccupancy = new HashMap<>();
-        presetOccupancy.put("ICU", 92);
-        presetOccupancy.put("General Ward", 75);
-        presetOccupancy.put("Pediatrics", 60);
-        presetOccupancy.put("Emergency Ward", 45);
-        presetOccupancy.put("Cardiology", 34);
-        presetOccupancy.put("Maternity", 10);
-
         for (String dept : departments) {
             long deptTotal = totalPerDept.getOrDefault(dept, 0L);
             long deptOccupied = occupiedPerDept.getOrDefault(dept, 0L);
 
-            int percentage;
-            if (deptTotal > 0) {
-                percentage = (int) Math.round(((double) deptOccupied / deptTotal) * 100);
-            } else {
-                percentage = presetOccupancy.getOrDefault(dept, 50);
-            }
-
+            int percentage = deptTotal > 0 ? (int) Math.round(((double) deptOccupied / deptTotal) * 100) : 0;
             boolean isAlert = percentage >= 85;
 
             result.add(DepartmentOccupancyDto.builder()
