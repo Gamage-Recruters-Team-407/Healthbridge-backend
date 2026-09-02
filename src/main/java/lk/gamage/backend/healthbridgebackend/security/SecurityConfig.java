@@ -38,6 +38,7 @@ public class SecurityConfig {
                                 "/api/departments/**",
                                 "/api/beds/**",
                                 "/api/staff/**",
+                                "/api/equipment/**",
                                 "/api/hospital-admin/**",
                                 "/error",
                                 "/api/medical-records/**",
