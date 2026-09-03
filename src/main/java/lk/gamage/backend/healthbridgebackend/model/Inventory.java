@@ -7,41 +7,44 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import lk.gamage.backend.healthbridgebackend.model.enums.InventoryStatus;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "medicines")
+@Document(collection = "medicine_inventory")
 
-public class Medicine {
+public class Inventory {
 
     @Id
     private String id;
 
-    @Indexed(unique = true)
+    private String pharmacyId;
+    private String medicineId;
     private String medicineCode;
+    private String medicineName;
 
-    private String name;
-    private String genericName;
-    private String brand;
-    private String manufacturer;
-    private String category;
-    private String dosageForm;
-    private String strength;
+    private String batchNumber;
+    private String supplierId;
+    private String supplierName;
 
-    private boolean controlledDrug;
-    private boolean prescriptionRequired;
+    private int quantityInStock;
+    private int reorderLevel;
+    private int reorderQuantity;
 
-    private double unitPrice;
+    private double costPrice;
+    private double sellingPrice;
 
-    private List<String> substituteMedicineCodes;
+    private LocalDate manufactureDate;
+    private LocalDate expiryDate;
 
+//    private String status;
+    private InventoryStatus status;
 
     @CreatedDate
     private LocalDateTime createdAt;
