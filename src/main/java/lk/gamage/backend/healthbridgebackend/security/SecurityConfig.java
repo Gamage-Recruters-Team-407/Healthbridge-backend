@@ -47,7 +47,8 @@ public class SecurityConfig {
                                 "/api/diagnoses/**",
                                 "/api/treatments/**",
                                 "/api/contacts/**",
-                                "/api/sos/**"
+                                "/api/sos/**",
+                                "/api/medical-documents/**"
                         ).permitAll()
                         .requestMatchers("/api/lab/**").hasAnyRole("LAB_OFFICER", "ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated()
