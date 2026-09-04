@@ -36,13 +36,19 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/departments/**",
+                                "/api/beds/**",
+                                "/api/staff/**",
+                                "/api/equipment/**",
                                 "/api/hospital-admin/**",
                                 "/error",
                                 "/api/medical-records/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/api/diagnoses/**",
-                                "/api/treatments/**"
+                                "/api/treatments/**",
+                                "/api/contacts/**",
+                                "/api/sos/**",
+                                "/api/medical-documents/**"
                         ).permitAll()
                         .requestMatchers("/api/lab/**").hasAnyRole("LAB_OFFICER", "ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated()

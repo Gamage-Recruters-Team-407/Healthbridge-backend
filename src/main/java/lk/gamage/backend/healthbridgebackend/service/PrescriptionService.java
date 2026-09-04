@@ -1,4 +1,7 @@
-package lk.gamage.backend.healthbridgebackend.service;
-
-public class PrescriptionService {
-}
+//package lk.gamage.backend.healthbridgebackend.service;
+//
+//public interface PrescriptionService {
+//
+//
+//
+//}
