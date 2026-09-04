@@ -24,6 +24,7 @@ public class UserProfileResponse {
     private String medicalHistory;
     private java.util.List<String> allergies;
     private java.util.List<String> conditions;
+    private String accountStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -48,6 +49,7 @@ public class UserProfileResponse {
         this.medicalHistory = user.getMedicalHistory();
         this.allergies = user.getAllergies();
         this.conditions = user.getConditions();
+        this.accountStatus = user.getAccountStatus();
         this.createdAt = user.getCreatedAt();
         this.updatedAt = user.getUpdatedAt();
     }
@@ -178,6 +180,14 @@ public class UserProfileResponse {
 
     public void setConditions(java.util.List<String> conditions) {
         this.conditions = conditions;
+    }
+
+    public String getAccountStatus() {
+        return accountStatus;
+    }
+
+    public void setAccountStatus(String accountStatus) {
+        this.accountStatus = accountStatus;
     }
 
     public LocalDateTime getCreatedAt() {
