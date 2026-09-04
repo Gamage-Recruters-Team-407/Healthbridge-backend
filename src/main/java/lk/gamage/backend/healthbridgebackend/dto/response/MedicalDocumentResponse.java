@@ -13,6 +13,12 @@ public class MedicalDocumentResponse {
 
     private String doctorId;
 
+    private String documentGroupId;
+
+    private Integer version;
+
+    private String status;
+
     private String documentType;
 
     private String fileName;
@@ -26,6 +32,10 @@ public class MedicalDocumentResponse {
     private String description;
 
     private LocalDateTime uploadedAt;
+
+    private LocalDateTime updatedAt;
+
+    private LocalDateTime archivedAt;
 
 
     public MedicalDocumentResponse() {
@@ -69,6 +79,36 @@ public class MedicalDocumentResponse {
 
     public void setDoctorId(String doctorId) {
         this.doctorId = doctorId;
+    }
+
+
+    public String getDocumentGroupId() {
+        return documentGroupId;
+    }
+
+
+    public void setDocumentGroupId(String documentGroupId) {
+        this.documentGroupId = documentGroupId;
+    }
+
+
+    public Integer getVersion() {
+        return version;
+    }
+
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+
+    public String getStatus() {
+        return status;
+    }
+
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
 
@@ -139,5 +179,25 @@ public class MedicalDocumentResponse {
 
     public void setUploadedAt(LocalDateTime uploadedAt) {
         this.uploadedAt = uploadedAt;
+    }
+
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+
+    public LocalDateTime getArchivedAt() {
+        return archivedAt;
+    }
+
+
+    public void setArchivedAt(LocalDateTime archivedAt) {
+        this.archivedAt = archivedAt;
     }
 }

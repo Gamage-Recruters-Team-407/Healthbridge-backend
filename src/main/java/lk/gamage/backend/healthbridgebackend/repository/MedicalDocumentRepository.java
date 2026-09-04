@@ -14,6 +14,10 @@ public interface MedicalDocumentRepository
 
 
     List<MedicalDocument>
+    findAllByOrderByUploadedAtDesc();
+
+
+    List<MedicalDocument>
     findByMedicalRecordIdOrderByUploadedAtDesc(
             String medicalRecordId
     );
@@ -28,5 +32,17 @@ public interface MedicalDocumentRepository
     List<MedicalDocument>
     findByDoctorIdOrderByUploadedAtDesc(
             String doctorId
+    );
+
+
+    List<MedicalDocument>
+    findByDocumentGroupIdOrderByVersionDesc(
+            String documentGroupId
+    );
+
+
+    List<MedicalDocument>
+    findByStatusOrderByUploadedAtDesc(
+            String status
     );
 }

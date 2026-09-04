@@ -9,6 +9,11 @@ import java.time.LocalDateTime;
 @Document(collection = "medical_documents")
 public class MedicalDocument {
 
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_SUPERSEDED = "SUPERSEDED";
+    public static final String STATUS_ARCHIVED = "ARCHIVED";
+
+
     @Id
     private String id;
 
@@ -17,6 +22,25 @@ public class MedicalDocument {
     private String patientId;
 
     private String doctorId;
+
+    /*
+     * All versions of the same logical document
+     * share the same documentGroupId.
+     */
+    private String documentGroupId;
+
+    /*
+     * File version:
+     * 1, 2, 3...
+     */
+    private Integer version = 1;
+
+    /*
+     * ACTIVE
+     * SUPERSEDED
+     * ARCHIVED
+     */
+    private String status = STATUS_ACTIVE;
 
     private String documentType;
 
@@ -28,6 +52,11 @@ public class MedicalDocument {
 
     private String fileUrl;
 
+    /*
+     * Internal Cloudinary fields.
+     * These are stored in MongoDB but are not exposed
+     * to the frontend response.
+     */
     private String cloudinaryPublicId;
 
     private String cloudinaryResourceType;
@@ -35,6 +64,10 @@ public class MedicalDocument {
     private String description;
 
     private LocalDateTime uploadedAt;
+
+    private LocalDateTime updatedAt;
+
+    private LocalDateTime archivedAt;
 
 
     public MedicalDocument() {
@@ -78,6 +111,36 @@ public class MedicalDocument {
 
     public void setDoctorId(String doctorId) {
         this.doctorId = doctorId;
+    }
+
+
+    public String getDocumentGroupId() {
+        return documentGroupId;
+    }
+
+
+    public void setDocumentGroupId(String documentGroupId) {
+        this.documentGroupId = documentGroupId;
+    }
+
+
+    public Integer getVersion() {
+        return version;
+    }
+
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+
+    public String getStatus() {
+        return status;
+    }
+
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
 
@@ -146,8 +209,11 @@ public class MedicalDocument {
     }
 
 
-    public void setCloudinaryResourceType(String cloudinaryResourceType) {
-        this.cloudinaryResourceType = cloudinaryResourceType;
+    public void setCloudinaryResourceType(
+            String cloudinaryResourceType
+    ) {
+        this.cloudinaryResourceType =
+                cloudinaryResourceType;
     }
 
 
@@ -168,5 +234,25 @@ public class MedicalDocument {
 
     public void setUploadedAt(LocalDateTime uploadedAt) {
         this.uploadedAt = uploadedAt;
+    }
+
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+
+    public LocalDateTime getArchivedAt() {
+        return archivedAt;
+    }
+
+
+    public void setArchivedAt(LocalDateTime archivedAt) {
+        this.archivedAt = archivedAt;
     }
 }
