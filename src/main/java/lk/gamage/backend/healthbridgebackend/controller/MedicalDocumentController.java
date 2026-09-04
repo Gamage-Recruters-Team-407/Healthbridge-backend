@@ -1,5 +1,6 @@
 package lk.gamage.backend.healthbridgebackend.controller;
 
+import lk.gamage.backend.healthbridgebackend.dto.request.MedicalDocumentUpdateRequest;
 import lk.gamage.backend.healthbridgebackend.dto.response.MedicalDocumentResponse;
 import lk.gamage.backend.healthbridgebackend.service.MedicalDocumentService;
 
@@ -16,12 +17,14 @@ import java.util.List;
 @RequestMapping("/api/medical-documents")
 public class MedicalDocumentController {
 
-    private final MedicalDocumentService medicalDocumentService;
+    private final MedicalDocumentService
+            medicalDocumentService;
 
 
     public MedicalDocumentController(
             MedicalDocumentService medicalDocumentService
     ) {
+
         this.medicalDocumentService =
                 medicalDocumentService;
     }
@@ -57,14 +60,15 @@ public class MedicalDocumentController {
     ) {
 
         MedicalDocumentResponse response =
-                medicalDocumentService.uploadDocument(
-                        file,
-                        medicalRecordId,
-                        patientId,
-                        doctorId,
-                        documentType,
-                        description
-                );
+                medicalDocumentService
+                        .uploadDocument(
+                                file,
+                                medicalRecordId,
+                                patientId,
+                                doctorId,
+                                documentType,
+                                description
+                        );
 
 
         return ResponseEntity
@@ -84,6 +88,36 @@ public class MedicalDocumentController {
     }
 
 
+    @GetMapping("/archived")
+    public ResponseEntity<List<MedicalDocumentResponse>>
+    getArchivedDocuments() {
+
+        return ResponseEntity.ok(
+                medicalDocumentService
+                        .getArchivedDocuments()
+        );
+    }
+
+
+    @GetMapping(
+            "/versions/{documentGroupIdOrDocumentId}"
+    )
+    public ResponseEntity<List<MedicalDocumentResponse>>
+    getDocumentVersionHistory(
+
+            @PathVariable
+            String documentGroupIdOrDocumentId
+    ) {
+
+        return ResponseEntity.ok(
+                medicalDocumentService
+                        .getDocumentVersionHistory(
+                                documentGroupIdOrDocumentId
+                        )
+        );
+    }
+
+
     @GetMapping("/{id}")
     public ResponseEntity<MedicalDocumentResponse>
     getDocumentById(
@@ -97,7 +131,9 @@ public class MedicalDocumentController {
     }
 
 
-    @GetMapping("/record/{medicalRecordId}")
+    @GetMapping(
+            "/record/{medicalRecordId}"
+    )
     public ResponseEntity<List<MedicalDocumentResponse>>
     getDocumentsByMedicalRecord(
             @PathVariable String medicalRecordId
@@ -112,7 +148,9 @@ public class MedicalDocumentController {
     }
 
 
-    @GetMapping("/patient/{patientId}")
+    @GetMapping(
+            "/patient/{patientId}"
+    )
     public ResponseEntity<List<MedicalDocumentResponse>>
     getDocumentsByPatient(
             @PathVariable String patientId
@@ -127,7 +165,9 @@ public class MedicalDocumentController {
     }
 
 
-    @GetMapping("/doctor/{doctorId}")
+    @GetMapping(
+            "/doctor/{doctorId}"
+    )
     public ResponseEntity<List<MedicalDocumentResponse>>
     getDocumentsByDoctor(
             @PathVariable String doctorId
@@ -142,14 +182,104 @@ public class MedicalDocumentController {
     }
 
 
-    @DeleteMapping("/{id}")
+    @PutMapping("/{id}")
+    public ResponseEntity<MedicalDocumentResponse>
+    updateDocumentMetadata(
+
+            @PathVariable String id,
+
+            @RequestBody
+            MedicalDocumentUpdateRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                medicalDocumentService
+                        .updateDocumentMetadata(
+                                id,
+                                request
+                        )
+        );
+    }
+
+
+    @PutMapping(
+            value = "/{id}/replace",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<MedicalDocumentResponse>
+    replaceDocumentFile(
+
+            @PathVariable
+            String id,
+
+            @RequestParam("file")
+            MultipartFile file,
+
+            @RequestParam("doctorId")
+            String doctorId,
+
+            @RequestParam(
+                    value = "description",
+                    required = false
+            )
+            String description
+    ) {
+
+        MedicalDocumentResponse response =
+                medicalDocumentService
+                        .replaceDocumentFile(
+                                id,
+                                file,
+                                doctorId,
+                                description
+                        );
+
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+
+    /*
+     * Normal remove.
+     *
+     * Keeps:
+     * - MongoDB metadata
+     * - Cloudinary file
+     */
+    @PatchMapping("/{id}/archive")
+    public ResponseEntity<MedicalDocumentResponse>
+    archiveDocument(
+            @PathVariable String id
+    ) {
+
+        return ResponseEntity.ok(
+                medicalDocumentService
+                        .archiveDocument(id)
+        );
+    }
+
+
+    /*
+     * Permanent delete.
+     *
+     * Only ARCHIVED documents are accepted.
+     *
+     * Deletes:
+     * - Cloudinary actual file
+     * - MongoDB metadata
+     */
+    @DeleteMapping("/{id}/permanent")
     public ResponseEntity<Void>
-    deleteDocument(
+    permanentlyDeleteDocument(
             @PathVariable String id
     ) {
 
         medicalDocumentService
-                .deleteDocument(id);
+                .permanentlyDeleteDocument(
+                        id
+                );
 
 
         return ResponseEntity
