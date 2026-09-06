@@ -1,95 +1,247 @@
-//package lk.gamage.backend.healthbridgebackend.service.impl;
-//
-//import lk.gamage.backend.healthbridgebackend.dto.PharmacyDTOs.PrescriptionVerificationRequest;
-//import lk.gamage.backend.healthbridgebackend.dto.PharmacyDTOs.PrescriptionVerificationResponse;
-//import lk.gamage.backend.healthbridgebackend.dto.PharmacyDTOs.PrescriptionVerificationResponse.ItemAvailability;
-//import lk.gamage.backend.healthbridgebackend.exception.ResourceNotFoundException;
-//import lk.gamage.backend.healthbridgebackend.exception.BadRequestException;
-//import lk.gamage.backend.healthbridgebackend.model.Prescription;
-//import lk.gamage.backend.healthbridgebackend.repository.PrescriptionRepository;
-//import lk.gamage.backend.healthbridgebackend.repository.InventoryRepository;
-//import lk.gamage.backend.healthbridgebackend.service.PrescriptionService;
-//import lombok.RequiredArgsConstructor;
-//import org.springframework.stereotype.Service;
-//
-//import java.time.LocalDateTime;
-//import java.util.List;
-//import java.util.stream.Collectors;
-//
-//@Service
-//@RequiredArgsConstructor
-//public class PrescriptionServiceImpl implements PrescriptionService {
-//
-//    private final PrescriptionRepository prescriptionRepository;
-//    private final InventoryRepository inventoryRepository;
-//
-//    @Override
-//    public PrescriptionVerificationResponse verify(PrescriptionVerificationRequest request) {
-//
-//        Prescription prescription = resolvePrescription(request);
-//
-//        PrescriptionVerificationResponse response = new PrescriptionVerificationResponse();
-//
-//        String failReason = checkValidity(prescription);
-//        if (failReason != null) {
-//            response.setValid(false);
-//            response.setMessage(failReason);
-//            response.setPrescriptionId(prescription.getId());
-//            response.setStatus(prescription.getStatus());
-//            return response;
-//        }
-//
-//        List<ItemAvailability> availabilities = prescription.getItems().stream()
-//                .map(item -> buildAvailability(request.getPharmacyId(), item))
-//                .collect(Collectors.toList());
-//
-//        response.setValid(true);
-//        response.setMessage("Prescription verified successfully.");
-//        response.setPrescriptionId(prescription.getId());
-//        response.setPatientName(prescription.getPatientName());
-//        response.setStatus(prescription.getStatus());
-//        response.setExpiresAt(prescription.getExpiresAt());
-//        response.setItems(availabilities);
-//
-//        return response;
-//    }
-//
-//    private Prescription resolvePrescription(PrescriptionVerificationRequest request) {
-//        if (request.getQrToken() != null && !request.getQrToken().isBlank()) {
-//            return prescriptionRepository.findByQrToken(request.getQrToken())
-//                    .orElseThrow(() -> new BadRequestException("Invalid or unrecognized QR code."));
-//        }
-//        if (request.getPrescriptionCode() != null && !request.getPrescriptionCode().isBlank()) {
-//            return prescriptionRepository.findByPrescriptionCode(request.getPrescriptionCode())
-//                    .orElseThrow(() -> new ResourceNotFoundException("Prescription not found."));
-//        }
-//        throw new BadRequestException("QR token or prescription code is required.");
-//    }
-//
-//    private String checkValidity(Prescription prescription) {
-//        if ("CANCELLED".equals(prescription.getStatus())) return "This prescription has been cancelled.";
-//        if ("FULLY_DISPENSED".equals(prescription.getStatus())) return "This prescription has already been fully dispensed.";
-//        if (prescription.getExpiresAt() != null && prescription.getExpiresAt().isBefore(LocalDateTime.now())) {
-//            return "This prescription has expired.";
-//        }
-//        return null;
-//    }
-//
-//    private ItemAvailability buildAvailability(String pharmacyId, Prescription.PrescriptionItem item) {
-//        int remaining = item.getPrescribedQuantity() - item.getDispensedQuantity();
-//
-//        int available = inventoryRepository
-//                .findByPharmacyIdAndMedicineId(pharmacyId, item.getMedicineId())
-//                .stream()
-//                .mapToInt(inv -> inv.getQuantityInStock())
-//                .sum();
-//
-//        ItemAvailability availability = new ItemAvailability();
-//        availability.setMedicineId(item.getMedicineId());
-//        availability.setMedicineName(item.getMedicineName());
-//        availability.setPrescribedQuantity(remaining);
-//        availability.setAvailableInStock(available >= remaining);
-//        availability.setAvailableQuantity(available);
-//        return availability;
-//    }
-//}
+package lk.gamage.backend.healthbridgebackend.service.impl;
+
+import lk.gamage.backend.healthbridgebackend.dto.request.CreatePrescriptionRequest;
+import lk.gamage.backend.healthbridgebackend.dto.request.UpdatePrescriptionRequest;
+import lk.gamage.backend.healthbridgebackend.dto.response.DrugInteraction;
+import lk.gamage.backend.healthbridgebackend.dto.response.PrescriptionResponse;
+import lk.gamage.backend.healthbridgebackend.exception.ResourceNotFoundException;
+import lk.gamage.backend.healthbridgebackend.model.Medicine;
+import lk.gamage.backend.healthbridgebackend.model.Prescription;
+import lk.gamage.backend.healthbridgebackend.model.PrescriptionItem;
+import lk.gamage.backend.healthbridgebackend.repository.MedicineRepository;
+import lk.gamage.backend.healthbridgebackend.repository.PrescriptionRepository;
+import lk.gamage.backend.healthbridgebackend.service.PrescriptionService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+public class PrescriptionServiceImpl implements PrescriptionService {
+
+    @Autowired
+    private PrescriptionRepository prescriptionRepository;
+
+    @Autowired
+    private MedicineRepository medicineRepository; // ✅ Fixed: Using Repository instead of Service
+
+    @Override
+    public PrescriptionResponse createPrescription(CreatePrescriptionRequest request) {
+        // Generate unique prescription number
+        String prescriptionNumber = generatePrescriptionNumber();
+
+        // Map items
+        List<PrescriptionItem> items = request.getItems().stream()
+                .map(item -> PrescriptionItem.builder()
+                        .medicineId(item.getMedicineId())
+                        .medicineName(item.getMedicineName())
+                        .dosage(item.getDosage())
+                        .frequency(item.getFrequency())
+                        .duration(item.getDuration())
+                        .quantity(item.getQuantity())
+                        .instructions(item.getInstructions())
+                        .build())
+                .collect(Collectors.toList());
+
+        // Calculate valid until date
+        LocalDateTime validUntil = LocalDateTime.now().plusDays(request.getValidDays());
+
+        // Create prescription
+        Prescription prescription = Prescription.builder()
+                .prescriptionNumber(prescriptionNumber)
+                .patientId(request.getPatientId())
+                .patientName(request.getPatientName())
+                .patientPhone(request.getPatientPhone())
+                .doctorId(request.getDoctorId())
+                .doctorName(request.getDoctorName())
+                .items(items)
+                .notes(request.getNotes())
+                .diagnosis(request.getDiagnosis())
+                .validUntil(validUntil)
+                .status("ACTIVE")
+                .qrCodeData(generateQRCode(prescriptionNumber))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        Prescription savedPrescription = prescriptionRepository.save(prescription);
+
+        return mapToResponse(savedPrescription);
+    }
+
+    @Override
+    public PrescriptionResponse updatePrescription(String id, UpdatePrescriptionRequest request) {
+        Prescription prescription = prescriptionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription not found with id: " + id));
+
+        // Update items if provided
+        if (request.getItems() != null) {
+            List<PrescriptionItem> items = request.getItems().stream()
+                    .map(item -> PrescriptionItem.builder()
+                            .medicineId(item.getMedicineId())
+                            .medicineName(item.getMedicineName())
+                            .dosage(item.getDosage())
+                            .frequency(item.getFrequency())
+                            .duration(item.getDuration())
+                            .quantity(item.getQuantity())
+                            .instructions(item.getInstructions())
+                            .build())
+                    .collect(Collectors.toList());
+            prescription.setItems(items);
+        }
+
+        // Update other fields
+        if (request.getNotes() != null) {
+            prescription.setNotes(request.getNotes());
+        }
+        if (request.getDiagnosis() != null) {
+            prescription.setDiagnosis(request.getDiagnosis());
+        }
+        if (request.getStatus() != null) {
+            prescription.setStatus(request.getStatus());
+        }
+
+        prescription.setUpdatedAt(LocalDateTime.now());
+
+        Prescription updatedPrescription = prescriptionRepository.save(prescription);
+        return mapToResponse(updatedPrescription);
+    }
+
+    @Override
+    public void deletePrescription(String id) {
+        if (!prescriptionRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Prescription not found with id: " + id);
+        }
+        prescriptionRepository.deleteById(id);
+    }
+
+    @Override
+    public PrescriptionResponse getPrescriptionById(String id) {
+        Prescription prescription = prescriptionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription not found with id: " + id));
+        return mapToResponse(prescription);
+    }
+
+    @Override
+    public PrescriptionResponse getPrescriptionByNumber(String prescriptionNumber) {
+        Prescription prescription = prescriptionRepository.findByPrescriptionNumber(prescriptionNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription not found with number: " + prescriptionNumber));
+        return mapToResponse(prescription);
+    }
+
+    @Override
+    public List<PrescriptionResponse> getAllPrescriptions() {
+        return prescriptionRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PrescriptionResponse> getPrescriptionsByPatientId(String patientId) {
+        return prescriptionRepository.findByPatientId(patientId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PrescriptionResponse> getPrescriptionsByDoctorId(String doctorId) {
+        return prescriptionRepository.findByDoctorId(doctorId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PrescriptionResponse> getActivePrescriptionsByPatientId(String patientId) {
+        return prescriptionRepository.findByPatientIdAndStatus(patientId, "ACTIVE").stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PrescriptionResponse> getActivePrescriptionsByDoctorId(String doctorId) {
+        return prescriptionRepository.findByDoctorIdAndStatus(doctorId, "ACTIVE").stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<DrugInteraction> checkDrugInteractions(List<String> medicineIds) {
+        List<DrugInteraction> interactions = new ArrayList<>();
+
+        // ✅ Fixed: Using medicineRepository instead of medicineService
+        List<Medicine> medicines = medicineIds.stream()
+                .map(id -> medicineRepository.findById(id).orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // Check interactions between each pair
+        for (int i = 0; i < medicines.size(); i++) {
+            for (int j = i + 1; j < medicines.size(); j++) {
+                Medicine med1 = medicines.get(i);
+                Medicine med2 = medicines.get(j);
+
+                // Check if med1 interacts with med2
+                if (med1.getSubstituteMedicineCodes() != null &&
+                        med1.getSubstituteMedicineCodes().contains(med2.getMedicineCode())) {
+                    interactions.add(DrugInteraction.builder()
+                            .medicine1(med1.getName())
+                            .medicine2(med2.getName())
+                            .severity("MODERATE")
+                            .description("Potential interaction between " + med1.getName() + " and " + med2.getName())
+                            .build());
+                }
+            }
+        }
+
+        return interactions;
+    }
+
+    @Override
+    public String generateQRCode(String prescriptionNumber) {
+        // Simple QR code data - in production, use a QR code library
+        return "PRESCRIPTION:" + prescriptionNumber + ":HEALTHBRIDGE";
+    }
+
+    // Helper method to generate unique prescription number
+    private String generatePrescriptionNumber() {
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String random = String.valueOf((int)(Math.random() * 10000));
+        return "RX-" + timestamp.substring(timestamp.length() - 8) + "-" + random;
+    }
+
+    // Helper method to map Prescription to PrescriptionResponse
+    private PrescriptionResponse mapToResponse(Prescription prescription) {
+        List<lk.gamage.backend.healthbridgebackend.dto.response.PrescriptionItemResponse> itemResponses =
+                prescription.getItems().stream()
+                        .map(item -> lk.gamage.backend.healthbridgebackend.dto.response.PrescriptionItemResponse.builder()
+                                .medicineId(item.getMedicineId())
+                                .medicineName(item.getMedicineName())
+                                .dosage(item.getDosage())
+                                .frequency(item.getFrequency())
+                                .duration(item.getDuration())
+                                .quantity(item.getQuantity())
+                                .instructions(item.getInstructions())
+                                .build())
+                        .collect(Collectors.toList());
+
+        return PrescriptionResponse.builder()
+                .id(prescription.getId())
+                .prescriptionNumber(prescription.getPrescriptionNumber())
+                .patientId(prescription.getPatientId())
+                .patientName(prescription.getPatientName())
+                .patientPhone(prescription.getPatientPhone())
+                .doctorId(prescription.getDoctorId())
+                .doctorName(prescription.getDoctorName())
+                .items(itemResponses)
+                .notes(prescription.getNotes())
+                .diagnosis(prescription.getDiagnosis())
+                .validUntil(prescription.getValidUntil())
+                .status(prescription.getStatus())
+                .qrCodeData(prescription.getQrCodeData())
+                .createdAt(prescription.getCreatedAt())
+                .updatedAt(prescription.getUpdatedAt())
+                .build();
+    }
+}

@@ -1,14 +1,9 @@
-package lk.gamage.backend.healthbridgebackend.model;
+package lk.gamage.backend.healthbridgebackend.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,36 +12,20 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "prescriptions")
-public class Prescription {
-
-    @Id
+public class PrescriptionResponse {
     private String id;
-
-    @Indexed(unique = true)
     private String prescriptionNumber;
-
     private String patientId;
     private String patientName;
     private String patientPhone;
-
     private String doctorId;
     private String doctorName;
-
-    private List<PrescriptionItem> items;
-
+    private List<PrescriptionItemResponse> items;
     private String notes;
     private String diagnosis;
-
     private LocalDateTime validUntil;
-
-    private String status; // ACTIVE, COMPLETED, CANCELLED
-
+    private String status;
     private String qrCodeData;
-
-    @CreatedDate
     private LocalDateTime createdAt;
-
-    @LastModifiedDate
     private LocalDateTime updatedAt;
 }
