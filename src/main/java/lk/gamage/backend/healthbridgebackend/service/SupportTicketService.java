@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -98,6 +99,14 @@ public class SupportTicketService {
         return new TicketResponse(ticketRepository.save(ticket));
     }
 
+    public TicketResponse editUserReply(String ticketId, String replyId, String message) {
+        return editReply(ticketId, replyId, message, "USER");
+    }
+
+    public TicketResponse deleteUserReply(String ticketId, String replyId) {
+        return deleteReply(ticketId, replyId, "USER");
+    }
+
     // ---------- Admin ----------
 
     public List<TicketSummaryResponse> getAllTickets() {
@@ -138,6 +147,52 @@ public class SupportTicketService {
         ticket.setUpdatedAt(LocalDateTime.now());
 
         return new TicketResponse(ticketRepository.save(ticket));
+    }
+
+    public TicketResponse editAdminReply(String ticketId, String replyId, String message) {
+        return editReply(ticketId, replyId, message, "ADMIN");
+    }
+
+    public TicketResponse deleteAdminReply(String ticketId, String replyId) {
+        return deleteReply(ticketId, replyId, "ADMIN");
+    }
+
+    private TicketResponse editReply(String ticketId, String replyId, String message, String senderRole) {
+        User user = getCurrentUser();
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
+        TicketReply reply = findReplyForSender(ticket, replyId, user, senderRole);
+
+        if (message == null || message.isBlank()) {
+            throw new IllegalArgumentException("Message is required");
+        }
+
+        reply.setMessage(message.trim());
+        ticket.setUpdatedAt(LocalDateTime.now());
+        return new TicketResponse(ticketRepository.save(ticket));
+    }
+
+    private TicketResponse deleteReply(String ticketId, String replyId, String senderRole) {
+        User user = getCurrentUser();
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
+        TicketReply reply = findReplyForSender(ticket, replyId, user, senderRole);
+
+        ticket.getReplies().remove(reply);
+        ticket.setUpdatedAt(LocalDateTime.now());
+        return new TicketResponse(ticketRepository.save(ticket));
+    }
+
+    private TicketReply findReplyForSender(SupportTicket ticket, String replyId, User user, String senderRole) {
+        TicketReply reply = ticket.getReplies().stream()
+            .filter(candidate -> Objects.equals(candidate.getId(), replyId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Reply not found"));
+
+        if (!user.getId().equals(reply.getSenderId()) || !senderRole.equals(reply.getSenderRole())) {
+            throw new SecurityException("You are not allowed to modify this reply");
+        }
+        return reply;
     }
 
     private TicketReply buildReply(String senderId, String senderName, String senderRole,
