@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -23,35 +24,29 @@ public class Prescription {
     private String id;
 
     @Indexed(unique = true)
-    private String prescriptionCode;
-
-    @Indexed(unique = true)
-    private String qrToken;
+    private String prescriptionNumber;
 
     private String patientId;
     private String patientName;
+    private String patientPhone;
+
     private String doctorId;
     private String doctorName;
 
     private List<PrescriptionItem> items;
 
-    private String status;
+    private String notes;
+    private String diagnosis;
 
-    private LocalDateTime issuedAt;
-    private LocalDateTime expiresAt;
+    private LocalDateTime validUntil;
+
+    private String status; // ACTIVE, COMPLETED, CANCELLED
+
+    private String qrCodeData;
 
     @CreatedDate
     private LocalDateTime createdAt;
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PrescriptionItem {
-        private String medicineId;
-        private String medicineName;
-        private String dosageInstructions;
-        private int prescribedQuantity;
-        private int dispensedQuantity;
-    }
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 }
