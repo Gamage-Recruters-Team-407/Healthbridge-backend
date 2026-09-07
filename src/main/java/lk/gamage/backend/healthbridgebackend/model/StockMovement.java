@@ -1,6 +1,5 @@
 package lk.gamage.backend.healthbridgebackend.model;
 
-import lk.gamage.backend.healthbridgebackend.model.enums.StockMovementType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,8 +24,6 @@ public class StockMovement {
     private String itemCode;
 
     private Integer quantity;
-
-    private StockMovementType type;
 
     private String reason;
 

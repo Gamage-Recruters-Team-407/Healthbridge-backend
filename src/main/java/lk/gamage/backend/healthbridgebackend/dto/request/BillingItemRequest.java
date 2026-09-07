@@ -1,23 +1,15 @@
-package lk.gamage.backend.healthbridgebackend.model;
+package lk.gamage.backend.healthbridgebackend.dto.request;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "billing_items")
-public class BillingItem {
-
-    @Id
-    private String id;
+public class BillingItemRequest {
 
     private String invoiceId;
 
@@ -30,6 +22,4 @@ public class BillingItem {
     private Integer quantity;
 
     private BigDecimal unitPrice;
-
-    private BigDecimal amount;
 }

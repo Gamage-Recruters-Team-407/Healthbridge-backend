@@ -8,36 +8,31 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "hospital_inventory")
-public class HospitalInventory {
+@Document(collection = "compliance_reports")
+public class ComplianceReport {
 
     @Id
     private String id;
 
     private String hospitalId;
 
-    private String itemCode;
+    private String reportType;
 
-    private String itemName;
+    private String period;
 
-    private String category;
+    private String status;
 
-    private Integer quantity;
+    private String summary;
 
-    private Integer reorderLevel;
+    private String preparedBy;
 
-    private String unit;
+    private LocalDate reportDate;
 
-    private String supplier;
-
-    private LocalDate expiryDate;
-
-    private Double unitCost;
-
-    private String location;
+    private LocalDateTime createdAt;
 }

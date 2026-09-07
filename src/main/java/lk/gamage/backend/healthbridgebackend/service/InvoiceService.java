@@ -1,21 +1,21 @@
 package lk.gamage.backend.healthbridgebackend.service;
 
-import lk.gamage.backend.healthbridgebackend.dto.InvoiceRequest;
-import lk.gamage.backend.healthbridgebackend.model.Invoice;
+import lk.gamage.backend.healthbridgebackend.dto.request.InvoiceRequest;
+import lk.gamage.backend.healthbridgebackend.dto.response.InvoiceResponse;
 
 import java.util.List;
 
 public interface InvoiceService {
 
-    Invoice createInvoice(InvoiceRequest request);
+    InvoiceResponse createInvoice(InvoiceRequest request);
 
-    Invoice getInvoice(String id);
+    List<InvoiceResponse> getAllInvoices();
 
-    List<Invoice> getAllInvoices();
+    InvoiceResponse getInvoice(String id);
 
-    List<Invoice> getPatientInvoices(String patientId);
+    List<InvoiceResponse> getPatientInvoices(String patientId);
 
-    Invoice updateInvoice(String id, InvoiceRequest request);
+    InvoiceResponse updateInvoice(String id, InvoiceRequest request);
 
     void deleteInvoice(String id);
 }

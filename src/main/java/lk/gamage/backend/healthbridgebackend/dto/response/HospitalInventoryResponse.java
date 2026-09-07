@@ -1,11 +1,9 @@
-package lk.gamage.backend.healthbridgebackend.model;
+package lk.gamage.backend.healthbridgebackend.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
 
@@ -13,10 +11,8 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "hospital_inventory")
-public class HospitalInventory {
+public class HospitalInventoryResponse {
 
-    @Id
     private String id;
 
     private String hospitalId;
@@ -40,4 +36,6 @@ public class HospitalInventory {
     private Double unitCost;
 
     private String location;
+
+    private boolean lowStock;
 }
