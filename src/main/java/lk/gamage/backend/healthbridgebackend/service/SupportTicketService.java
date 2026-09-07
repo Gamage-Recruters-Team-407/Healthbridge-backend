@@ -4,6 +4,7 @@ import lk.gamage.backend.healthbridgebackend.dto.response.TicketResponse;
 import lk.gamage.backend.healthbridgebackend.dto.response.TicketSummaryResponse;
 import lk.gamage.backend.healthbridgebackend.model.SupportTicket;
 import lk.gamage.backend.healthbridgebackend.model.TicketReply;
+import lk.gamage.backend.healthbridgebackend.model.TicketCategory;
 import lk.gamage.backend.healthbridgebackend.model.TicketStatus;
 import lk.gamage.backend.healthbridgebackend.model.User;
 import lk.gamage.backend.healthbridgebackend.repository.SupportTicketRepository;
@@ -38,7 +39,8 @@ public class SupportTicketService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
     }
 
-    public TicketResponse createTicket(String subject, String description, MultipartFile attachment) {
+    public TicketResponse createTicket(String subject, String description, TicketCategory category,
+                                       String contactNumber, MultipartFile attachment) {
         User user = getCurrentUser();
 
         if (subject == null || subject.isBlank()) {
@@ -47,6 +49,12 @@ public class SupportTicketService {
         if (description == null || description.isBlank()) {
             throw new IllegalArgumentException("Description is required");
         }
+        if (category == null) {
+            throw new IllegalArgumentException("Category is required");
+        }
+        if (contactNumber == null || contactNumber.isBlank()) {
+            throw new IllegalArgumentException("Contact number is required");
+        }
 
         SupportTicket.SupportTicketBuilder builder = SupportTicket.builder()
                 .userId(user.getId())
@@ -54,6 +62,8 @@ public class SupportTicketService {
                 .userEmail(user.getEmail())
                 .subject(subject.trim())
                 .description(description.trim())
+                .category(category)
+                .contactNumber(contactNumber.trim())
                 .status(TicketStatus.OPEN);
 
         if (attachment != null && !attachment.isEmpty()) {

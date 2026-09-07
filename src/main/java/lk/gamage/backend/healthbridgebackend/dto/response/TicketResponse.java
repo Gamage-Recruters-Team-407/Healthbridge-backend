@@ -1,6 +1,7 @@
 package lk.gamage.backend.healthbridgebackend.dto.response;
 
 import lk.gamage.backend.healthbridgebackend.model.SupportTicket;
+import lk.gamage.backend.healthbridgebackend.model.TicketCategory;
 import lk.gamage.backend.healthbridgebackend.model.TicketStatus;
 
 import java.time.LocalDateTime;
@@ -15,6 +16,8 @@ public class TicketResponse {
     private String userEmail;
     private String subject;
     private String description;
+    private TicketCategory category;
+    private String contactNumber;
     private String attachmentUrl;
     private TicketStatus status;
     private List<TicketReplyResponse> replies;
@@ -31,6 +34,8 @@ public class TicketResponse {
         this.userEmail = ticket.getUserEmail();
         this.subject = ticket.getSubject();
         this.description = ticket.getDescription();
+        this.category = ticket.getCategory();
+        this.contactNumber = ticket.getContactNumber();
         this.attachmentUrl = ticket.getAttachmentUrl();
         this.status = ticket.getStatus();
         this.replies = ticket.getReplies() == null ? List.of() :
@@ -56,6 +61,12 @@ public class TicketResponse {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public TicketCategory getCategory() { return category; }
+    public void setCategory(TicketCategory category) { this.category = category; }
+
+    public String getContactNumber() { return contactNumber; }
+    public void setContactNumber(String contactNumber) { this.contactNumber = contactNumber; }
 
     public String getAttachmentUrl() { return attachmentUrl; }
     public void setAttachmentUrl(String attachmentUrl) { this.attachmentUrl = attachmentUrl; }

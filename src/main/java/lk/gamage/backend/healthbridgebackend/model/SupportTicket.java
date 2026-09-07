@@ -27,6 +27,8 @@ public class SupportTicket {
 
     private String subject;
     private String description;
+    private TicketCategory category;
+    private String contactNumber;
 
     private String attachmentUrl;
     private String attachmentPublicId;

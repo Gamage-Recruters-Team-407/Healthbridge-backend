@@ -1,6 +1,7 @@
 package lk.gamage.backend.healthbridgebackend.controller;
 
 import lk.gamage.backend.healthbridgebackend.dto.request.UpdateTicketReplyRequest;
+import lk.gamage.backend.healthbridgebackend.model.TicketCategory;
 import lk.gamage.backend.healthbridgebackend.service.SupportTicketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,10 +22,12 @@ public class SupportTicketController {
     public ResponseEntity<?> createTicket(
             @RequestParam("subject") String subject,
             @RequestParam("description") String description,
+                @RequestParam("category") TicketCategory category,
+                @RequestParam("contactNumber") String contactNumber,
             @RequestParam(value = "attachment", required = false) MultipartFile attachment) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(supportTicketService.createTicket(subject, description, attachment));
+                    .body(supportTicketService.createTicket(subject, description, category, contactNumber, attachment));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
