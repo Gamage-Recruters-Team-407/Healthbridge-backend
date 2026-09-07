@@ -1,6 +1,5 @@
 package lk.gamage.backend.healthbridgebackend.service;
 
-
 import lk.gamage.backend.healthbridgebackend.dto.request.DiagnosisRequest;
 import lk.gamage.backend.healthbridgebackend.dto.response.DiagnosisResponse;
 
@@ -28,6 +27,16 @@ public interface DiagnosisService {
     );
 
 
+    List<DiagnosisResponse> getDiagnosesByPatient(
+            String patientId
+    );
+
+
+    List<DiagnosisResponse> getDiagnosesByDoctor(
+            String doctorId
+    );
+
+
     DiagnosisResponse updateDiagnosis(
             String id,
             DiagnosisRequest request
@@ -37,5 +46,4 @@ public interface DiagnosisService {
     void deleteDiagnosis(
             String id
     );
-
 }
