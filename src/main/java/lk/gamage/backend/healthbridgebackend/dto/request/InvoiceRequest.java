@@ -1,26 +1,16 @@
-package lk.gamage.backend.healthbridgebackend.model;
+package lk.gamage.backend.healthbridgebackend.dto.request;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "invoices")
-public class Invoice {
-
-    @Id
-    private String id;
-
-    private String invoiceNumber;
+public class InvoiceRequest {
 
     private String patientId;
 
@@ -32,21 +22,11 @@ public class Invoice {
 
     private LocalDateTime dueDate;
 
-    private BigDecimal subtotal;
-
     private BigDecimal discount;
 
     private BigDecimal tax;
 
-    private BigDecimal total;
-
     private BigDecimal paidAmount;
-
-    private BigDecimal balance;
-
-    private String status;
-
-    private String paymentStatus;
 
     private String notes;
 }
