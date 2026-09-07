@@ -1,5 +1,7 @@
 package lk.gamage.backend.healthbridgebackend.controller;
 
+import lk.gamage.backend.healthbridgebackend.dto.request.UpdateTicketReplyRequest;
+import lk.gamage.backend.healthbridgebackend.model.TicketCategory;
 import lk.gamage.backend.healthbridgebackend.service.SupportTicketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,10 +22,12 @@ public class SupportTicketController {
     public ResponseEntity<?> createTicket(
             @RequestParam("subject") String subject,
             @RequestParam("description") String description,
+                @RequestParam("category") TicketCategory category,
+                @RequestParam("contactNumber") String contactNumber,
             @RequestParam(value = "attachment", required = false) MultipartFile attachment) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(supportTicketService.createTicket(subject, description, attachment));
+                    .body(supportTicketService.createTicket(subject, description, category, contactNumber, attachment));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
@@ -70,6 +74,37 @@ public class SupportTicketController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Error adding reply: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{ticketId}/reply/{replyId}")
+    public ResponseEntity<?> editReply(
+            @PathVariable String ticketId,
+            @PathVariable String replyId,
+            @RequestBody UpdateTicketReplyRequest request) {
+        try {
+            return ResponseEntity.ok(supportTicketService.editUserReply(ticketId, replyId, request.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error editing reply: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{ticketId}/reply/{replyId}")
+    public ResponseEntity<?> deleteReply(@PathVariable String ticketId, @PathVariable String replyId) {
+        try {
+            return ResponseEntity.ok(supportTicketService.deleteUserReply(ticketId, replyId));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error deleting reply: " + e.getMessage()));
         }
     }
 }
