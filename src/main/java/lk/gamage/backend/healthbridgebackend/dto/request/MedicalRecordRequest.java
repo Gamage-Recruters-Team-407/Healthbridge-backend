@@ -11,10 +11,16 @@ public class MedicalRecordRequest {
     @NotBlank(message = "Patient ID is required")
     private String patientId;
 
-    @NotBlank(message = "Doctor ID is required")
+    /*
+     * Doctor ID is NOT required from frontend.
+     * Logged-in doctor's JWT user ID will be used.
+     */
     private String doctorId;
 
-    @NotBlank(message = "Doctor name is required")
+    /*
+     * Doctor name is NOT required from frontend.
+     * Logged-in doctor's JWT details will be used.
+     */
     private String doctorName;
 
     @NotBlank(message = "Hospital name is required")
@@ -40,8 +46,10 @@ public class MedicalRecordRequest {
 
     private String status;
 
+
     public MedicalRecordRequest() {
     }
+
 
     public String getPatientId() {
         return patientId;
@@ -51,6 +59,7 @@ public class MedicalRecordRequest {
         this.patientId = patientId;
     }
 
+
     public String getDoctorId() {
         return doctorId;
     }
@@ -58,6 +67,7 @@ public class MedicalRecordRequest {
     public void setDoctorId(String doctorId) {
         this.doctorId = doctorId;
     }
+
 
     public String getDoctorName() {
         return doctorName;
@@ -67,6 +77,7 @@ public class MedicalRecordRequest {
         this.doctorName = doctorName;
     }
 
+
     public String getHospitalName() {
         return hospitalName;
     }
@@ -74,6 +85,7 @@ public class MedicalRecordRequest {
     public void setHospitalName(String hospitalName) {
         this.hospitalName = hospitalName;
     }
+
 
     public LocalDate getVisitDate() {
         return visitDate;
@@ -83,6 +95,7 @@ public class MedicalRecordRequest {
         this.visitDate = visitDate;
     }
 
+
     public String getRecordType() {
         return recordType;
     }
@@ -90,6 +103,7 @@ public class MedicalRecordRequest {
     public void setRecordType(String recordType) {
         this.recordType = recordType;
     }
+
 
     public String getDiagnosis() {
         return diagnosis;
@@ -99,6 +113,7 @@ public class MedicalRecordRequest {
         this.diagnosis = diagnosis;
     }
 
+
     public String getClinicalSummary() {
         return clinicalSummary;
     }
@@ -106,6 +121,7 @@ public class MedicalRecordRequest {
     public void setClinicalSummary(String clinicalSummary) {
         this.clinicalSummary = clinicalSummary;
     }
+
 
     public List<String> getSymptoms() {
         return symptoms;
@@ -115,6 +131,7 @@ public class MedicalRecordRequest {
         this.symptoms = symptoms;
     }
 
+
     public List<String> getTreatmentPlan() {
         return treatmentPlan;
     }
@@ -123,6 +140,7 @@ public class MedicalRecordRequest {
         this.treatmentPlan = treatmentPlan;
     }
 
+
     public String getConsultationNotes() {
         return consultationNotes;
     }
@@ -130,6 +148,7 @@ public class MedicalRecordRequest {
     public void setConsultationNotes(String consultationNotes) {
         this.consultationNotes = consultationNotes;
     }
+
 
     public String getStatus() {
         return status;

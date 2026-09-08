@@ -4,10 +4,20 @@ import jakarta.validation.Valid;
 
 import lk.gamage.backend.healthbridgebackend.dto.request.DiagnosisRequest;
 import lk.gamage.backend.healthbridgebackend.dto.response.DiagnosisResponse;
+
+import lk.gamage.backend.healthbridgebackend.model.Role;
+
+import lk.gamage.backend.healthbridgebackend.security.CustomUserDetails;
+
 import lk.gamage.backend.healthbridgebackend.service.DiagnosisService;
+import lk.gamage.backend.healthbridgebackend.service.EhrAccessService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,26 +28,75 @@ import java.util.List;
 public class DiagnosisController {
 
 
-    private final DiagnosisService diagnosisService;
+    private final DiagnosisService
+            diagnosisService;
+
+    private final EhrAccessService
+            ehrAccessService;
 
 
     public DiagnosisController(
-            DiagnosisService diagnosisService
+            DiagnosisService diagnosisService,
+            EhrAccessService ehrAccessService
     ) {
 
         this.diagnosisService =
                 diagnosisService;
+
+        this.ehrAccessService =
+                ehrAccessService;
     }
 
 
+    /*
+     * ---------------------------------------------------------
+     * CREATE DIAGNOSIS
+     *
+     * DOCTOR ONLY
+     *
+     * Doctor must own the MedicalRecord.
+     * doctorId is taken from JWT.
+     * ---------------------------------------------------------
+     */
     @PostMapping
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<DiagnosisResponse>
     createDiagnosis(
 
             @Valid
             @RequestBody
-            DiagnosisRequest request
+            DiagnosisRequest request,
+
+            Authentication authentication
     ) {
+
+
+        if (!ehrAccessService
+                .canDoctorUseMedicalRecord(
+                        request.getMedicalRecordId(),
+                        request.getPatientId(),
+                        authentication
+                )) {
+
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .build();
+        }
+
+
+        CustomUserDetails currentDoctor =
+                (CustomUserDetails)
+                        authentication.getPrincipal();
+
+
+        /*
+         * Never trust doctorId
+         * supplied by frontend.
+         */
+        request.setDoctorId(
+                currentDoctor.getId()
+        );
+
 
         DiagnosisResponse response =
                 diagnosisService
@@ -52,7 +111,17 @@ public class DiagnosisController {
     }
 
 
+    /*
+     * ---------------------------------------------------------
+     * GET ALL DIAGNOSES
+     *
+     * ADMIN / SUPER ADMIN ONLY
+     * ---------------------------------------------------------
+     */
     @GetMapping
+    @PreAuthorize(
+            "hasAnyRole('ADMIN', 'SUPER_ADMIN')"
+    )
     public ResponseEntity<List<DiagnosisResponse>>
     getAllDiagnoses() {
 
@@ -64,20 +133,49 @@ public class DiagnosisController {
 
 
     /*
-     * IMPORTANT:
-     * Keep /patient, /doctor and /record mappings
-     * before the generic /{id} method for clarity.
+     * ---------------------------------------------------------
+     * GET DIAGNOSES BY MEDICAL RECORD
+     *
+     * PATIENT:
+     * only own MedicalRecord.
+     *
+     * DOCTOR / ADMIN / SUPER ADMIN:
+     * allowed.
+     * ---------------------------------------------------------
      */
-
-
     @GetMapping(
             "/record/{medicalRecordId}"
     )
+    @PreAuthorize(
+            "hasAnyRole('PATIENT', 'DOCTOR', 'ADMIN', 'SUPER_ADMIN')"
+    )
     public ResponseEntity<List<DiagnosisResponse>>
     getDiagnosesByMedicalRecord(
+
             @PathVariable
-            String medicalRecordId
+            String medicalRecordId,
+
+            Authentication authentication
     ) {
+
+
+        CustomUserDetails currentUser =
+                (CustomUserDetails)
+                        authentication.getPrincipal();
+
+
+        if (currentUser.getRole() == Role.PATIENT
+                && !ehrAccessService
+                .canPatientAccessMedicalRecord(
+                        medicalRecordId,
+                        authentication
+                )) {
+
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .build();
+        }
+
 
         return ResponseEntity.ok(
                 diagnosisService
@@ -88,14 +186,50 @@ public class DiagnosisController {
     }
 
 
+    /*
+     * ---------------------------------------------------------
+     * GET DIAGNOSES BY PATIENT
+     *
+     * PATIENT:
+     * own diagnoses only.
+     *
+     * DOCTOR / ADMIN / SUPER ADMIN:
+     * allowed.
+     * ---------------------------------------------------------
+     */
     @GetMapping(
             "/patient/{patientId}"
     )
+    @PreAuthorize(
+            "hasAnyRole('PATIENT', 'DOCTOR', 'ADMIN', 'SUPER_ADMIN')"
+    )
     public ResponseEntity<List<DiagnosisResponse>>
     getDiagnosesByPatient(
+
             @PathVariable
-            String patientId
+            String patientId,
+
+            Authentication authentication
     ) {
+
+
+        CustomUserDetails currentUser =
+                (CustomUserDetails)
+                        authentication.getPrincipal();
+
+
+        if (currentUser.getRole() == Role.PATIENT
+                && !ehrAccessService
+                .isCurrentPatient(
+                        patientId,
+                        authentication
+                )) {
+
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .build();
+        }
+
 
         return ResponseEntity.ok(
                 diagnosisService
@@ -106,14 +240,50 @@ public class DiagnosisController {
     }
 
 
+    /*
+     * ---------------------------------------------------------
+     * GET DIAGNOSES BY DOCTOR
+     *
+     * DOCTOR:
+     * own diagnoses only.
+     *
+     * ADMIN / SUPER ADMIN:
+     * allowed.
+     * ---------------------------------------------------------
+     */
     @GetMapping(
             "/doctor/{doctorId}"
     )
+    @PreAuthorize(
+            "hasAnyRole('DOCTOR', 'ADMIN', 'SUPER_ADMIN')"
+    )
     public ResponseEntity<List<DiagnosisResponse>>
     getDiagnosesByDoctor(
+
             @PathVariable
-            String doctorId
+            String doctorId,
+
+            Authentication authentication
     ) {
+
+
+        CustomUserDetails currentUser =
+                (CustomUserDetails)
+                        authentication.getPrincipal();
+
+
+        if (currentUser.getRole() == Role.DOCTOR
+                && !ehrAccessService
+                .isCurrentDoctor(
+                        doctorId,
+                        authentication
+                )) {
+
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .build();
+        }
+
 
         return ResponseEntity.ok(
                 diagnosisService
@@ -124,12 +294,48 @@ public class DiagnosisController {
     }
 
 
+    /*
+     * ---------------------------------------------------------
+     * GET SINGLE DIAGNOSIS
+     *
+     * PATIENT:
+     * own diagnosis only.
+     *
+     * DOCTOR / ADMIN / SUPER ADMIN:
+     * allowed.
+     * ---------------------------------------------------------
+     */
     @GetMapping("/{id}")
+    @PreAuthorize(
+            "hasAnyRole('PATIENT', 'DOCTOR', 'ADMIN', 'SUPER_ADMIN')"
+    )
     public ResponseEntity<DiagnosisResponse>
     getDiagnosisById(
+
             @PathVariable
-            String id
+            String id,
+
+            Authentication authentication
     ) {
+
+
+        CustomUserDetails currentUser =
+                (CustomUserDetails)
+                        authentication.getPrincipal();
+
+
+        if (currentUser.getRole() == Role.PATIENT
+                && !ehrAccessService
+                .canPatientAccessDiagnosis(
+                        id,
+                        authentication
+                )) {
+
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .build();
+        }
+
 
         return ResponseEntity.ok(
                 diagnosisService
@@ -140,7 +346,21 @@ public class DiagnosisController {
     }
 
 
+    /*
+     * ---------------------------------------------------------
+     * UPDATE DIAGNOSIS
+     *
+     * DOCTOR ONLY
+     *
+     * Doctor can update only their
+     * own diagnosis.
+     *
+     * Diagnosis cannot be moved to
+     * another patient or MedicalRecord.
+     * ---------------------------------------------------------
+     */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<DiagnosisResponse>
     updateDiagnosis(
 
@@ -149,8 +369,52 @@ public class DiagnosisController {
 
             @Valid
             @RequestBody
-            DiagnosisRequest request
+            DiagnosisRequest request,
+
+            Authentication authentication
     ) {
+
+
+        if (!ehrAccessService
+                .canDoctorUpdateDiagnosis(
+                        id,
+                        request.getMedicalRecordId(),
+                        request.getPatientId(),
+                        authentication
+                )) {
+
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .build();
+        }
+
+
+        /*
+         * Parent MedicalRecord must also
+         * belong to logged-in doctor.
+         */
+        if (!ehrAccessService
+                .canDoctorUseMedicalRecord(
+                        request.getMedicalRecordId(),
+                        request.getPatientId(),
+                        authentication
+                )) {
+
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .build();
+        }
+
+
+        CustomUserDetails currentDoctor =
+                (CustomUserDetails)
+                        authentication.getPrincipal();
+
+
+        request.setDoctorId(
+                currentDoctor.getId()
+        );
+
 
         return ResponseEntity.ok(
                 diagnosisService
@@ -162,12 +426,39 @@ public class DiagnosisController {
     }
 
 
+    /*
+     * ---------------------------------------------------------
+     * DELETE DIAGNOSIS
+     *
+     * DOCTOR ONLY
+     *
+     * Doctor can delete only
+     * their own diagnosis.
+     * ---------------------------------------------------------
+     */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<Void>
     deleteDiagnosis(
+
             @PathVariable
-            String id
+            String id,
+
+            Authentication authentication
     ) {
+
+
+        if (!ehrAccessService
+                .canDoctorDeleteDiagnosis(
+                        id,
+                        authentication
+                )) {
+
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .build();
+        }
+
 
         diagnosisService
                 .deleteDiagnosis(

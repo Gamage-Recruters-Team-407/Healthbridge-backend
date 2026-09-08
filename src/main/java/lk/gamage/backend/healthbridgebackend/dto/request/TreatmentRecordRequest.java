@@ -1,11 +1,9 @@
 package lk.gamage.backend.healthbridgebackend.dto.request;
 
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
-
 
 
 public class TreatmentRecordRequest {
@@ -19,7 +17,10 @@ public class TreatmentRecordRequest {
     private String patientId;
 
 
-    @NotBlank(message = "Doctor ID is required")
+    /*
+     * Doctor ID is not required from frontend.
+     * Logged-in doctor's JWT user ID will be used.
+     */
     private String doctorId;
 
 
@@ -41,10 +42,8 @@ public class TreatmentRecordRequest {
 
 
 
-
     public TreatmentRecordRequest() {
     }
-
 
 
     public String getMedicalRecordId() {
@@ -52,11 +51,11 @@ public class TreatmentRecordRequest {
     }
 
 
-
-    public void setMedicalRecordId(String medicalRecordId) {
+    public void setMedicalRecordId(
+            String medicalRecordId
+    ) {
         this.medicalRecordId = medicalRecordId;
     }
-
 
 
     public String getPatientId() {
@@ -64,11 +63,11 @@ public class TreatmentRecordRequest {
     }
 
 
-
-    public void setPatientId(String patientId) {
+    public void setPatientId(
+            String patientId
+    ) {
         this.patientId = patientId;
     }
-
 
 
     public String getDoctorId() {
@@ -76,11 +75,11 @@ public class TreatmentRecordRequest {
     }
 
 
-
-    public void setDoctorId(String doctorId) {
+    public void setDoctorId(
+            String doctorId
+    ) {
         this.doctorId = doctorId;
     }
-
 
 
     public String getTreatmentType() {
@@ -88,11 +87,11 @@ public class TreatmentRecordRequest {
     }
 
 
-
-    public void setTreatmentType(String treatmentType) {
+    public void setTreatmentType(
+            String treatmentType
+    ) {
         this.treatmentType = treatmentType;
     }
-
 
 
     public String getDescription() {
@@ -100,11 +99,11 @@ public class TreatmentRecordRequest {
     }
 
 
-
-    public void setDescription(String description) {
+    public void setDescription(
+            String description
+    ) {
         this.description = description;
     }
-
 
 
     public LocalDate getStartDate() {
@@ -112,11 +111,11 @@ public class TreatmentRecordRequest {
     }
 
 
-
-    public void setStartDate(LocalDate startDate) {
+    public void setStartDate(
+            LocalDate startDate
+    ) {
         this.startDate = startDate;
     }
-
 
 
     public LocalDate getEndDate() {
@@ -124,11 +123,11 @@ public class TreatmentRecordRequest {
     }
 
 
-
-    public void setEndDate(LocalDate endDate) {
+    public void setEndDate(
+            LocalDate endDate
+    ) {
         this.endDate = endDate;
     }
-
 
 
     public String getStatus() {
@@ -136,9 +135,9 @@ public class TreatmentRecordRequest {
     }
 
 
-
-    public void setStatus(String status) {
+    public void setStatus(
+            String status
+    ) {
         this.status = status;
     }
-
 }
