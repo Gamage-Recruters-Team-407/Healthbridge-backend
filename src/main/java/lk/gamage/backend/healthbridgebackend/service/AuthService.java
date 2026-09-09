@@ -52,7 +52,14 @@ public class AuthService {
     private EmailService emailService;
 
     private final SecureRandom secureRandom = new SecureRandom();
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = createRestTemplate();
+
+    private static RestTemplate createRestTemplate() {
+        org.springframework.http.client.SimpleClientHttpRequestFactory factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(5000);
+        return new RestTemplate(factory);
+    }
 
 
     public AuthResponse register(RegisterRequest request) {
@@ -67,6 +74,7 @@ public class AuthService {
         User user = new User();
         user.setFullName(request.getFullName().trim());
         user.setEmail(request.getEmail().toLowerCase().trim());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhoneNumber(request.getPhoneNumber().trim());
         String assignedRole = Role.PATIENT;
         if (request.getRole() != null && !request.getRole().trim().isEmpty()) {
@@ -248,17 +256,24 @@ public class AuthService {
         String picture = null;
 
         if (token != null && !token.isBlank()) {
-            // Attempt 1: Verify as ID Token via Google tokeninfo endpoint
-            try {
-                String tokenInfoUrl = "https://oauth2.googleapis.com/tokeninfo?id_token=" + token;
-                Map<?, ?> response = restTemplate.getForObject(tokenInfoUrl, Map.class);
-                if (response != null && response.containsKey("email")) {
-                    verifiedEmail = (String) response.get("email");
-                    verifiedName = (String) response.get("name");
-                    googleSub = (String) response.get("sub");
-                    picture = (String) response.get("picture");
+            boolean isIdToken = token.contains(".") && !token.startsWith("ya29.");
+            if (isIdToken) {
+                // Attempt 1: Verify as ID Token via Google tokeninfo endpoint
+                try {
+                    String tokenInfoUrl = "https://oauth2.googleapis.com/tokeninfo?id_token=" + token;
+                    Map<?, ?> response = restTemplate.getForObject(tokenInfoUrl, Map.class);
+                    if (response != null && response.containsKey("email")) {
+                        verifiedEmail = (String) response.get("email");
+                        verifiedName = (String) response.get("name");
+                        googleSub = (String) response.get("sub");
+                        picture = (String) response.get("picture");
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to verify as Google ID token: {}", e.getMessage());
                 }
-            } catch (Exception e) {
+            }
+
+            if (verifiedEmail == null) {
                 // Attempt 2: Verify as Access Token via Google userinfo endpoint
                 try {
                     HttpHeaders headers = new HttpHeaders();
@@ -278,6 +293,7 @@ public class AuthService {
                         picture = (String) body.get("picture");
                     }
                 } catch (Exception ex) {
+                    log.warn("Failed to verify via Google userinfo: {}", ex.getMessage());
                     // Fallback to client-provided email/name if provided
                     if (request.getEmail() != null && !request.getEmail().isBlank()) {
                         verifiedEmail = request.getEmail();
