@@ -68,8 +68,17 @@ public class AuthService {
         user.setFullName(request.getFullName().trim());
         user.setEmail(request.getEmail().toLowerCase().trim());
         user.setPhoneNumber(request.getPhoneNumber().trim());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.PATIENT);
+        String assignedRole = Role.PATIENT;
+        if (request.getRole() != null && !request.getRole().trim().isEmpty()) {
+            String requestedRole = request.getRole().trim().toUpperCase();
+            if (Role.isValidRole(requestedRole)) {
+                assignedRole = requestedRole;
+            } else {
+                throw new IllegalArgumentException("Invalid role: " + request.getRole() +
+                        ". Allowed roles: " + String.join(", ", Role.ALL_ROLES));
+            }
+        }
+        user.setRole(assignedRole);
         user.setProvider(AuthProvider.LOCAL);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());

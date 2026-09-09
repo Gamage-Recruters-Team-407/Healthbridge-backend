@@ -164,7 +164,7 @@ public class DiagnosisController {
                         authentication.getPrincipal();
 
 
-        if (currentUser.getRole() == Role.PATIENT
+        if (Role.PATIENT.equals(currentUser.getRole())
                 && !ehrAccessService
                 .canPatientAccessMedicalRecord(
                         medicalRecordId,
@@ -218,7 +218,7 @@ public class DiagnosisController {
                         authentication.getPrincipal();
 
 
-        if (currentUser.getRole() == Role.PATIENT
+        if (Role.PATIENT.equals(currentUser.getRole())
                 && !ehrAccessService
                 .isCurrentPatient(
                         patientId,
@@ -272,7 +272,7 @@ public class DiagnosisController {
                         authentication.getPrincipal();
 
 
-        if (currentUser.getRole() == Role.DOCTOR
+        if (Role.DOCTOR.equals(currentUser.getRole())
                 && !ehrAccessService
                 .isCurrentDoctor(
                         doctorId,
@@ -324,7 +324,7 @@ public class DiagnosisController {
                         authentication.getPrincipal();
 
 
-        if (currentUser.getRole() == Role.PATIENT
+        if (Role.PATIENT.equals(currentUser.getRole())
                 && !ehrAccessService
                 .canPatientAccessDiagnosis(
                         id,

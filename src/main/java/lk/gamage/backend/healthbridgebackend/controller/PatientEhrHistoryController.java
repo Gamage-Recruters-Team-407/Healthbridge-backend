@@ -77,7 +77,7 @@ public class PatientEhrHistoryController {
          * Patient A cannot access
          * Patient B EHR history.
          */
-        if (currentUser.getRole() == Role.PATIENT
+        if (Role.PATIENT.equals(currentUser.getRole())
                 && !ehrAccessService
                 .isCurrentPatient(
                         patientId,
