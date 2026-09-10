@@ -12,7 +12,7 @@ public class UserProfileResponse {
     private String fullName;
     private String email;
     private String phoneNumber;
-    private Role role;
+    private String role;
     private AuthProvider provider;
     private String googleId;
     private String picture;
@@ -86,11 +86,11 @@ public class UserProfileResponse {
         this.phoneNumber = phoneNumber;
     }
 
-    public Role getRole() {
+    public String getRole() {
         return role;
     }
 
-    public void setRole(Role role) {
+    public void setRole(String role) {
         this.role = role;
     }
 

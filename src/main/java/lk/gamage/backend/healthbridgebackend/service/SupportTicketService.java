@@ -33,6 +33,9 @@ public class SupportTicketService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email.toLowerCase().trim())
@@ -73,6 +76,10 @@ public class SupportTicketService {
         }
 
         SupportTicket saved = ticketRepository.save(builder.build());
+        notificationService.notifyAdminsAboutTicket(
+            "New support ticket",
+            user.getFullName() + " raised a support ticket: " + saved.getSubject(),
+            saved.getId());
         return new TicketResponse(saved);
     }
 
@@ -106,7 +113,12 @@ public class SupportTicketService {
         ticket.getReplies().add(reply);
         ticket.setUpdatedAt(LocalDateTime.now());
 
-        return new TicketResponse(ticketRepository.save(ticket));
+        SupportTicket saved = ticketRepository.save(ticket);
+        notificationService.notifyAdminsAboutTicket(
+            "New support ticket reply",
+            user.getFullName() + " replied to support ticket: " + saved.getSubject(),
+            saved.getId());
+        return new TicketResponse(saved);
     }
 
     public TicketResponse editUserReply(String ticketId, String replyId, String message) {
@@ -156,7 +168,13 @@ public class SupportTicketService {
         }
         ticket.setUpdatedAt(LocalDateTime.now());
 
-        return new TicketResponse(ticketRepository.save(ticket));
+        SupportTicket saved = ticketRepository.save(ticket);
+        notificationService.notifySupportTicket(
+            saved.getUserId(),
+            "Admin replied to your support ticket",
+            admin.getFullName() + " replied to: " + saved.getSubject(),
+            saved.getId());
+        return new TicketResponse(saved);
     }
 
     public TicketResponse editAdminReply(String ticketId, String replyId, String message) {

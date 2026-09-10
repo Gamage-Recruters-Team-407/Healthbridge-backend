@@ -41,17 +41,19 @@ public class SecurityConfig {
                                 "/api/equipment/**",
                                 "/api/hospital-admin/**",
                                 "/error",
-                                "/api/medical-records/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/api/diagnoses/**",
-                                "/api/treatments/**",
-                                "/api/prescriptions/**",
-                                "/api/sos/**",
-                                "/api/medical-documents/**"
+                                "/api/contacts/**",
+                                "/api/sos/**"
                         ).permitAll()
                         .requestMatchers("/api/lab/results/patient/**").authenticated()
                         .requestMatchers("/api/lab/**").hasAnyRole("LAB_OFFICER", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(
+                                "/api/medical-records/**",
+                                "/api/diagnoses/**",
+                                "/api/treatments/**",
+                                "/api/medical-documents/**"
+                        ).hasAnyRole("PATIENT", "DOCTOR", "ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
