@@ -8,6 +8,8 @@ import lk.gamage.backend.healthbridgebackend.service.PrescriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -17,7 +19,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/prescriptions")
-@CrossOrigin(origins = "*")
 public class PrescriptionController {
 
     @Autowired
@@ -117,5 +118,15 @@ public class PrescriptionController {
         qrData.put("prescriptionNumber", prescription.getPrescriptionNumber());
         qrData.put("qrCodeData", prescription.getQrCodeData());
         return ResponseEntity.ok(qrData);
+    }
+
+    // 13. Download Prescription PDF
+    @GetMapping("/{id}/download")
+    public ResponseEntity<byte[]> downloadPrescriptionPdf(@PathVariable String id) {
+        byte[] pdf = prescriptionService.generatePrescriptionPdf(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"prescription-" + id + ".pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 }

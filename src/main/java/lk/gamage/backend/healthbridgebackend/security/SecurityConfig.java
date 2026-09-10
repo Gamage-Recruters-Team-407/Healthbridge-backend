@@ -46,10 +46,11 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/api/diagnoses/**",
                                 "/api/treatments/**",
-                                "/api/contacts/**",
+                                "/api/prescriptions/**",
                                 "/api/sos/**",
                                 "/api/medical-documents/**"
                         ).permitAll()
+                        .requestMatchers("/api/lab/results/patient/**").authenticated()
                         .requestMatchers("/api/lab/**").hasAnyRole("LAB_OFFICER", "ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated()
                 )
