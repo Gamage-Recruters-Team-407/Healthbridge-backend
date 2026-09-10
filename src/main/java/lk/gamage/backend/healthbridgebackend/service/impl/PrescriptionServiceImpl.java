@@ -14,6 +14,14 @@ import lk.gamage.backend.healthbridgebackend.service.PrescriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Image;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.pdf.PdfWriter;
+import com.itextpdf.text.pdf.BarcodeQRCode;
+import java.io.ByteArrayOutputStream;
+
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,6 +34,12 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
     @Autowired
     private MedicineRepository medicineRepository; // ✅ Fixed: Using Repository instead of Service
+
+    // --- DEVELOPER 03/17: MEDICATION REMINDERS ---
+    // Please do not remove. This service automatically creates patient reminders when a prescription is issued.
+    @Autowired
+    private lk.gamage.backend.healthbridgebackend.service.MedicationReminderService medicationReminderService;
+    // ---------------------------------------------
 
     @Override
     public PrescriptionResponse createPrescription(CreatePrescriptionRequest request) {
@@ -67,6 +81,16 @@ public class PrescriptionServiceImpl implements PrescriptionService {
                 .build();
 
         Prescription savedPrescription = prescriptionRepository.save(prescription);
+
+        // --- DEVELOPER 03/17: MEDICATION REMINDERS ---
+        // Generates daily reminders for the patient dashboard.
+        // Wrapped in try-catch to guarantee that if reminders fail, the prescription STILL SAVES successfully.
+        try {
+            medicationReminderService.generateRemindersForPrescription(savedPrescription);
+        } catch (Exception e) {
+            System.err.println("Warning: Prescription saved, but automated reminders failed to generate - " + e.getMessage());
+        }
+        // ---------------------------------------------
 
         return mapToResponse(savedPrescription);
     }
@@ -243,5 +267,43 @@ public class PrescriptionServiceImpl implements PrescriptionService {
                 .createdAt(prescription.getCreatedAt())
                 .updatedAt(prescription.getUpdatedAt())
                 .build();
+    }
+
+    @Override
+    public byte[] generatePrescriptionPdf(String id) {
+        Prescription prescription = prescriptionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription not found with id: " + id));
+
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Document document = new Document();
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            document.add(new Paragraph("OFFICIAL PRESCRIPTION"));
+            document.add(new Paragraph("Prescription Number: " + prescription.getPrescriptionNumber()));
+            document.add(new Paragraph("Date Issued: " + prescription.getCreatedAt()));
+            document.add(new Paragraph("Status: " + prescription.getStatus()));
+            document.add(new Paragraph("--------------------------------------------------"));
+            
+            // Add Scannable QR Code
+            String qrData = prescription.getQrCodeData() != null ? prescription.getQrCodeData() : prescription.getPrescriptionNumber();
+            BarcodeQRCode qrCode = new BarcodeQRCode(qrData, 128, 128, null);
+            Image qrCodeImage = qrCode.getImage();
+            qrCodeImage.setAlignment(Element.ALIGN_LEFT);
+            qrCodeImage.setSpacingBefore(10f);
+            qrCodeImage.setSpacingAfter(10f);
+            document.add(qrCodeImage);
+            
+            document.add(new Paragraph("Medicines:"));
+            for (PrescriptionItem item : prescription.getItems()) {
+                document.add(new Paragraph("• " + item.getMedicineName() + " - " + item.getDosage() + " (" + item.getFrequency() + ")"));
+                document.add(new Paragraph("  Instructions: " + item.getInstructions()));
+            }
+
+            document.close();
+            return out.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate PDF", e);
+        }
     }
 }
