@@ -43,15 +43,16 @@ public class SecurityConfig {
                                 "/error",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
+                                "/api/diagnoses/**",
+                                "/api/treatments/**",
                                 "/api/contacts/**",
-                                "/api/sos/**"
+                                "/api/sos/**",
+                                "/api/appointments/**"
                         ).permitAll()
                         .requestMatchers("/api/lab/results/patient/**").authenticated()
                         .requestMatchers("/api/lab/**").hasAnyRole("LAB_OFFICER", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(
                                 "/api/medical-records/**",
-                                "/api/diagnoses/**",
-                                "/api/treatments/**",
                                 "/api/medical-documents/**"
                         ).hasAnyRole("PATIENT", "DOCTOR", "ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated()
