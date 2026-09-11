@@ -33,7 +33,8 @@ public class User {
 
     private String password;
 
-    private Role role = Role.PATIENT;
+    @Builder.Default
+    private String role = Role.PATIENT;
 
     private AuthProvider provider = AuthProvider.LOCAL;
 

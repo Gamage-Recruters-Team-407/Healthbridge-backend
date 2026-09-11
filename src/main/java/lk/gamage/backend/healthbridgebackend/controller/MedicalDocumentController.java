@@ -215,7 +215,7 @@ public class MedicalDocumentController {
                         authentication.getPrincipal();
 
 
-        if (currentUser.getRole() == Role.PATIENT
+        if (Role.PATIENT.equals(currentUser.getRole())
                 && !ehrAccessService
                 .canPatientAccessDocumentVersionHistory(
                         documentGroupIdOrDocumentId,
@@ -228,7 +228,7 @@ public class MedicalDocumentController {
         }
 
 
-        if (currentUser.getRole() == Role.DOCTOR
+        if (Role.DOCTOR.equals(currentUser.getRole())
                 && !ehrAccessService
                 .canDoctorAccessDocumentVersionHistory(
                         documentGroupIdOrDocumentId,
@@ -283,7 +283,7 @@ public class MedicalDocumentController {
                         authentication.getPrincipal();
 
 
-        if (currentUser.getRole() == Role.PATIENT
+        if (Role.PATIENT.equals(currentUser.getRole())
                 && !ehrAccessService
                 .canPatientAccessMedicalDocument(
                         id,
@@ -296,7 +296,7 @@ public class MedicalDocumentController {
         }
 
 
-        if (currentUser.getRole() == Role.DOCTOR
+        if (Role.DOCTOR.equals(currentUser.getRole())
                 && !ehrAccessService
                 .canDoctorViewMedicalDocument(
                         id,
@@ -348,7 +348,7 @@ public class MedicalDocumentController {
                         authentication.getPrincipal();
 
 
-        if (currentUser.getRole() == Role.PATIENT
+        if (Role.PATIENT.equals(currentUser.getRole())
                 && !ehrAccessService
                 .canPatientAccessMedicalRecord(
                         medicalRecordId,
@@ -402,7 +402,7 @@ public class MedicalDocumentController {
                         authentication.getPrincipal();
 
 
-        if (currentUser.getRole() == Role.PATIENT
+        if (Role.PATIENT.equals(currentUser.getRole())
                 && !ehrAccessService
                 .isCurrentPatient(
                         patientId,
@@ -456,7 +456,7 @@ public class MedicalDocumentController {
                         authentication.getPrincipal();
 
 
-        if (currentUser.getRole() == Role.DOCTOR
+        if (Role.DOCTOR.equals(currentUser.getRole())
                 && !ehrAccessService
                 .isCurrentDoctor(
                         doctorId,
@@ -631,7 +631,7 @@ public class MedicalDocumentController {
                         authentication.getPrincipal();
 
 
-        if (currentUser.getRole() == Role.DOCTOR
+        if (Role.DOCTOR.equals(currentUser.getRole())
                 && !ehrAccessService
                 .canDoctorModifyMedicalDocument(
                         id,
