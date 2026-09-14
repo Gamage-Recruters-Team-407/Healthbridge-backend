@@ -17,16 +17,16 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 @Service
 public class EhrPatientLookupService {
 
-    private static final int MAX_RESULTS = 10;
-
     private final MongoTemplate mongoTemplate;
     private final MedicalRecordRepository medicalRecordRepository;
+
 
     public EhrPatientLookupService(
             MongoTemplate mongoTemplate,
@@ -42,217 +42,357 @@ public class EhrPatientLookupService {
      * SEARCH REGISTERED PATIENTS
      * =========================================================
      *
-     * Used by:
+     * Blank:
+     * -> ALL registered PATIENT users
      *
-     * 1. Create Medical Record
-     * 2. Find Patient EHR
+     * Text:
+     * -> Name search only
      *
-     * Empty query:
-     * returns first 10 registered PATIENT users.
+     * ID:
+     * -> Exact MongoDB User ID
      *
-     * Search query:
-     * searches name / email.
+     * Examples:
      *
-     * Exact MongoDB ID:
-     * also supported.
+     * "he"
+     * -> Health
+     *
+     * "theshan"
+     * -> Theshan Geethanjan
+     *
+     * "gee"
+     * -> Theshan Geethanjan
+     *
+     * "theshan gee"
+     * -> Theshan Geethanjan
+     *
+     * Exact patient ID
+     * -> exact patient
      */
     public List<EhrPatientLookupResponse> searchPatients(
             String searchText
     ) {
 
-        String normalized =
+        String normalizedSearch =
                 searchText == null
                         ? ""
                         : searchText.trim();
 
 
-        /*
-         * IMPORTANT:
-         *
-         * User.role is String.
-         * Do NOT compare with:
-         *
-         * user.getRole() == Role.PATIENT
-         *
-         * Use String comparison instead.
-         */
-        Criteria patientRoleCriteria =
-                Criteria.where("role")
-                        .regex(
-                                Pattern.compile(
-                                        "^"
-                                                + Pattern.quote(Role.PATIENT)
-                                                + "$",
-                                        Pattern.CASE_INSENSITIVE
-                                )
-                        );
+        List<User> allPatients =
+                findAllPatients();
 
 
         /*
-         * Empty search.
-         *
-         * Show a small selectable list.
+         * Empty search:
+         * return every registered PATIENT.
          */
-        if (!StringUtils.hasText(normalized)) {
-
-            Query query =
-                    new Query(
-                            patientRoleCriteria
-                    )
-                            .with(
-                                    Sort.by(
-                                            Sort.Direction.ASC,
-                                            "fullName"
-                                    )
-                            )
-                            .limit(
-                                    MAX_RESULTS
-                            );
-
-
-            List<User> users =
-                    mongoTemplate.find(
-                            query,
-                            User.class
-                    );
-
+        if (!StringUtils.hasText(normalizedSearch)) {
 
             return toResponses(
-                    users
+                    allPatients
             );
         }
 
 
-        Map<String, User> uniquePatients =
+        Map<String, User> matches =
                 new LinkedHashMap<>();
 
 
         /*
-         * First:
-         * try exact MongoDB User ID.
+         * =====================================================
+         * EXACT PATIENT ID
+         * =====================================================
          */
-        User exactUser =
-                mongoTemplate.findById(
-                        normalized,
-                        User.class
+        try {
+
+            User exactUser =
+                    mongoTemplate.findById(
+                            normalizedSearch,
+                            User.class
+                    );
+
+
+            if (isPatient(exactUser)) {
+
+                matches.put(
+                        exactUser.getId(),
+                        exactUser
                 );
+            }
 
+        } catch (Exception ignored) {
 
-        if (isPatient(exactUser)) {
-
-            uniquePatients.put(
-                    exactUser.getId(),
-                    exactUser
-            );
+            /*
+             * Invalid / non Mongo ObjectId text is normal
+             * during name searching.
+             */
         }
 
 
         /*
-         * One character search is too broad.
-         *
-         * Exact ID result above can still return.
+         * =====================================================
+         * NAME SEARCH
+         * =====================================================
          */
-        if (normalized.length() < 2) {
+        for (User patient : allPatients) {
 
-            return toResponses(
-                    new ArrayList<>(
-                            uniquePatients.values()
-                    )
-            );
-        }
-
-
-        Pattern searchPattern =
-                Pattern.compile(
-                        Pattern.quote(
-                                normalized
-                        ),
-                        Pattern.CASE_INSENSITIVE
-                );
-
-
-        Criteria searchCriteria =
-                new Criteria()
-                        .orOperator(
-
-                                Criteria
-                                        .where("fullName")
-                                        .regex(
-                                                searchPattern
-                                        ),
-
-                                Criteria
-                                        .where("firstName")
-                                        .regex(
-                                                searchPattern
-                                        ),
-
-                                Criteria
-                                        .where("lastName")
-                                        .regex(
-                                                searchPattern
-                                        ),
-
-                                Criteria
-                                        .where("email")
-                                        .regex(
-                                                searchPattern
-                                        )
-                        );
-
-
-        Query query =
-                new Query(
-                        new Criteria()
-                                .andOperator(
-                                        patientRoleCriteria,
-                                        searchCriteria
-                                )
-                )
-                        .with(
-                                Sort.by(
-                                        Sort.Direction.ASC,
-                                        "fullName"
-                                )
-                        )
-                        .limit(
-                                MAX_RESULTS
-                        );
-
-
-        List<User> matches =
-                mongoTemplate.find(
-                        query,
-                        User.class
-                );
-
-
-        for (User user : matches) {
-
-            if (!isPatient(user)) {
+            if (patient == null) {
                 continue;
             }
 
 
-            uniquePatients.putIfAbsent(
-                    user.getId(),
-                    user
-            );
+            if (
+                    !StringUtils.hasText(
+                            patient.getId()
+                    )
+            ) {
+                continue;
+            }
 
 
             if (
-                    uniquePatients.size()
-                            >= MAX_RESULTS
+                    matchesPatientName(
+                            patient,
+                            normalizedSearch
+                    )
             ) {
-                break;
+
+                matches.putIfAbsent(
+                        patient.getId(),
+                        patient
+                );
             }
         }
 
 
         return toResponses(
                 new ArrayList<>(
-                        uniquePatients.values()
+                        matches.values()
                 )
+        );
+    }
+
+
+    /*
+     * =========================================================
+     * ALL REGISTERED PATIENTS
+     * =========================================================
+     */
+    private List<User> findAllPatients() {
+
+        Criteria patientRole =
+                Criteria
+                        .where("role")
+                        .regex(
+                                Pattern.compile(
+                                        "^"
+                                                + Pattern.quote(
+                                                Role.PATIENT
+                                        )
+                                                + "$",
+                                        Pattern.CASE_INSENSITIVE
+                                )
+                        );
+
+
+        Query query =
+                new Query(
+                        patientRole
+                );
+
+
+        query.with(
+                Sort.by(
+                        Sort.Direction.ASC,
+                        "fullName"
+                )
+        );
+
+
+        List<User> users =
+                mongoTemplate.find(
+                        query,
+                        User.class
+                );
+
+
+        List<User> patients =
+                new ArrayList<>();
+
+
+        for (User user : users) {
+
+            if (isPatient(user)) {
+
+                patients.add(
+                        user
+                );
+            }
+        }
+
+
+        return patients;
+    }
+
+
+    /*
+     * =========================================================
+     * PATIENT NAME SEARCH
+     * =========================================================
+     *
+     * Prefix-per-word search.
+     *
+     * Example:
+     *
+     * Patient:
+     * Theshan Geethanjan
+     *
+     * Search "theshan"
+     * -> YES
+     *
+     * Search "gee"
+     * -> YES
+     *
+     * Search "theshan gee"
+     * -> YES
+     *
+     * Search "he"
+     * -> NO
+     *
+     * because "Theshan" starts with "th",
+     * not "he".
+     */
+    private boolean matchesPatientName(
+            User patient,
+            String searchText
+    ) {
+
+        if (
+                patient == null
+                || !StringUtils.hasText(searchText)
+        ) {
+
+            return false;
+        }
+
+
+        String patientName =
+                getPatientName(
+                        patient
+                );
+
+
+        if (
+                !StringUtils.hasText(
+                        patientName
+                )
+        ) {
+
+            return false;
+        }
+
+
+        String normalizedName =
+                normalizeText(
+                        patientName
+                );
+
+
+        String normalizedSearch =
+                normalizeText(
+                        searchText
+                );
+
+
+        if (
+                !StringUtils.hasText(normalizedSearch)
+        ) {
+
+            return false;
+        }
+
+
+        String[] patientWords =
+                normalizedName.split(
+                        "\\s+"
+                );
+
+
+        String[] searchWords =
+                normalizedSearch.split(
+                        "\\s+"
+                );
+
+
+        /*
+         * Every search word must match the
+         * START of at least one patient-name word.
+         */
+        for (String searchWord : searchWords) {
+
+            if (
+                    !StringUtils.hasText(
+                            searchWord
+                    )
+            ) {
+                continue;
+            }
+
+
+            boolean tokenMatched =
+                    false;
+
+
+            for (String patientWord : patientWords) {
+
+                if (
+                        patientWord.startsWith(
+                                searchWord
+                        )
+                ) {
+
+                    tokenMatched =
+                            true;
+
+                    break;
+                }
+            }
+
+
+            if (!tokenMatched) {
+
+                return false;
+            }
+        }
+
+
+        return true;
+    }
+
+
+    /*
+     * =========================================================
+     * PATIENT DISPLAY NAME
+     * =========================================================
+     */
+    private String getPatientName(
+            User patient
+    ) {
+
+        if (
+                StringUtils.hasText(
+                        patient.getFullName()
+                )
+        ) {
+
+            return patient
+                    .getFullName()
+                    .trim();
+        }
+
+
+        return buildName(
+                patient
         );
     }
 
@@ -261,23 +401,16 @@ public class EhrPatientLookupService {
      * =========================================================
      * DOCTOR -> MY EHR PATIENTS
      * =========================================================
-     *
-     * Only patients for whom THIS doctor already
-     * created at least one active MedicalRecord.
-     *
-     * Example:
-     *
-     * Doctor A
-     *   Patient 1 -> 3 records
-     *   Patient 2 -> 1 record
-     *
-     * Doctor B records are NOT shown here.
      */
     public List<EhrPatientLookupResponse> getDoctorPatients(
             String doctorId
     ) {
 
-        if (!StringUtils.hasText(doctorId)) {
+        if (
+                !StringUtils.hasText(
+                        doctorId
+                )
+        ) {
 
             return List.of();
         }
@@ -302,13 +435,14 @@ public class EhrPatientLookupService {
 
 
             /*
-             * Ignore archived records.
+             * Do not count archived records.
              */
             if (
                     Boolean.TRUE.equals(
                             record.getArchived()
                     )
             ) {
+
                 continue;
             }
 
@@ -318,6 +452,7 @@ public class EhrPatientLookupService {
                             record.getPatientId()
                     )
             ) {
+
                 continue;
             }
 
@@ -345,12 +480,12 @@ public class EhrPatientLookupService {
 
             if (
                     visitDate != null
-                            && (
-                            summary.lastVisitDate == null
-                                    || visitDate.isAfter(
-                                    summary.lastVisitDate
-                            )
+                    && (
+                    summary.lastVisitDate == null
+                            || visitDate.isAfter(
+                            summary.lastVisitDate
                     )
+            )
             ) {
 
                 summary.lastVisitDate =
@@ -365,9 +500,6 @@ public class EhrPatientLookupService {
         }
 
 
-        /*
-         * Fetch User records for the unique patient IDs.
-         */
         Query usersQuery =
                 new Query(
                         Criteria
@@ -407,13 +539,6 @@ public class EhrPatientLookupService {
                 new ArrayList<>();
 
 
-        /*
-         * summaries is LinkedHashMap.
-         *
-         * MedicalRecordRepository already returns
-         * latest visit first, so this keeps the most
-         * recently treated patient near the top.
-         */
         for (
                 Map.Entry<
                         String,
@@ -422,13 +547,9 @@ public class EhrPatientLookupService {
                 : summaries.entrySet()
         ) {
 
-            String patientId =
-                    entry.getKey();
-
-
             User patient =
                     usersById.get(
-                            patientId
+                            entry.getKey()
                     );
 
 
@@ -473,7 +594,7 @@ public class EhrPatientLookupService {
 
     /*
      * =========================================================
-     * HELPERS
+     * ROLE CHECK
      * =========================================================
      */
     private boolean isPatient(
@@ -499,6 +620,11 @@ public class EhrPatientLookupService {
     }
 
 
+    /*
+     * =========================================================
+     * RESPONSE LIST
+     * =========================================================
+     */
     private List<EhrPatientLookupResponse> toResponses(
             List<User> users
     ) {
@@ -508,6 +634,7 @@ public class EhrPatientLookupService {
 
 
         if (users == null) {
+
             return results;
         }
 
@@ -524,14 +651,6 @@ public class EhrPatientLookupService {
                             user
                     )
             );
-
-
-            if (
-                    results.size()
-                            >= MAX_RESULTS
-            ) {
-                break;
-            }
         }
 
 
@@ -539,19 +658,17 @@ public class EhrPatientLookupService {
     }
 
 
+    /*
+     * =========================================================
+     * USER -> RESPONSE
+     * =========================================================
+     */
     private EhrPatientLookupResponse toResponse(
             User patient
     ) {
 
         String fullName =
-                StringUtils.hasText(
-                        patient.getFullName()
-                )
-                        ? patient
-                        .getFullName()
-                        .trim()
-
-                        : buildName(
+                getPatientName(
                         patient
                 );
 
@@ -602,6 +719,11 @@ public class EhrPatientLookupService {
     }
 
 
+    /*
+     * =========================================================
+     * BUILD FALLBACK NAME
+     * =========================================================
+     */
     private String buildName(
             User patient
     ) {
@@ -634,6 +756,38 @@ public class EhrPatientLookupService {
     }
 
 
+    /*
+     * =========================================================
+     * NORMALIZE SEARCH TEXT
+     * =========================================================
+     */
+    private String normalizeText(
+            String value
+    ) {
+
+        if (value == null) {
+
+            return "";
+        }
+
+
+        return value
+                .trim()
+                .toLowerCase(
+                        Locale.ROOT
+                )
+                .replaceAll(
+                        "\\s+",
+                        " "
+                );
+    }
+
+
+    /*
+     * =========================================================
+     * DOCTOR PATIENT SUMMARY
+     * =========================================================
+     */
     private static class DoctorPatientSummary {
 
         private int recordCount = 0;
