@@ -215,6 +215,44 @@ public class EhrAccessService {
                 .orElse(false);
     }
 
+    /*
+ * DOCTOR:
+ * can archive only a MedicalRecord
+ * created by the logged-in doctor.
+ */
+public boolean canDoctorArchiveMedicalRecord(
+        String medicalRecordId,
+        Authentication authentication
+) {
+
+    CustomUserDetails user =
+            getCurrentUser(authentication);
+
+
+    if (user == null
+            || user.getRole() != Role.DOCTOR
+            || !StringUtils.hasText(medicalRecordId)) {
+
+        return false;
+    }
+
+
+    return medicalRecordRepository
+            .findById(
+                    medicalRecordId.trim()
+            )
+            .map(record ->
+                    user.getId()
+                            .equals(
+                                    record.getDoctorId()
+                            )
+                            &&
+                            !Boolean.TRUE.equals(
+                                    record.getArchived()
+                            )
+            )
+            .orElse(false);
+}
 
     /*
      * Used when Doctor creates:
