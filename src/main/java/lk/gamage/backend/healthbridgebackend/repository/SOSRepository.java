@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface SOSRepository extends MongoRepository<SOSAlert, String> {
     List<SOSAlert> findByUserId(String userId);
+    List<SOSAlert> findByStatus(String status);
 }

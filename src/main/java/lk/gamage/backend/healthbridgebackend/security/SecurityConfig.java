@@ -47,6 +47,7 @@ public class SecurityConfig {
                                 "/api/treatments/**",
                                 "/api/contacts/**",
                                 "/api/sos/**",
+                                "/ws/**",
                                 "/api/appointments/**"
                         ).permitAll()
                         .requestMatchers("/api/lab/results/patient/**").authenticated()
@@ -72,7 +73,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-User-Id"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
