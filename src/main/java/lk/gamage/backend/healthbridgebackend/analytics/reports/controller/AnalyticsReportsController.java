@@ -4,6 +4,7 @@ import lk.gamage.backend.healthbridgebackend.analytics.dto.response.AnalyticsErr
 import lk.gamage.backend.healthbridgebackend.analytics.reports.dto.request.GenerateAnalyticsReportRequest;
 import lk.gamage.backend.healthbridgebackend.analytics.reports.dto.response.AnalyticsReportCapabilitiesResponse;
 import lk.gamage.backend.healthbridgebackend.analytics.reports.dto.response.AnalyticsReportResponse;
+import lk.gamage.backend.healthbridgebackend.analytics.reports.dto.response.ReportsAnalyticsResponseDTO;
 import lk.gamage.backend.healthbridgebackend.analytics.reports.service.AnalyticsReportsService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,13 @@ public class AnalyticsReportsController {
     @GetMapping("/capabilities")
     public AnalyticsReportCapabilitiesResponse getCapabilities() {
         return analyticsReportsService.getCapabilities();
+    }
+
+    @GetMapping
+    public ReportsAnalyticsResponseDTO getReportsAnalytics(
+            @RequestParam(defaultValue = "month") String period
+    ) {
+        return analyticsReportsService.getReportsAnalytics(period);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

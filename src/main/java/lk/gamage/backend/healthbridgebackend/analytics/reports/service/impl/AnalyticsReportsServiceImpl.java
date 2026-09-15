@@ -74,6 +74,39 @@ public class AnalyticsReportsServiceImpl implements AnalyticsReportsService {
         );
     }
 
+    @Override
+    public ReportsAnalyticsResponseDTO getReportsAnalytics(String requestedPeriod) {
+        String period = normalizePeriod(requestedPeriod);
+        String persistenceReason = "Report persistence is not implemented.";
+        String schedulingReason = "Report scheduling and persistent report storage are not implemented.";
+        String activityReason = "Report activity persistence is not implemented.";
+        String categoryReason = "Report category distribution persistence is not implemented.";
+
+        return new ReportsAnalyticsResponseDTO(
+                Instant.now(),
+                period,
+                DataAvailability.PARTIAL,
+                List.of(
+                        new AnalyticsKpiDTO("Reports Generated", null, persistenceReason),
+                        new AnalyticsKpiDTO("Scheduled Reports", null, schedulingReason),
+                        new AnalyticsKpiDTO("Reports This Period", null, persistenceReason),
+                        new AnalyticsKpiDTO("Pending Reports", null, persistenceReason)
+                ),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(
+                        new DataAvailabilityDTO("Reports", DataAvailability.PARTIAL.name(), persistenceReason),
+                        new DataAvailabilityDTO("Report Activity", DataAvailability.UNAVAILABLE.name(), activityReason),
+                        new DataAvailabilityDTO("Category Distribution", DataAvailability.UNAVAILABLE.name(), categoryReason),
+                        new DataAvailabilityDTO("Scheduled Reports", DataAvailability.UNAVAILABLE.name(), schedulingReason),
+                        new DataAvailabilityDTO("PDF Export", DataAvailability.UNAVAILABLE.name(), EXPORT_REASON),
+                        new DataAvailabilityDTO("Excel Export", DataAvailability.UNAVAILABLE.name(), EXPORT_REASON)
+                )
+        );
+    }
+
     private ReportContent healthcareReport(String period) {
         HealthcareAnalyticsResponse source = healthcareAnalyticsService.getHealthcareAnalytics(period);
         List<AnalyticsReportSectionResponse> sections = List.of(
