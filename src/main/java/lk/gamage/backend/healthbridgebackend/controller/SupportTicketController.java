@@ -1,5 +1,6 @@
 package lk.gamage.backend.healthbridgebackend.controller;
 
+import lk.gamage.backend.healthbridgebackend.dto.request.SubmitTicketFeedbackRequest;
 import lk.gamage.backend.healthbridgebackend.dto.request.UpdateTicketReplyRequest;
 import lk.gamage.backend.healthbridgebackend.model.TicketCategory;
 import lk.gamage.backend.healthbridgebackend.service.SupportTicketService;
@@ -74,6 +75,51 @@ public class SupportTicketController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Error adding reply: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/feedback")
+    public ResponseEntity<?> submitFeedback(
+            @PathVariable String id,
+            @RequestBody SubmitTicketFeedbackRequest request) {
+        try {
+            return ResponseEntity.ok(supportTicketService.submitFeedback(
+                    id, request.getRating(), request.getComment()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error submitting feedback: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{id}/feedback")
+    public ResponseEntity<?> getFeedback(@PathVariable String id) {
+        try {
+            return ResponseEntity.ok(supportTicketService.getFeedback(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error retrieving feedback: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}/feedback")
+    public ResponseEntity<?> deleteFeedback(@PathVariable String id) {
+        try {
+            return ResponseEntity.ok(supportTicketService.deleteFeedback(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error deleting feedback: " + e.getMessage()));
         }
     }
 
