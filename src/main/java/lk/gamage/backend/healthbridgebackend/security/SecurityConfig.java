@@ -53,6 +53,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/api/lab/results/patient/**").authenticated()
                         .requestMatchers("/api/lab/**").hasAnyRole("LAB_OFFICER", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/api/analytics/**").hasAnyRole("ADMIN", "DOCTOR")
                         .requestMatchers(
                                 "/api/medical-records/**",
                                 "/api/medical-documents/**"
