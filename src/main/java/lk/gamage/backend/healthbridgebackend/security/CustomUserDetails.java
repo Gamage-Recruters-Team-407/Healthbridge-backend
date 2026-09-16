@@ -15,7 +15,7 @@ public class CustomUserDetails implements UserDetails {
     private final String email;
     private final String fullName;
     private final String password;
-    private final Role role;
+    private final String role;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public CustomUserDetails(User user) {
@@ -23,9 +23,9 @@ public class CustomUserDetails implements UserDetails {
         this.email = user.getEmail();
         this.fullName = user.getFullName();
         this.password = user.getPassword() != null ? user.getPassword() : "";
-        this.role = user.getRole();
+        this.role = user.getRole() != null ? user.getRole() : Role.PATIENT;
         this.authorities = Collections.singletonList(
-                new SimpleGrantedAuthority("ROLE_" + (user.getRole() != null ? user.getRole().name() : "PATIENT"))
+                new SimpleGrantedAuthority("ROLE_" + this.role)
         );
     }
 
@@ -37,7 +37,7 @@ public class CustomUserDetails implements UserDetails {
         return fullName;
     }
 
-    public Role getRole() {
+    public String getRole() {
         return role;
     }
 

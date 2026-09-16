@@ -2,12 +2,12 @@ package lk.gamage.backend.healthbridgebackend.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class CloudinaryService {
@@ -30,7 +30,6 @@ public class CloudinaryService {
     }
 
     public Map<String, Object> uploadFile(MultipartFile file) {
-
         if (file == null || file.isEmpty()) {
             return null;
         }
@@ -38,28 +37,40 @@ public class CloudinaryService {
         requireConfiguration();
 
         try {
-
-            Map<String, Object> uploadOptions = ObjectUtils.asMap(
-                    "folder", "healthbridge/support-tickets",
-                    "resource_type", "auto"
-            );
-
             return cloudinary.uploader().upload(
                     file.getBytes(),
-                    uploadOptions
+                    ObjectUtils.asMap("resource_type", "auto")
             );
-
         } catch (IOException e) {
+            throw new RuntimeException("Failed to upload file to Cloudinary", e);
+        }
+    }
 
-            throw new RuntimeException(
-                    "Failed to upload file to Cloudinary",
-                    e
+    public Map<String, String> uploadFile(MultipartFile file, String folder) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+
+        requireConfiguration();
+
+        try {
+            Map uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", folder,
+                            "resource_type", "auto"
+                    )
             );
+
+            String url = (String) uploadResult.get("secure_url");
+            String publicId = (String) uploadResult.get("public_id");
+            return Map.of("url", url, "publicId", publicId);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload file to Cloudinary: " + e.getMessage(), e);
         }
     }
 
     public void deleteFile(String publicId, String resourceType) {
-
         if (publicId == null || publicId.isBlank()) {
             return;
         }
@@ -67,20 +78,15 @@ public class CloudinaryService {
         requireConfiguration();
 
         try {
-
             cloudinary.uploader().destroy(
                     publicId,
                     ObjectUtils.asMap(
-                            "resource_type", resourceType
+                            "resource_type",
+                            resourceType == null || resourceType.isBlank() ? "auto" : resourceType
                     )
             );
-
-        } catch (Exception e) {
-
-            throw new RuntimeException(
-                    "Failed to delete file from Cloudinary",
-                    e
-            );
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to delete file from Cloudinary", e);
         }
     }
 
