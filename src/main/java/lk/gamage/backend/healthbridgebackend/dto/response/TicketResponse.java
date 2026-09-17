@@ -21,6 +21,9 @@ public class TicketResponse {
     private String attachmentUrl;
     private TicketStatus status;
     private List<TicketReplyResponse> replies;
+    private Integer feedbackRating;
+    private String feedbackComment;
+    private LocalDateTime feedbackSubmittedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -40,6 +43,9 @@ public class TicketResponse {
         this.status = ticket.getStatus();
         this.replies = ticket.getReplies() == null ? List.of() :
                 ticket.getReplies().stream().map(TicketReplyResponse::new).collect(Collectors.toList());
+        this.feedbackRating = ticket.getFeedbackRating();
+        this.feedbackComment = ticket.getFeedbackComment();
+        this.feedbackSubmittedAt = ticket.getFeedbackSubmittedAt();
         this.createdAt = ticket.getCreatedAt();
         this.updatedAt = ticket.getUpdatedAt();
     }
@@ -76,6 +82,15 @@ public class TicketResponse {
 
     public List<TicketReplyResponse> getReplies() { return replies; }
     public void setReplies(List<TicketReplyResponse> replies) { this.replies = replies; }
+
+    public Integer getFeedbackRating() { return feedbackRating; }
+    public void setFeedbackRating(Integer feedbackRating) { this.feedbackRating = feedbackRating; }
+
+    public String getFeedbackComment() { return feedbackComment; }
+    public void setFeedbackComment(String feedbackComment) { this.feedbackComment = feedbackComment; }
+
+    public LocalDateTime getFeedbackSubmittedAt() { return feedbackSubmittedAt; }
+    public void setFeedbackSubmittedAt(LocalDateTime feedbackSubmittedAt) { this.feedbackSubmittedAt = feedbackSubmittedAt; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
