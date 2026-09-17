@@ -59,6 +59,18 @@ public class User {
 
     private String accountStatus = "Active";
 
+    @Builder.Default
+    private boolean twoFactorEnabled = false;
+
+    @Builder.Default
+    private NotificationPrefs notificationPrefs = new NotificationPrefs();
+
+    @Builder.Default
+    private PrivacyPrefs privacyPrefs = new PrivacyPrefs();
+
+    @Builder.Default
+    private LocalizationPrefs localizationPrefs = new LocalizationPrefs();
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     private LocalDateTime updatedAt = LocalDateTime.now();
