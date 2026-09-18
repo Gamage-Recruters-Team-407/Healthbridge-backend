@@ -21,32 +21,18 @@ public class Invoice {
     private String id;
 
     private String invoiceNumber;
-
     private String patientId;
-
     private String patientName;
-
     private String hospitalId;
-
     private LocalDateTime issueDate;
-
     private LocalDateTime dueDate;
-
     private BigDecimal subtotal;
-
     private BigDecimal discount;
-
     private BigDecimal tax;
-
     private BigDecimal total;
-
     private BigDecimal paidAmount;
-
     private BigDecimal balance;
-
-    private String status;
-
-    private String paymentStatus;
-
+    private String status;        // DRAFT, ISSUED, PAID, CANCELLED
+    private String paymentStatus; // UNPAID, PARTIAL, PAID, REFUNDED
     private String notes;
 }

@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/hospital-billing/invoices")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
+@RequestMapping("/api/hospital-billing/invoices")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class InvoiceController {
 
     private final InvoiceService invoiceService;
