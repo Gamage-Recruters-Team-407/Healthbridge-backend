@@ -27,6 +27,8 @@ public class SupportTicket {
 
     private String subject;
     private String description;
+    private TicketCategory category;
+    private String contactNumber;
 
     private String attachmentUrl;
     private String attachmentPublicId;
@@ -36,6 +38,10 @@ public class SupportTicket {
 
     @Builder.Default
     private List<TicketReply> replies = new ArrayList<>();
+
+    private Integer feedbackRating;
+    private String feedbackComment;
+    private LocalDateTime feedbackSubmittedAt;
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

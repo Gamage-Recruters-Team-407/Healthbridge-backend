@@ -3,7 +3,7 @@ package lk.gamage.backend.healthbridgebackend.service.impl;
 import lk.gamage.backend.healthbridgebackend.dto.DeliveryDto;
 import lk.gamage.backend.healthbridgebackend.exception.ResourceNotFoundException;
 import lk.gamage.backend.healthbridgebackend.model.Delivery;
-import lk.gamage.backend.healthbridgebackend.model.enums.DeliveryStatus;
+import lk.gamage.backend.healthbridgebackend.enums.DeliveryStatus;
 import lk.gamage.backend.healthbridgebackend.repository.DeliveryRepository;
 import lk.gamage.backend.healthbridgebackend.service.DeliveryService;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,7 @@
 package lk.gamage.backend.healthbridgebackend.model;
 
 import lk.gamage.backend.healthbridgebackend.enums.AppointmentStatus;
+import lk.gamage.backend.healthbridgebackend.enums.DoctorDecision;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.springframework.data.annotation.Id;
@@ -20,6 +21,7 @@ public class Appointment {
     private String appointmentType;
     private String reason;
     private AppointmentStatus status;
+    private DoctorDecision doctorDecision;
     private String cancellationReason;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -34,6 +36,7 @@ public class Appointment {
         this.hospital = hospital; this.appointmentDate = appointmentDate;
         this.appointmentTime = appointmentTime; this.appointmentType = appointmentType;
         this.reason = reason; this.status = AppointmentStatus.UPCOMING;
+        this.doctorDecision = DoctorDecision.PENDING;
         this.createdAt = LocalDateTime.now(); this.updatedAt = this.createdAt;
     }
 
@@ -48,6 +51,7 @@ public class Appointment {
     public String getAppointmentType() { return appointmentType; } public void setAppointmentType(String v) { appointmentType = v; }
     public String getReason() { return reason; } public void setReason(String v) { reason = v; }
     public AppointmentStatus getStatus() { return status; } public void setStatus(AppointmentStatus v) { status = v; }
+    public DoctorDecision getDoctorDecision() { return doctorDecision; } public void setDoctorDecision(DoctorDecision v) { doctorDecision = v; }
     public String getCancellationReason() { return cancellationReason; } public void setCancellationReason(String v) { cancellationReason = v; }
     public LocalDateTime getCreatedAt() { return createdAt; } public void setCreatedAt(LocalDateTime v) { createdAt = v; }
     public LocalDateTime getUpdatedAt() { return updatedAt; } public void setUpdatedAt(LocalDateTime v) { updatedAt = v; }

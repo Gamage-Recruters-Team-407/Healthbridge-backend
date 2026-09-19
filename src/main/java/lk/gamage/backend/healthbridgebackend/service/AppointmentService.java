@@ -5,9 +5,11 @@ import lk.gamage.backend.healthbridgebackend.model.Appointment;
 import java.util.List;
 
 public interface AppointmentService {
-    List<Appointment> find(String patientId, String status);
+    List<Appointment> find(String patientId, String doctorId, String status);
     Appointment findById(String id);
     Appointment create(AppointmentRequest request);
     Appointment reschedule(String id, AppointmentRequest request);
     Appointment cancel(String id, String reason);
+    Appointment decide(String id, String decision);
+    Appointment complete(String id);
 }

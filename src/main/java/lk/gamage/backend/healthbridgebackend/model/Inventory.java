@@ -8,7 +8,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
-import lk.gamage.backend.healthbridgebackend.model.enums.InventoryStatus;
+import lk.gamage.backend.healthbridgebackend.enums.InventoryStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -43,7 +43,7 @@ public class Inventory {
     private LocalDate manufactureDate;
     private LocalDate expiryDate;
 
-//    private String status;
+    //    private String status;
     private InventoryStatus status;
 
     @CreatedDate

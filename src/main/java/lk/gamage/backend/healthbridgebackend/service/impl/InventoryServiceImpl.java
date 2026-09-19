@@ -3,7 +3,7 @@ package lk.gamage.backend.healthbridgebackend.service.impl;
 import lk.gamage.backend.healthbridgebackend.dto.InventoryRequest;
 import lk.gamage.backend.healthbridgebackend.dto.InventoryResponse;
 import lk.gamage.backend.healthbridgebackend.model.Inventory;
-import lk.gamage.backend.healthbridgebackend.model.enums.InventoryStatus;
+import lk.gamage.backend.healthbridgebackend.enums.InventoryStatus;
 import lk.gamage.backend.healthbridgebackend.repository.InventoryRepository;
 import lk.gamage.backend.healthbridgebackend.service.InventoryService;
 import lombok.RequiredArgsConstructor;

@@ -1,7 +1,7 @@
 package lk.gamage.backend.healthbridgebackend.repository;
 
 import lk.gamage.backend.healthbridgebackend.model.Inventory;
-import lk.gamage.backend.healthbridgebackend.model.enums.InventoryStatus;
+import lk.gamage.backend.healthbridgebackend.enums.InventoryStatus;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import java.util.List;

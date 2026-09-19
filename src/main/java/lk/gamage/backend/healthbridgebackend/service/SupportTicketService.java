@@ -4,6 +4,7 @@ import lk.gamage.backend.healthbridgebackend.dto.response.TicketResponse;
 import lk.gamage.backend.healthbridgebackend.dto.response.TicketSummaryResponse;
 import lk.gamage.backend.healthbridgebackend.model.SupportTicket;
 import lk.gamage.backend.healthbridgebackend.model.TicketReply;
+import lk.gamage.backend.healthbridgebackend.model.TicketCategory;
 import lk.gamage.backend.healthbridgebackend.model.TicketStatus;
 import lk.gamage.backend.healthbridgebackend.model.User;
 import lk.gamage.backend.healthbridgebackend.repository.SupportTicketRepository;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -31,13 +33,17 @@ public class SupportTicketService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email.toLowerCase().trim())
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
     }
 
-    public TicketResponse createTicket(String subject, String description, MultipartFile attachment) {
+    public TicketResponse createTicket(String subject, String description, TicketCategory category,
+                                       String contactNumber, MultipartFile attachment) {
         User user = getCurrentUser();
 
         if (subject == null || subject.isBlank()) {
@@ -46,6 +52,12 @@ public class SupportTicketService {
         if (description == null || description.isBlank()) {
             throw new IllegalArgumentException("Description is required");
         }
+        if (category == null) {
+            throw new IllegalArgumentException("Category is required");
+        }
+        if (contactNumber == null || contactNumber.isBlank()) {
+            throw new IllegalArgumentException("Contact number is required");
+        }
 
         SupportTicket.SupportTicketBuilder builder = SupportTicket.builder()
                 .userId(user.getId())
@@ -53,6 +65,8 @@ public class SupportTicketService {
                 .userEmail(user.getEmail())
                 .subject(subject.trim())
                 .description(description.trim())
+                .category(category)
+                .contactNumber(contactNumber.trim())
                 .status(TicketStatus.OPEN);
 
         if (attachment != null && !attachment.isEmpty()) {
@@ -62,6 +76,10 @@ public class SupportTicketService {
         }
 
         SupportTicket saved = ticketRepository.save(builder.build());
+        notificationService.notifyAdminsAboutTicket(
+            "New support ticket",
+            user.getFullName() + " raised a support ticket: " + saved.getSubject(),
+            saved.getId());
         return new TicketResponse(saved);
     }
 
@@ -90,12 +108,26 @@ public class SupportTicketService {
         if (!ticket.getUserId().equals(user.getId())) {
             throw new SecurityException("You are not allowed to reply to this ticket");
         }
+        ensureTicketIsOpenForReplies(ticket);
 
         TicketReply reply = buildReply(user.getId(), user.getFullName(), "USER", message, image);
         ticket.getReplies().add(reply);
         ticket.setUpdatedAt(LocalDateTime.now());
 
-        return new TicketResponse(ticketRepository.save(ticket));
+        SupportTicket saved = ticketRepository.save(ticket);
+        notificationService.notifyAdminsAboutTicket(
+            "New support ticket reply",
+            user.getFullName() + " replied to support ticket: " + saved.getSubject(),
+            saved.getId());
+        return new TicketResponse(saved);
+    }
+
+    public TicketResponse editUserReply(String ticketId, String replyId, String message) {
+        return editReply(ticketId, replyId, message, "USER");
+    }
+
+    public TicketResponse deleteUserReply(String ticketId, String replyId) {
+        return deleteReply(ticketId, replyId, "USER");
     }
 
     // ---------- Admin ----------
@@ -123,10 +155,69 @@ public class SupportTicketService {
         return new TicketResponse(ticketRepository.save(ticket));
     }
 
+    public TicketResponse submitFeedback(String ticketId, Integer rating, String comment) {
+        User user = getCurrentUser();
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
+
+        if (!ticket.getUserId().equals(user.getId())) {
+            throw new SecurityException("You are not allowed to submit feedback for this ticket");
+        }
+        if (ticket.getStatus() != TicketStatus.SOLVED) {
+            throw new IllegalArgumentException("Feedback can only be submitted for solved tickets");
+        }
+        if (rating == null || rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+        if (ticket.getFeedbackRating() != null) {
+            throw new IllegalArgumentException("Feedback has already been submitted for this ticket");
+        }
+
+        ticket.setFeedbackRating(rating);
+        ticket.setFeedbackComment(comment == null || comment.isBlank() ? null : comment.trim());
+        ticket.setFeedbackSubmittedAt(LocalDateTime.now());
+        ticket.setUpdatedAt(LocalDateTime.now());
+        return new TicketResponse(ticketRepository.save(ticket));
+    }
+
+    public TicketResponse getFeedback(String ticketId) {
+        User user = getCurrentUser();
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
+
+        if (!ticket.getUserId().equals(user.getId())) {
+            throw new SecurityException("You are not allowed to view feedback for this ticket");
+        }
+        if (ticket.getFeedbackRating() == null) {
+            throw new IllegalArgumentException("Feedback not found for this ticket");
+        }
+        return new TicketResponse(ticket);
+    }
+
+    public TicketResponse deleteFeedback(String ticketId) {
+        User user = getCurrentUser();
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
+
+        if (!ticket.getUserId().equals(user.getId())) {
+            throw new SecurityException("You are not allowed to delete feedback for this ticket");
+        }
+        if (ticket.getFeedbackRating() == null) {
+            throw new IllegalArgumentException("Feedback not found for this ticket");
+        }
+
+        ticket.setFeedbackRating(null);
+        ticket.setFeedbackComment(null);
+        ticket.setFeedbackSubmittedAt(null);
+        ticket.setUpdatedAt(LocalDateTime.now());
+        return new TicketResponse(ticketRepository.save(ticket));
+    }
+
     public TicketResponse addAdminReply(String ticketId, String message, MultipartFile image) {
         User admin = getCurrentUser();
         SupportTicket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
+        ensureTicketIsOpenForReplies(ticket);
 
         TicketReply reply = buildReply(admin.getId(), admin.getFullName(), "ADMIN", message, image);
         ticket.getReplies().add(reply);
@@ -137,7 +228,67 @@ public class SupportTicketService {
         }
         ticket.setUpdatedAt(LocalDateTime.now());
 
+        SupportTicket saved = ticketRepository.save(ticket);
+        notificationService.notifySupportTicket(
+            saved.getUserId(),
+            "Admin replied to your support ticket",
+            admin.getFullName() + " replied to: " + saved.getSubject(),
+            saved.getId());
+        return new TicketResponse(saved);
+    }
+
+    public TicketResponse editAdminReply(String ticketId, String replyId, String message) {
+        return editReply(ticketId, replyId, message, "ADMIN");
+    }
+
+    public TicketResponse deleteAdminReply(String ticketId, String replyId) {
+        return deleteReply(ticketId, replyId, "ADMIN");
+    }
+
+    private TicketResponse editReply(String ticketId, String replyId, String message, String senderRole) {
+        User user = getCurrentUser();
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
+        ensureTicketIsOpenForReplies(ticket);
+        TicketReply reply = findReplyForSender(ticket, replyId, user, senderRole);
+
+        if (message == null || message.isBlank()) {
+            throw new IllegalArgumentException("Message is required");
+        }
+
+        reply.setMessage(message.trim());
+        ticket.setUpdatedAt(LocalDateTime.now());
         return new TicketResponse(ticketRepository.save(ticket));
+    }
+
+    private TicketResponse deleteReply(String ticketId, String replyId, String senderRole) {
+        User user = getCurrentUser();
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
+        ensureTicketIsOpenForReplies(ticket);
+        TicketReply reply = findReplyForSender(ticket, replyId, user, senderRole);
+
+        ticket.getReplies().remove(reply);
+        ticket.setUpdatedAt(LocalDateTime.now());
+        return new TicketResponse(ticketRepository.save(ticket));
+    }
+
+    private TicketReply findReplyForSender(SupportTicket ticket, String replyId, User user, String senderRole) {
+        TicketReply reply = ticket.getReplies().stream()
+            .filter(candidate -> Objects.equals(candidate.getId(), replyId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Reply not found"));
+
+        if (!user.getId().equals(reply.getSenderId()) || !senderRole.equals(reply.getSenderRole())) {
+            throw new SecurityException("You are not allowed to modify this reply");
+        }
+        return reply;
+    }
+
+    private void ensureTicketIsOpenForReplies(SupportTicket ticket) {
+        if (ticket.getStatus() == TicketStatus.SOLVED) {
+            throw new IllegalArgumentException("This ticket is solved and no longer accepts messages");
+        }
     }
 
     private TicketReply buildReply(String senderId, String senderName, String senderRole,

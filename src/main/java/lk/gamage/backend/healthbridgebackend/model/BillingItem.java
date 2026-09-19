@@ -21,15 +21,15 @@ public class BillingItem {
 
     private String invoiceId;
 
-    private String itemCode;
-
-    private String description;
+    private String patientId;
 
     private String category;
+
+    private String description;
 
     private Integer quantity;
 
     private BigDecimal unitPrice;
 
-    private BigDecimal totalPrice;
+    private BigDecimal amount;
 }

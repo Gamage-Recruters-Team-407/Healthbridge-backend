@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
+
 public class DiagnosisRequest {
 
 
@@ -16,7 +17,11 @@ public class DiagnosisRequest {
     private String patientId;
 
 
-    @NotBlank(message = "Doctor ID is required")
+    /*
+     * Not required from frontend.
+     * Logged-in doctor's JWT user ID
+     * will be used.
+     */
     private String doctorId;
 
 
@@ -44,8 +49,11 @@ public class DiagnosisRequest {
     }
 
 
-    public void setMedicalRecordId(String medicalRecordId) {
-        this.medicalRecordId = medicalRecordId;
+    public void setMedicalRecordId(
+            String medicalRecordId
+    ) {
+        this.medicalRecordId =
+                medicalRecordId;
     }
 
 
@@ -54,8 +62,11 @@ public class DiagnosisRequest {
     }
 
 
-    public void setPatientId(String patientId) {
-        this.patientId = patientId;
+    public void setPatientId(
+            String patientId
+    ) {
+        this.patientId =
+                patientId;
     }
 
 
@@ -64,8 +75,11 @@ public class DiagnosisRequest {
     }
 
 
-    public void setDoctorId(String doctorId) {
-        this.doctorId = doctorId;
+    public void setDoctorId(
+            String doctorId
+    ) {
+        this.doctorId =
+                doctorId;
     }
 
 
@@ -74,8 +88,11 @@ public class DiagnosisRequest {
     }
 
 
-    public void setDiagnosisName(String diagnosisName) {
-        this.diagnosisName = diagnosisName;
+    public void setDiagnosisName(
+            String diagnosisName
+    ) {
+        this.diagnosisName =
+                diagnosisName;
     }
 
 
@@ -84,8 +101,11 @@ public class DiagnosisRequest {
     }
 
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setDescription(
+            String description
+    ) {
+        this.description =
+                description;
     }
 
 
@@ -94,8 +114,11 @@ public class DiagnosisRequest {
     }
 
 
-    public void setSeverity(String severity) {
-        this.severity = severity;
+    public void setSeverity(
+            String severity
+    ) {
+        this.severity =
+                severity;
     }
 
 
@@ -104,7 +127,10 @@ public class DiagnosisRequest {
     }
 
 
-    public void setDiagnosedDate(LocalDate diagnosedDate) {
-        this.diagnosedDate = diagnosedDate;
+    public void setDiagnosedDate(
+            LocalDate diagnosedDate
+    ) {
+        this.diagnosedDate =
+                diagnosedDate;
     }
 }

@@ -3,7 +3,7 @@ package lk.gamage.backend.healthbridgebackend.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lk.gamage.backend.healthbridgebackend.model.TicketCategory;
-import lk.gamage.backend.healthbridgebackend.model.TicketPriority;
+
 
 public class CreateSupportTicketRequest {
 
@@ -16,11 +16,9 @@ public class CreateSupportTicketRequest {
     @NotBlank
     private String description;
 
-    @NotNull
-    private TicketPriority priority;
-
+   
     @NotBlank
-    private String mobileNumber;
+    private String contactNumber;
 
     public String getSubject() {
         return subject;
@@ -46,19 +44,13 @@ public class CreateSupportTicketRequest {
         this.description = description;
     }
 
-    public TicketPriority getPriority() {
-        return priority;
+   
+
+    public String getContactNumber() {
+        return contactNumber;
     }
 
-    public void setPriority(TicketPriority priority) {
-        this.priority = priority;
-    }
-
-    public String getMobileNumber() {
-        return mobileNumber;
-    }
-
-    public void setMobileNumber(String mobileNumber) {
-        this.mobileNumber = mobileNumber;
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
     }
 }

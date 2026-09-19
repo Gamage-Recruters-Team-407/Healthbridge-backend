@@ -8,8 +8,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
-import lk.gamage.backend.healthbridgebackend.model.enums.DeliveryStatus;
-
+import lk.gamage.backend.healthbridgebackend.enums.DeliveryStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,6 +24,7 @@ public class Delivery {
     private String id;
 
     private String deliveryCode;
+    private String orderCode;
 
     private String pharmacyId;
     private String patientId;
@@ -36,11 +36,14 @@ public class Delivery {
     private String deliveryAddress;
     private String contactPhone;
 
-//    private String status;
     private DeliveryStatus status;
 
     private String assignedRiderId;
     private String assignedRiderName;
+
+    private String fulfillmentType;
+    private boolean actionRequired;
+    private String courierService;
 
     private LocalDateTime scheduledAt;
     private LocalDateTime dispatchedAt;

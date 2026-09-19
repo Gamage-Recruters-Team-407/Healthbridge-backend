@@ -22,5 +22,5 @@ public class InventoryResponse {
     private String batchNumber;
     private String supplierName;
     private Double sellingPrice;
-    private String status; // IN_STOCK, LOW_STOCK, OUT_OF_STOCK, EXPIRED
+    private String status;
 }
