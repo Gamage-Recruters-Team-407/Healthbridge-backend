@@ -1,47 +1,25 @@
 package lk.gamage.backend.healthbridgebackend.service;
 
-import lk.gamage.backend.healthbridgebackend.model.EmergencyContact;
-import lk.gamage.backend.healthbridgebackend.model.NotificationLog;
 import lk.gamage.backend.healthbridgebackend.model.LabResult;
-import lk.gamage.backend.healthbridgebackend.repository.NotificationLogRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lk.gamage.backend.healthbridgebackend.model.Notification;
+import lk.gamage.backend.healthbridgebackend.model.Role;
+import lk.gamage.backend.healthbridgebackend.model.User;
+import lk.gamage.backend.healthbridgebackend.repository.NotificationRepository;
+import lk.gamage.backend.healthbridgebackend.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class NotificationService {
 
-    private final NotificationLogRepository notificationLogRepository;
+    @Autowired
+    private NotificationRepository notificationRepository;
 
-    public void notifyContacts(String alertId, List<EmergencyContact> contacts) {
-        for (EmergencyContact contact : contacts) {
-            // Mock sending SMS
-            log.info("Sending SMS to {} at {}", contact.getName(), contact.getPhone());
-            
-            NotificationLog nLog = NotificationLog.builder()
-                    .alertId(alertId)
-                    .contactId(contact.getId())
-                    .contactName(contact.getName())
-                    .contactPhone(contact.getPhone())
-                    .notificationType("SMS")
-                    .status("SENT")
-                    .sentAt(Instant.now())
-                    .build();
-                    
-            notificationLogRepository.save(nLog);
-        }
-    }
-
-    public void notifyCancellation(String alertId, List<EmergencyContact> contacts) {
-        for (EmergencyContact contact : contacts) {
-            log.info("Sending Cancellation SMS to {} at {}", contact.getName(), contact.getPhone());
-        }
-    }
+    @Autowired
+    private UserRepository userRepository;
 
     public void sendCriticalResultAlert(LabResult saved) {
         // TODO: implement actual notification logic (email/SMS/push)
@@ -51,5 +29,41 @@ public class NotificationService {
     public void notifyResultAvailable(LabResult saved) {
         // TODO: implement actual notification logic
         System.out.println("Result published for patient " + saved.getPatientId());
+    }
+
+    public List<Notification> getNotifications(String recipientId) {
+        return notificationRepository.findByRecipientIdOrderByCreatedAtDesc(recipientId);
+    }
+
+    public long getUnreadCount(String recipientId) {
+        return notificationRepository.countByRecipientIdAndReadFalse(recipientId);
+    }
+
+    public Notification markAsRead(String notificationId, String recipientId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new IllegalArgumentException("Notification not found"));
+        if (!recipientId.equals(notification.getRecipientId())) {
+            throw new SecurityException("You are not allowed to update this notification");
+        }
+        notification.setRead(true);
+        return notificationRepository.save(notification);
+    }
+
+    public void notifySupportTicket(String recipientId, String title, String message, String ticketId) {
+        notificationRepository.save(Notification.builder()
+                .recipientId(recipientId)
+                .type("SUPPORT_TICKET")
+                .title(title)
+                .message(message)
+                .referenceType("SUPPORT_TICKET")
+                .referenceId(ticketId)
+                .read(false)
+                .createdAt(LocalDateTime.now())
+                .build());
+    }
+
+    public void notifyAdminsAboutTicket(String title, String message, String ticketId) {
+        List<User> admins = userRepository.findByRoleIn(List.of(Role.ADMIN, Role.SUPER_ADMIN));
+        admins.forEach(admin -> notifySupportTicket(admin.getId(), title, message, ticketId));
     }
 }
