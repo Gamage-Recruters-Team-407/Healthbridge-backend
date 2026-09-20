@@ -6,9 +6,11 @@ import lk.gamage.backend.healthbridgebackend.dto.request.InsuranceClaimRequest;
 import lk.gamage.backend.healthbridgebackend.dto.request.InsurancePolicyRequest;
 import lk.gamage.backend.healthbridgebackend.dto.response.InsuranceClaimResponse;
 import lk.gamage.backend.healthbridgebackend.dto.response.InsurancePolicyResponse;
+import lk.gamage.backend.healthbridgebackend.dto.response.InsuranceReportResponse;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface InsuranceService {
@@ -22,4 +24,5 @@ public interface InsuranceService {
     List<InsuranceClaimResponse> getClaimsForPatient(String patientId);
     List<InsuranceClaimResponse> getAllClaims();
     InsuranceClaimResponse decideClaim(String claimId, String officerId, ClaimDecisionRequest decision);
+    InsuranceReportResponse getInsuranceReportSummary(LocalDate startDate, LocalDate endDate);
 }

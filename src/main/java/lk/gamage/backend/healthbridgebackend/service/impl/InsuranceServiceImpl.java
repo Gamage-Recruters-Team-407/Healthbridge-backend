@@ -6,6 +6,7 @@ import lk.gamage.backend.healthbridgebackend.dto.request.InsuranceClaimRequest;
 import lk.gamage.backend.healthbridgebackend.dto.request.InsurancePolicyRequest;
 import lk.gamage.backend.healthbridgebackend.dto.response.InsuranceClaimResponse;
 import lk.gamage.backend.healthbridgebackend.dto.response.InsurancePolicyResponse;
+import lk.gamage.backend.healthbridgebackend.dto.response.InsuranceReportResponse;
 import lk.gamage.backend.healthbridgebackend.enums.ClaimStatus;
 import lk.gamage.backend.healthbridgebackend.enums.PolicyStatus;
 import lk.gamage.backend.healthbridgebackend.exception.BadRequestException;
@@ -20,10 +21,11 @@ import lk.gamage.backend.healthbridgebackend.service.InsuranceService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -185,6 +187,181 @@ public class InsuranceServiceImpl implements InsuranceService {
         claim.setUpdatedAt(LocalDateTime.now());
 
         return toInsuranceClaimResponse(claimRepo.save(claim));
+    }
+
+    @Override
+    public InsuranceReportResponse getInsuranceReportSummary(LocalDate startDate, LocalDate endDate) {
+        List<InsuranceClaim> allClaims = claimRepo.findAll();
+        List<InsurancePolicy> allPolicies = policyRepo.findAll();
+
+        // Filter claims by date range if provided
+        List<InsuranceClaim> filteredClaims = allClaims.stream()
+                .filter(c -> {
+                    if (c.getSubmittedAt() == null) return false;
+                    LocalDate submittedDate = c.getSubmittedAt().toLocalDate();
+                    if (startDate != null && submittedDate.isBefore(startDate)) return false;
+                    if (endDate != null && submittedDate.isAfter(endDate)) return false;
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+        long totalClaims = filteredClaims.size();
+        long approvedClaims = filteredClaims.stream()
+                .filter(c -> c.getStatus() == ClaimStatus.APPROVED || c.getStatus() == ClaimStatus.PAID).count();
+        long pendingClaims = filteredClaims.stream()
+                .filter(c -> c.getStatus() == ClaimStatus.SUBMITTED || c.getStatus() == ClaimStatus.UNDER_REVIEW).count();
+        long rejectedClaims = filteredClaims.stream()
+                .filter(c -> c.getStatus() == ClaimStatus.REJECTED).count();
+        long paidClaims = filteredClaims.stream()
+                .filter(c -> c.getStatus() == ClaimStatus.PAID).count();
+
+        double totalClaimAmount = filteredClaims.stream()
+                .mapToDouble(c -> c.getClaimAmount() != null ? c.getClaimAmount() : 0.0).sum();
+        double totalApprovedAmount = filteredClaims.stream()
+                .filter(c -> c.getStatus() == ClaimStatus.APPROVED || c.getStatus() == ClaimStatus.PAID)
+                .mapToDouble(c -> c.getApprovedAmount() != null ? c.getApprovedAmount() : (c.getClaimAmount() != null ? c.getClaimAmount() : 0.0)).sum();
+        double totalRejectedAmount = filteredClaims.stream()
+                .filter(c -> c.getStatus() == ClaimStatus.REJECTED)
+                .mapToDouble(c -> c.getClaimAmount() != null ? c.getClaimAmount() : 0.0).sum();
+        double totalPendingAmount = filteredClaims.stream()
+                .filter(c -> c.getStatus() == ClaimStatus.SUBMITTED || c.getStatus() == ClaimStatus.UNDER_REVIEW)
+                .mapToDouble(c -> c.getClaimAmount() != null ? c.getClaimAmount() : 0.0).sum();
+
+        double approvalRate = totalClaims > 0 ? (approvedClaims * 100.0 / totalClaims) : 0.0;
+        double rejectionRate = totalClaims > 0 ? (rejectedClaims * 100.0 / totalClaims) : 0.0;
+
+        // Average processing time in hours
+        double avgProcessingTimeHours = filteredClaims.stream()
+                .filter(c -> c.getSubmittedAt() != null && c.getReviewedAt() != null)
+                .mapToLong(c -> Duration.between(c.getSubmittedAt(), c.getReviewedAt()).toMinutes())
+                .average()
+                .orElse(0.0) / 60.0;
+
+        // Status counts and amounts maps
+        Map<String, Long> statusCounts = new HashMap<>();
+        Map<String, Double> statusAmounts = new HashMap<>();
+        for (ClaimStatus status : ClaimStatus.values()) {
+            statusCounts.put(status.name(), 0L);
+            statusAmounts.put(status.name(), 0.0);
+        }
+        for (InsuranceClaim c : filteredClaims) {
+            if (c.getStatus() != null) {
+                String sName = c.getStatus().name();
+                statusCounts.put(sName, statusCounts.getOrDefault(sName, 0L) + 1L);
+                statusAmounts.put(sName, statusAmounts.getOrDefault(sName, 0.0) + (c.getClaimAmount() != null ? c.getClaimAmount() : 0.0));
+            }
+        }
+
+        // Policy Metrics
+        long totalPolicies = allPolicies.size();
+        long activePolicies = allPolicies.stream().filter(p -> p.getStatus() == PolicyStatus.ACTIVE).count();
+        double totalCoverageIssued = allPolicies.stream()
+                .mapToDouble(p -> p.getCoverageAmount() != null ? p.getCoverageAmount() : 0.0).sum();
+        double totalCoverageUsed = allPolicies.stream()
+                .mapToDouble(p -> p.getCoverageUsed() != null ? p.getCoverageUsed() : 0.0).sum();
+        double totalCoverageRemaining = Math.max(0.0, totalCoverageIssued - totalCoverageUsed);
+        double policyUtilizationRate = totalCoverageIssued > 0 ? (totalCoverageUsed * 100.0 / totalCoverageIssued) : 0.0;
+
+        // Monthly trends (Last 6 months)
+        Map<String, InsuranceReportResponse.MonthlyTrendItem> trendsMap = new LinkedHashMap<>();
+        LocalDate now = LocalDate.now();
+        DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("MMM");
+        for (int i = 5; i >= 0; i--) {
+            LocalDate mDate = now.minusMonths(i);
+            String mKey = mDate.format(monthFormatter);
+            trendsMap.put(mKey, InsuranceReportResponse.MonthlyTrendItem.builder()
+                    .month(mKey)
+                    .year(mDate.getYear())
+                    .claimCount(0L)
+                    .approvedCount(0L)
+                    .totalRequested(0.0)
+                    .totalApproved(0.0)
+                    .build());
+        }
+
+        for (InsuranceClaim c : filteredClaims) {
+            if (c.getSubmittedAt() != null) {
+                String mKey = c.getSubmittedAt().format(monthFormatter);
+                InsuranceReportResponse.MonthlyTrendItem item = trendsMap.get(mKey);
+                if (item != null) {
+                    item.setClaimCount(item.getClaimCount() + 1);
+                    item.setTotalRequested(item.getTotalRequested() + (c.getClaimAmount() != null ? c.getClaimAmount() : 0.0));
+                    if (c.getStatus() == ClaimStatus.APPROVED || c.getStatus() == ClaimStatus.PAID) {
+                        item.setApprovedCount(item.getApprovedCount() + 1);
+                        item.setTotalApproved(item.getTotalApproved() + (c.getApprovedAmount() != null ? c.getApprovedAmount() : (c.getClaimAmount() != null ? c.getClaimAmount() : 0.0)));
+                    }
+                }
+            }
+        }
+
+        // Provider summaries
+        Map<String, InsuranceReportResponse.ProviderSummaryItem> providerMap = new HashMap<>();
+        Map<String, String> policyToProvider = new HashMap<>();
+        for (InsurancePolicy p : allPolicies) {
+            String prov = p.getProviderName() != null ? p.getProviderName() : "General";
+            policyToProvider.put(p.getId(), prov);
+            InsuranceReportResponse.ProviderSummaryItem pItem = providerMap.computeIfAbsent(prov, k ->
+                    InsuranceReportResponse.ProviderSummaryItem.builder()
+                            .providerName(prov)
+                            .policyCount(0L)
+                            .claimCount(0L)
+                            .totalCoverage(0.0)
+                            .totalClaimed(0.0)
+                            .totalApproved(0.0)
+                            .build());
+            pItem.setPolicyCount(pItem.getPolicyCount() + 1);
+            pItem.setTotalCoverage(pItem.getTotalCoverage() + (p.getCoverageAmount() != null ? p.getCoverageAmount() : 0.0));
+        }
+
+        for (InsuranceClaim c : filteredClaims) {
+            String prov = policyToProvider.getOrDefault(c.getPolicyId(), "General");
+            InsuranceReportResponse.ProviderSummaryItem pItem = providerMap.computeIfAbsent(prov, k ->
+                    InsuranceReportResponse.ProviderSummaryItem.builder()
+                            .providerName(prov)
+                            .policyCount(0L)
+                            .claimCount(0L)
+                            .totalCoverage(0.0)
+                            .totalClaimed(0.0)
+                            .totalApproved(0.0)
+                            .build());
+            pItem.setClaimCount(pItem.getClaimCount() + 1);
+            pItem.setTotalClaimed(pItem.getTotalClaimed() + (c.getClaimAmount() != null ? c.getClaimAmount() : 0.0));
+            if (c.getStatus() == ClaimStatus.APPROVED || c.getStatus() == ClaimStatus.PAID) {
+                pItem.setTotalApproved(pItem.getTotalApproved() + (c.getApprovedAmount() != null ? c.getApprovedAmount() : (c.getClaimAmount() != null ? c.getClaimAmount() : 0.0)));
+            }
+        }
+
+        List<InsuranceClaimResponse> mappedClaims = filteredClaims.stream()
+                .map(this::toInsuranceClaimResponse)
+                .collect(Collectors.toList());
+
+        return InsuranceReportResponse.builder()
+                .startDate(startDate)
+                .endDate(endDate)
+                .totalClaims(totalClaims)
+                .approvedClaims(approvedClaims)
+                .pendingClaims(pendingClaims)
+                .rejectedClaims(rejectedClaims)
+                .paidClaims(paidClaims)
+                .totalClaimAmount(totalClaimAmount)
+                .totalApprovedAmount(totalApprovedAmount)
+                .totalRejectedAmount(totalRejectedAmount)
+                .totalPendingAmount(totalPendingAmount)
+                .approvalRate(approvalRate)
+                .rejectionRate(rejectionRate)
+                .averageProcessingTimeHours(avgProcessingTimeHours)
+                .totalPolicies(totalPolicies)
+                .activePolicies(activePolicies)
+                .totalCoverageIssued(totalCoverageIssued)
+                .totalCoverageUsed(totalCoverageUsed)
+                .totalCoverageRemaining(totalCoverageRemaining)
+                .policyUtilizationRate(policyUtilizationRate)
+                .statusCounts(statusCounts)
+                .statusAmounts(statusAmounts)
+                .monthlyTrends(new ArrayList<>(trendsMap.values()))
+                .providerSummaries(new ArrayList<>(providerMap.values()))
+                .claims(mappedClaims)
+                .build();
     }
 
     // --- helpers ---
