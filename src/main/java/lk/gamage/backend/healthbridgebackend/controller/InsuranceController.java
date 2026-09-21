@@ -8,6 +8,7 @@ import lk.gamage.backend.healthbridgebackend.dto.request.InsurancePolicyRequest;
 import lk.gamage.backend.healthbridgebackend.dto.response.InsuranceClaimResponse;
 import lk.gamage.backend.healthbridgebackend.dto.response.InsurancePolicyResponse;
 import lk.gamage.backend.healthbridgebackend.dto.response.InsuranceReportResponse;
+import lk.gamage.backend.healthbridgebackend.enums.PolicyStatus;
 import lk.gamage.backend.healthbridgebackend.service.FileStorageService;
 import lk.gamage.backend.healthbridgebackend.service.InsuranceService;
 import org.springframework.core.io.InputStreamResource;
@@ -43,6 +44,12 @@ public class InsuranceController {
         return ResponseEntity.ok(insuranceService.createPolicy(request));
     }
 
+    @GetMapping("/policies")
+    @PreAuthorize("hasAnyRole('INSURANCE_OFFICER','ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<List<InsurancePolicyResponse>> getAllPolicies() {
+        return ResponseEntity.ok(insuranceService.getAllPolicies());
+    }
+
     @GetMapping("/policies/{id}")
     public ResponseEntity<InsurancePolicyResponse> getPolicy(@PathVariable String id) {
         return ResponseEntity.ok(insuranceService.getPolicyById(id));
@@ -56,6 +63,19 @@ public class InsuranceController {
     @GetMapping("/policies/verify/{policyNumber}")
     public ResponseEntity<InsurancePolicyResponse> verifyPolicy(@PathVariable String policyNumber) {
         return ResponseEntity.ok(insuranceService.verifyPolicy(policyNumber));
+    }
+
+    @PatchMapping("/policies/{id}/status")
+    @PreAuthorize("hasAnyRole('INSURANCE_OFFICER','ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<InsurancePolicyResponse> updatePolicyStatus(
+            @PathVariable String id, @RequestParam PolicyStatus status) {
+        return ResponseEntity.ok(insuranceService.updatePolicyStatus(id, status));
+    }
+
+    @GetMapping("/policies/{id}/claims")
+    @PreAuthorize("hasAnyRole('INSURANCE_OFFICER','ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<List<InsuranceClaimResponse>> getClaimsForPolicy(@PathVariable String id) {
+        return ResponseEntity.ok(insuranceService.getClaimsForPolicy(id));
     }
 
     // ---- Claims ----

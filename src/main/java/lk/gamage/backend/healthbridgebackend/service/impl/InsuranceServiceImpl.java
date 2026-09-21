@@ -73,6 +73,13 @@ public class InsuranceServiceImpl implements InsuranceService {
     }
 
     @Override
+    public List<InsurancePolicyResponse> getAllPolicies() {
+        return policyRepo.findAll().stream()
+                .map(this::toInsurancePolicyResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<InsurancePolicyResponse> getPoliciesForPatient(String patientId) {
         return policyRepo.findByPatientId(patientId).stream()
                 .map(this::toInsurancePolicyResponse).collect(Collectors.toList());
@@ -89,6 +96,22 @@ public class InsuranceServiceImpl implements InsuranceService {
             throw new BadRequestException("Policy has expired");
         }
         return toInsurancePolicyResponse(policy);
+    }
+
+    @Override
+    public InsurancePolicyResponse updatePolicyStatus(String policyId, PolicyStatus status) {
+        InsurancePolicy policy = findPolicyOrThrow(policyId);
+        policy.setStatus(status);
+        policy.setUpdatedAt(LocalDateTime.now());
+        return toInsurancePolicyResponse(policyRepo.save(policy));
+    }
+
+    @Override
+    public List<InsuranceClaimResponse> getClaimsForPolicy(String policyId) {
+        findPolicyOrThrow(policyId);
+        return claimRepo.findByPolicyId(policyId).stream()
+                .map(this::toInsuranceClaimResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -393,10 +416,22 @@ public class InsuranceServiceImpl implements InsuranceService {
     }
 
     private InsuranceClaimResponse toInsuranceClaimResponse(InsuranceClaim c) {
+        String policyNumber = null;
+        String providerName = null;
+        if (c.getPolicyId() != null) {
+            Optional<InsurancePolicy> policyOpt = policyRepo.findById(c.getPolicyId());
+            if (policyOpt.isPresent()) {
+                policyNumber = policyOpt.get().getPolicyNumber();
+                providerName = policyOpt.get().getProviderName();
+            }
+        }
+
         return InsuranceClaimResponse.builder()
                 .id(c.getId())
                 .claimNumber(c.getClaimNumber())
                 .policyId(c.getPolicyId())
+                .policyNumber(policyNumber)
+                .providerName(providerName)
                 .patientId(c.getPatientId())
                 .treatmentDescription(c.getTreatmentDescription())
                 .claimAmount(c.getClaimAmount())
