@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -158,5 +160,13 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
         return new UserProfileResponse(savedUser);
+    }
+
+    // Get All Users
+    public List<UserProfileResponse> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(UserProfileResponse::new)
+                .collect(Collectors.toList());
     }
 }
