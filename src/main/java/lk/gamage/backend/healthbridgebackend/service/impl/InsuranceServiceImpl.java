@@ -416,10 +416,22 @@ public class InsuranceServiceImpl implements InsuranceService {
     }
 
     private InsuranceClaimResponse toInsuranceClaimResponse(InsuranceClaim c) {
+        String policyNumber = null;
+        String providerName = null;
+        if (c.getPolicyId() != null) {
+            Optional<InsurancePolicy> policyOpt = policyRepo.findById(c.getPolicyId());
+            if (policyOpt.isPresent()) {
+                policyNumber = policyOpt.get().getPolicyNumber();
+                providerName = policyOpt.get().getProviderName();
+            }
+        }
+
         return InsuranceClaimResponse.builder()
                 .id(c.getId())
                 .claimNumber(c.getClaimNumber())
                 .policyId(c.getPolicyId())
+                .policyNumber(policyNumber)
+                .providerName(providerName)
                 .patientId(c.getPatientId())
                 .treatmentDescription(c.getTreatmentDescription())
                 .claimAmount(c.getClaimAmount())
