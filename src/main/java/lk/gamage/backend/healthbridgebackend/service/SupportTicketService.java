@@ -180,39 +180,6 @@ public class SupportTicketService {
         return new TicketResponse(ticketRepository.save(ticket));
     }
 
-    public TicketResponse getFeedback(String ticketId) {
-        User user = getCurrentUser();
-        SupportTicket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
-
-        if (!ticket.getUserId().equals(user.getId())) {
-            throw new SecurityException("You are not allowed to view feedback for this ticket");
-        }
-        if (ticket.getFeedbackRating() == null) {
-            throw new IllegalArgumentException("Feedback not found for this ticket");
-        }
-        return new TicketResponse(ticket);
-    }
-
-    public TicketResponse deleteFeedback(String ticketId) {
-        User user = getCurrentUser();
-        SupportTicket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
-
-        if (!ticket.getUserId().equals(user.getId())) {
-            throw new SecurityException("You are not allowed to delete feedback for this ticket");
-        }
-        if (ticket.getFeedbackRating() == null) {
-            throw new IllegalArgumentException("Feedback not found for this ticket");
-        }
-
-        ticket.setFeedbackRating(null);
-        ticket.setFeedbackComment(null);
-        ticket.setFeedbackSubmittedAt(null);
-        ticket.setUpdatedAt(LocalDateTime.now());
-        return new TicketResponse(ticketRepository.save(ticket));
-    }
-
     public TicketResponse addAdminReply(String ticketId, String message, MultipartFile image) {
         User admin = getCurrentUser();
         SupportTicket ticket = ticketRepository.findById(ticketId)
