@@ -48,9 +48,9 @@ public class SecurityConfig {
                                 "/api/treatments/**",
                                 "/api/contacts/**",
                                 "/api/sos/**",
-                                "/ws/**",
-                                "/api/appointments/**"
+                                "/ws/**"
                         ).permitAll()
+                        .requestMatchers("/api/appointments/**", "/api/doctor-sessions/**").authenticated()
                         .requestMatchers("/api/lab/results/patient/**").authenticated()
                         .requestMatchers("/api/lab/**").hasAnyRole("LAB_OFFICER", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/analytics/**").hasAnyRole("ADMIN", "DOCTOR")

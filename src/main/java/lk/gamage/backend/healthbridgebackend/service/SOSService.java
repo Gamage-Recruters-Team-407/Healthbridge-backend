@@ -46,14 +46,29 @@ public class SOSService {
             return userRepository.save(mockUser);
         });
 
+        List<String> allergies = user.getAllergies();
+        List<String> conditions = user.getConditions();
+        
+        // Remove updateDb mock data
+        if (allergies != null && allergies.size() == 1 && "Peanuts".equals(allergies.get(0))) {
+            allergies = List.of();
+        }
+        if (conditions != null && conditions.size() == 1 && "Asthma".equals(conditions.get(0))) {
+            if (user.getMedicalHistory() != null && !user.getMedicalHistory().trim().isEmpty()) {
+                conditions = List.of(user.getMedicalHistory().trim());
+            } else {
+                conditions = List.of();
+            }
+        }
+
         SOSAlert.PatientInfo patientInfo = SOSAlert.PatientInfo.builder()
                 .name(user.getFullName() != null ? user.getFullName() : (
                     (user.getFirstName() != null ? user.getFirstName() : "") + " " + 
                     (user.getLastName() != null ? user.getLastName() : "")
                 ).trim())
                 .bloodType(user.getBloodType() != null ? user.getBloodType() : user.getBloodGroup())
-                .allergies(user.getAllergies())
-                .conditions(user.getConditions())
+                .allergies(allergies != null ? allergies : List.of())
+                .conditions(conditions != null ? conditions : List.of())
                 .build();
 
         SOSAlert.Location location = SOSAlert.Location.builder()

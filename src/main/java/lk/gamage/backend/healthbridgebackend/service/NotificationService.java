@@ -62,6 +62,19 @@ public class NotificationService {
                 .build());
     }
 
+    public void notifyAppointment(String recipientId, String title, String message, String appointmentId) {
+        notificationRepository.save(Notification.builder()
+                .recipientId(recipientId)
+                .type("APPOINTMENT")
+                .title(title)
+                .message(message)
+                .referenceType("APPOINTMENT")
+                .referenceId(appointmentId)
+                .read(false)
+                .createdAt(LocalDateTime.now())
+                .build());
+    }
+
     public void notifyAdminsAboutTicket(String title, String message, String ticketId) {
         List<User> admins = userRepository.findByRoleIn(List.of(Role.ADMIN, Role.SUPER_ADMIN));
         admins.forEach(admin -> notifySupportTicket(admin.getId(), title, message, ticketId));
