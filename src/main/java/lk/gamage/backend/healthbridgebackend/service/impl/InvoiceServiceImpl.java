@@ -1,11 +1,8 @@
 package lk.gamage.backend.healthbridgebackend.service.impl;
-import lk.gamage.backend.healthbridgebackend.dto.BillingItemRequest;
-import lk.gamage.backend.healthbridgebackend.dto.InvoiceRequest;
-import lk.gamage.backend.healthbridgebackend.model.BillingItem;
+
+import lk.gamage.backend.healthbridgebackend.dto.request.InvoiceRequest;
+import lk.gamage.backend.healthbridgebackend.dto.response.InvoiceResponse;
 import lk.gamage.backend.healthbridgebackend.model.Invoice;
-import lk.gamage.backend.healthbridgebackend.model.enums.InvoiceStatus;
-import lk.gamage.backend.healthbridgebackend.model.enums.PaymentStatus;
-import lk.gamage.backend.healthbridgebackend.repository.BillingItemRepository;
 import lk.gamage.backend.healthbridgebackend.repository.InvoiceRepository;
 import lk.gamage.backend.healthbridgebackend.service.InvoiceService;
 import lombok.RequiredArgsConstructor;
@@ -13,130 +10,185 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class InvoiceServiceImpl implements InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
-    private final BillingItemRepository billingItemRepository;
 
     @Override
-    public Invoice createInvoice(InvoiceRequest request) {
+    public InvoiceResponse createInvoice(InvoiceRequest request) {
 
-        BigDecimal subTotal = BigDecimal.ZERO;
+        Invoice invoice = new Invoice();
 
-        for (BillingItemRequest item : request.getItems()) {
-
-            BigDecimal total = item.getUnitPrice()
-                    .multiply(BigDecimal.valueOf(item.getQuantity()));
-
-            subTotal = subTotal.add(total);
-        }
-
-        BigDecimal discount =
-                request.getDiscount() == null
-                        ? BigDecimal.ZERO
-                        : request.getDiscount();
-
-        BigDecimal tax =
-                request.getTax() == null
-                        ? BigDecimal.ZERO
-                        : request.getTax();
-
-        BigDecimal total =
-                subTotal.subtract(discount).add(tax);
-
-        Invoice invoice = Invoice.builder()
-                .invoiceNumber("INV-" +
-                        UUID.randomUUID()
-                                .toString()
-                                .substring(0, 8)
-                                .toUpperCase())
-                .patientId(request.getPatientId())
-                .patientName(request.getPatientName())
-                .hospitalId(request.getHospitalId())
-                .subTotal(subTotal)
-                .discount(discount)
-                .tax(tax)
-                .totalAmount(total)
-                .status(InvoiceStatus.ISSUED)
-                .paymentStatus(PaymentStatus.UNPAID)
-                .invoiceDate(LocalDateTime.now())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
-
-        Invoice saved = invoiceRepository.save(invoice);
-
-        for (BillingItemRequest item : request.getItems()) {
-
-            BigDecimal itemTotal =
-                    item.getUnitPrice()
-                            .multiply(
-                                    BigDecimal.valueOf(
-                                            item.getQuantity()));
-
-            BillingItem billingItem =
-                    BillingItem.builder()
-                            .invoiceId(saved.getId())
-                            .itemCode(item.getItemCode())
-                            .description(item.getDescription())
-                            .category(item.getCategory())
-                            .quantity(item.getQuantity())
-                            .unitPrice(item.getUnitPrice())
-                            .totalPrice(itemTotal)
-                            .build();
-
-            billingItemRepository.save(billingItem);
-        }
-
-        return saved;
-    }
-
-    @Override
-    public Invoice getInvoice(String id) {
-
-        return invoiceRepository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Invoice not found"));
-    }
-
-    @Override
-    public List<Invoice> getAllInvoices() {
-
-        return invoiceRepository.findAll();
-    }
-
-    @Override
-    public List<Invoice> getPatientInvoices(String patientId) {
-
-        return invoiceRepository.findByPatientId(patientId);
-    }
-
-    @Override
-    public Invoice updateInvoice(
-            String id,
-            InvoiceRequest request) {
-
-        Invoice invoice = getInvoice(id);
+        invoice.setInvoiceNumber(generateInvoiceNumber());
 
         invoice.setPatientId(request.getPatientId());
         invoice.setPatientName(request.getPatientName());
         invoice.setHospitalId(request.getHospitalId());
-        invoice.setUpdatedAt(LocalDateTime.now());
 
-        return invoiceRepository.save(invoice);
+        invoice.setIssueDate(
+                request.getIssueDate() != null
+                        ? request.getIssueDate()
+                        : LocalDateTime.now()
+        );
+
+        invoice.setDueDate(request.getDueDate());
+
+        invoice.setSubtotal(BigDecimal.ZERO);
+
+        invoice.setDiscount(
+                request.getDiscount() != null
+                        ? request.getDiscount()
+                        : BigDecimal.ZERO
+        );
+
+        invoice.setTax(
+                request.getTax() != null
+                        ? request.getTax()
+                        : BigDecimal.ZERO
+        );
+
+        invoice.setTotal(BigDecimal.ZERO);
+
+        invoice.setPaidAmount(
+                request.getPaidAmount() != null
+                        ? request.getPaidAmount()
+                        : BigDecimal.ZERO
+        );
+
+        invoice.setBalance(BigDecimal.ZERO);
+
+        invoice.setStatus("DRAFT");
+
+        invoice.setPaymentStatus("UNPAID");
+
+        invoice.setNotes(request.getNotes());
+
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+
+        return mapToResponse(savedInvoice);
+    }
+
+    @Override
+    public List<InvoiceResponse> getAllInvoices() {
+
+        return invoiceRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public InvoiceResponse getInvoice(String id) {
+
+        Invoice invoice = invoiceRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Invoice not found with id: " + id)
+                );
+
+        return mapToResponse(invoice);
+    }
+
+    @Override
+    public List<InvoiceResponse> getPatientInvoices(String patientId) {
+
+        return invoiceRepository.findByPatientId(patientId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public InvoiceResponse updateInvoice(
+            String id,
+            InvoiceRequest request) {
+
+        Invoice invoice = invoiceRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Invoice not found with id: " + id)
+                );
+
+        invoice.setPatientId(request.getPatientId());
+        invoice.setPatientName(request.getPatientName());
+        invoice.setHospitalId(request.getHospitalId());
+
+        if (request.getIssueDate() != null) {
+            invoice.setIssueDate(request.getIssueDate());
+        }
+
+        invoice.setDueDate(request.getDueDate());
+
+        invoice.setDiscount(
+                request.getDiscount() != null
+                        ? request.getDiscount()
+                        : BigDecimal.ZERO
+        );
+
+        invoice.setTax(
+                request.getTax() != null
+                        ? request.getTax()
+                        : BigDecimal.ZERO
+        );
+
+        invoice.setPaidAmount(
+                request.getPaidAmount() != null
+                        ? request.getPaidAmount()
+                        : BigDecimal.ZERO
+        );
+
+        invoice.setNotes(request.getNotes());
+
+        Invoice updatedInvoice = invoiceRepository.save(invoice);
+
+        return mapToResponse(updatedInvoice);
     }
 
     @Override
     public void deleteInvoice(String id) {
 
-        billingItemRepository.deleteByInvoiceId(id);
+        if (!invoiceRepository.existsById(id)) {
+            throw new RuntimeException(
+                    "Invoice not found with id: " + id
+            );
+        }
 
         invoiceRepository.deleteById(id);
+    }
+
+    private String generateInvoiceNumber() {
+
+        return "INV-" +
+                LocalDateTime.now()
+                        .format(
+                                DateTimeFormatter.ofPattern(
+                                        "yyyyMMddHHmmssSSS"
+                                )
+                        );
+    }
+
+    private InvoiceResponse mapToResponse(Invoice invoice) {
+
+        return InvoiceResponse.builder()
+                .id(invoice.getId())
+                .invoiceNumber(invoice.getInvoiceNumber())
+                .patientId(invoice.getPatientId())
+                .patientName(invoice.getPatientName())
+                .hospitalId(invoice.getHospitalId())
+                .issueDate(invoice.getIssueDate())
+                .dueDate(invoice.getDueDate())
+                .subtotal(invoice.getSubtotal())
+                .discount(invoice.getDiscount())
+                .tax(invoice.getTax())
+                .total(invoice.getTotal())
+                .paidAmount(invoice.getPaidAmount())
+                .balance(invoice.getBalance())
+                .status(invoice.getStatus())
+                .paymentStatus(invoice.getPaymentStatus())
+                .notes(invoice.getNotes())
+                .build();
     }
 }
