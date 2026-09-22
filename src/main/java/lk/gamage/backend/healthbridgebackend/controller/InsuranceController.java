@@ -7,9 +7,12 @@ import lk.gamage.backend.healthbridgebackend.dto.request.InsuranceClaimRequest;
 import lk.gamage.backend.healthbridgebackend.dto.request.InsurancePolicyRequest;
 import lk.gamage.backend.healthbridgebackend.dto.response.InsuranceClaimResponse;
 import lk.gamage.backend.healthbridgebackend.dto.response.InsurancePolicyResponse;
+import lk.gamage.backend.healthbridgebackend.dto.response.InsuranceReportResponse;
+import lk.gamage.backend.healthbridgebackend.enums.PolicyStatus;
 import lk.gamage.backend.healthbridgebackend.service.FileStorageService;
 import lk.gamage.backend.healthbridgebackend.service.InsuranceService;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,6 +21,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -40,6 +44,12 @@ public class InsuranceController {
         return ResponseEntity.ok(insuranceService.createPolicy(request));
     }
 
+    @GetMapping("/policies")
+    @PreAuthorize("hasAnyRole('INSURANCE_OFFICER','ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<List<InsurancePolicyResponse>> getAllPolicies() {
+        return ResponseEntity.ok(insuranceService.getAllPolicies());
+    }
+
     @GetMapping("/policies/{id}")
     public ResponseEntity<InsurancePolicyResponse> getPolicy(@PathVariable String id) {
         return ResponseEntity.ok(insuranceService.getPolicyById(id));
@@ -53,6 +63,19 @@ public class InsuranceController {
     @GetMapping("/policies/verify/{policyNumber}")
     public ResponseEntity<InsurancePolicyResponse> verifyPolicy(@PathVariable String policyNumber) {
         return ResponseEntity.ok(insuranceService.verifyPolicy(policyNumber));
+    }
+
+    @PatchMapping("/policies/{id}/status")
+    @PreAuthorize("hasAnyRole('INSURANCE_OFFICER','ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<InsurancePolicyResponse> updatePolicyStatus(
+            @PathVariable String id, @RequestParam PolicyStatus status) {
+        return ResponseEntity.ok(insuranceService.updatePolicyStatus(id, status));
+    }
+
+    @GetMapping("/policies/{id}/claims")
+    @PreAuthorize("hasAnyRole('INSURANCE_OFFICER','ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<List<InsuranceClaimResponse>> getClaimsForPolicy(@PathVariable String id) {
+        return ResponseEntity.ok(insuranceService.getClaimsForPolicy(id));
     }
 
     // ---- Claims ----
@@ -91,6 +114,16 @@ public class InsuranceController {
     public ResponseEntity<InsuranceClaimResponse> decideClaim(
             @PathVariable String id, @Valid @RequestBody ClaimDecisionRequest decision, Authentication auth) {
         return ResponseEntity.ok(insuranceService.decideClaim(id, auth.getName(), decision));
+    }
+
+    // ---- Reports ----
+
+    @GetMapping("/reports/summary")
+    @PreAuthorize("hasAnyRole('INSURANCE_OFFICER','ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<InsuranceReportResponse> getReportSummary(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(insuranceService.getInsuranceReportSummary(startDate, endDate));
     }
 
     // ---- Document download ----
