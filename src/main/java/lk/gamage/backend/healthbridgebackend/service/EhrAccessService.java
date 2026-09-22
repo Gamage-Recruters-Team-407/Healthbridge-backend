@@ -83,7 +83,7 @@ public class EhrAccessService {
 
 
         return user != null
-                && user.getRole() == Role.PATIENT
+                && Role.PATIENT.equals(user.getRole())
                 && StringUtils.hasText(patientId)
                 && user.getId().equals(
                         patientId.trim()
@@ -101,7 +101,7 @@ public class EhrAccessService {
 
 
         return user != null
-                && user.getRole() == Role.DOCTOR
+                && Role.DOCTOR.equals(user.getRole())
                 && StringUtils.hasText(doctorId)
                 && user.getId().equals(
                         doctorId.trim()
@@ -125,7 +125,7 @@ public class EhrAccessService {
                 )
                 .map(User::getRole)
                 .map(role ->
-                        role == Role.PATIENT
+                        Role.PATIENT.equals(role)
                 )
                 .orElse(false);
     }
@@ -148,7 +148,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.PATIENT
+                || !Role.PATIENT.equals(user.getRole())
                 || !StringUtils.hasText(medicalRecordId)) {
 
             return false;
@@ -184,7 +184,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.DOCTOR
+                || !Role.DOCTOR.equals(user.getRole())
                 || !StringUtils.hasText(medicalRecordId)
                 || !StringUtils.hasText(requestPatientId)) {
 
@@ -215,6 +215,44 @@ public class EhrAccessService {
                 .orElse(false);
     }
 
+    /*
+ * DOCTOR:
+ * can archive only a MedicalRecord
+ * created by the logged-in doctor.
+ */
+public boolean canDoctorArchiveMedicalRecord(
+        String medicalRecordId,
+        Authentication authentication
+) {
+
+    CustomUserDetails user =
+            getCurrentUser(authentication);
+
+
+    if (user == null
+            || user.getRole() != Role.DOCTOR
+            || !StringUtils.hasText(medicalRecordId)) {
+
+        return false;
+    }
+
+
+    return medicalRecordRepository
+            .findById(
+                    medicalRecordId.trim()
+            )
+            .map(record ->
+                    user.getId()
+                            .equals(
+                                    record.getDoctorId()
+                            )
+                            &&
+                            !Boolean.TRUE.equals(
+                                    record.getArchived()
+                            )
+            )
+            .orElse(false);
+}
 
     /*
      * Used when Doctor creates:
@@ -234,7 +272,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.DOCTOR
+                || !Role.DOCTOR.equals(user.getRole())
                 || !StringUtils.hasText(medicalRecordId)
                 || !StringUtils.hasText(patientId)) {
 
@@ -283,7 +321,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.PATIENT
+                || !Role.PATIENT.equals(user.getRole())
                 || !StringUtils.hasText(diagnosisId)) {
 
             return false;
@@ -312,7 +350,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.DOCTOR
+                || !Role.DOCTOR.equals(user.getRole())
                 || !StringUtils.hasText(diagnosisId)
                 || !StringUtils.hasText(requestMedicalRecordId)
                 || !StringUtils.hasText(requestPatientId)) {
@@ -357,7 +395,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.DOCTOR
+                || !Role.DOCTOR.equals(user.getRole())
                 || !StringUtils.hasText(diagnosisId)) {
 
             return false;
@@ -391,7 +429,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.PATIENT
+                || !Role.PATIENT.equals(user.getRole())
                 || !StringUtils.hasText(treatmentId)) {
 
             return false;
@@ -420,7 +458,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.DOCTOR
+                || !Role.DOCTOR.equals(user.getRole())
                 || !StringUtils.hasText(treatmentId)
                 || !StringUtils.hasText(requestMedicalRecordId)
                 || !StringUtils.hasText(requestPatientId)) {
@@ -465,7 +503,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.DOCTOR
+                || !Role.DOCTOR.equals(user.getRole())
                 || !StringUtils.hasText(treatmentId)) {
 
             return false;
@@ -503,7 +541,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.PATIENT
+                || !Role.PATIENT.equals(user.getRole())
                 || !StringUtils.hasText(documentId)) {
 
             return false;
@@ -546,7 +584,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.DOCTOR
+                || !Role.DOCTOR.equals(user.getRole())
                 || !StringUtils.hasText(documentId)) {
 
             return false;
@@ -578,7 +616,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.DOCTOR
+                || !Role.DOCTOR.equals(user.getRole())
                 || !StringUtils.hasText(documentId)) {
 
             return false;
@@ -635,7 +673,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.PATIENT
+                || !Role.PATIENT.equals(user.getRole())
                 || !StringUtils.hasText(
                         documentGroupIdOrDocumentId
                 )) {
@@ -693,7 +731,7 @@ public class EhrAccessService {
 
 
         if (user == null
-                || user.getRole() != Role.DOCTOR
+                || !Role.DOCTOR.equals(user.getRole())
                 || !StringUtils.hasText(
                         documentGroupIdOrDocumentId
                 )) {

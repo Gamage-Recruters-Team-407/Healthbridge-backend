@@ -2,6 +2,9 @@ package lk.gamage.backend.healthbridgebackend.service;
 
 import lk.gamage.backend.healthbridgebackend.dto.UserProfileResponse;
 import lk.gamage.backend.healthbridgebackend.dto.UserProfileUpdateRequest;
+import lk.gamage.backend.healthbridgebackend.model.LocalizationPrefs;
+import lk.gamage.backend.healthbridgebackend.model.NotificationPrefs;
+import lk.gamage.backend.healthbridgebackend.model.PrivacyPrefs;
 import lk.gamage.backend.healthbridgebackend.model.User;
 import lk.gamage.backend.healthbridgebackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,6 +83,42 @@ public class UserService {
         User user = userRepository.findByEmail(email.toLowerCase().trim())
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
         user.setAccountStatus("Active");
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse updateTwoFactor(String email, boolean enabled) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setTwoFactorEnabled(enabled);
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse updateNotificationPrefs(String email, NotificationPrefs prefs) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setNotificationPrefs(prefs);
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse updatePrivacyPrefs(String email, PrivacyPrefs prefs) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setPrivacyPrefs(prefs);
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse updateLocalizationPrefs(String email, LocalizationPrefs prefs) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setLocalizationPrefs(prefs);
         user.setUpdatedAt(LocalDateTime.now());
         User savedUser = userRepository.save(user);
         return new UserProfileResponse(savedUser);

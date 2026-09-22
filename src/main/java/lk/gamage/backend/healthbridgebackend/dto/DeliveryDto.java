@@ -26,18 +26,25 @@ public class DeliveryDto {
 
         @NotBlank
         private String contactPhone;
+
+        private String fulfillmentType;
+        private String courierService;    
     }
 
     @Data
     public static class Response {
         private String id;
         private String deliveryCode;
+        private String orderCode;
         private String pharmacyId;
         private String patientId;
         private List<ItemDTO> items;
         private String deliveryAddress;
         private String status;
         private String assignedRiderName;
+        private String fulfillmentType;
+        private boolean actionRequired;
+        private String courierService;
     }
 
     @Data

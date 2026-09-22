@@ -32,4 +32,6 @@ public interface PrescriptionService {
     List<DrugInteraction> checkDrugInteractions(List<String> medicineIds);
 
     String generateQRCode(String prescriptionNumber);
+
+    byte[] generatePrescriptionPdf(String id);
 }

@@ -190,7 +190,7 @@ public class MedicalRecordController {
          * PATIENT can only view
          * their own MedicalRecord.
          */
-        if (currentUser.getRole() == Role.PATIENT
+        if (Role.PATIENT.equals(currentUser.getRole())
                 && !ehrAccessService
                 .canPatientAccessMedicalRecord(
                         id,
@@ -249,7 +249,7 @@ public class MedicalRecordController {
          * Patient A cannot request
          * Patient B records.
          */
-        if (currentUser.getRole() == Role.PATIENT
+        if (Role.PATIENT.equals(currentUser.getRole())
                 && !ehrAccessService
                 .isCurrentPatient(
                         patientId,
@@ -305,7 +305,7 @@ public class MedicalRecordController {
          * Doctor A cannot use
          * Doctor B doctorId here.
          */
-        if (currentUser.getRole() == Role.DOCTOR
+        if (Role.DOCTOR.equals(currentUser.getRole())
                 && !ehrAccessService
                 .isCurrentDoctor(
                         doctorId,

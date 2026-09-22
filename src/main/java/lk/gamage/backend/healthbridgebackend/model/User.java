@@ -33,7 +33,8 @@ public class User {
 
     private String password;
 
-    private Role role = Role.PATIENT;
+    @Builder.Default
+    private String role = Role.PATIENT;
 
     private AuthProvider provider = AuthProvider.LOCAL;
 
@@ -57,6 +58,18 @@ public class User {
     private List<String> conditions;
 
     private String accountStatus = "Active";
+
+    @Builder.Default
+    private boolean twoFactorEnabled = false;
+
+    @Builder.Default
+    private NotificationPrefs notificationPrefs = new NotificationPrefs();
+
+    @Builder.Default
+    private PrivacyPrefs privacyPrefs = new PrivacyPrefs();
+
+    @Builder.Default
+    private LocalizationPrefs localizationPrefs = new LocalizationPrefs();
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
