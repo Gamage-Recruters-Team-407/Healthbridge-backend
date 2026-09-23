@@ -7,6 +7,9 @@ import java.util.List;
 
 public interface InvoiceService {
 
+    // ============================================================
+    // CRUD Operations
+    // ============================================================
     InvoiceResponse createInvoice(InvoiceRequest request);
 
     List<InvoiceResponse> getAllInvoices();
@@ -18,4 +21,13 @@ public interface InvoiceService {
     InvoiceResponse updateInvoice(String id, InvoiceRequest request);
 
     void deleteInvoice(String id);
+
+    // ============================================================
+    // ✅ Cross-Module Integration Methods
+    // ============================================================
+    InvoiceResponse createFromAppointment(String appointmentId);
+
+    InvoiceResponse createFromPrescription(String prescriptionId);
+
+    InvoiceResponse createFromLabTest(String labTestId);
 }

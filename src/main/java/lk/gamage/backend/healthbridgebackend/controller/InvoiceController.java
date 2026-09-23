@@ -73,4 +73,29 @@ public class InvoiceController {
                 .noContent()
                 .build();
     }
+
+    // InvoiceController.java
+    @PostMapping("/from-appointment/{appointmentId}")
+    public ResponseEntity<InvoiceResponse> createFromAppointment(
+            @PathVariable String appointmentId) {
+        return ResponseEntity.ok(
+                invoiceService.createFromAppointment(appointmentId)
+        );
+    }
+
+    // InvoiceController.java
+    @PostMapping("/from-prescription/{prescriptionId}")
+    public ResponseEntity<InvoiceResponse> createFromPrescription(
+            @PathVariable String prescriptionId) {
+        return ResponseEntity.ok(
+                invoiceService.createFromPrescription(prescriptionId)
+        );
+    }
+    @PostMapping("/from-lab-test/{labTestId}")
+    public ResponseEntity<InvoiceResponse> createFromLabTest(
+            @PathVariable String labTestId) {
+        return ResponseEntity.ok(
+                invoiceService.createFromLabTest(labTestId)
+        );
+    }
 }
