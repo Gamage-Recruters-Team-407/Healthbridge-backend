@@ -36,128 +36,7 @@ public class EquipmentServiceImpl implements EquipmentService {
 
     @PostConstruct
     public void seedInitialData() {
-        if (equipmentRepository.count() == 0) {
-            List<Equipment> seedData = Arrays.asList(
-                    Equipment.builder()
-                            .assetId("#EQ-10492")
-                            .name("Ventilator X200")
-                            .category("Life Support")
-                            .department("ICU")
-                            .location("ICU - Bed 04")
-                            .serialNo("SN-9948201")
-                            .status("In Use")
-                            .calibrationDueDate("Aug 15, 2026")
-                            .model("X200")
-                            .supplier("MedTech Corp")
-                            .purchaseDate("Jan 12, 2024")
-                            .warrantyExpiry("Dec 31, 2026")
-                            .depreciationPercentage(82)
-                            .initialValue(45000.0)
-                            .currentValue(36900.0)
-                            .alertMessage("Low Stock: O2 Sensors (2 units remaining in supply)")
-                            .createdAt(LocalDateTime.now())
-                            .updatedAt(LocalDateTime.now())
-                            .build(),
-                    Equipment.builder()
-                            .assetId("#EQ-06221")
-                            .name("Portable Ultrasound")
-                            .category("Diagnostic")
-                            .department("Radiology")
-                            .location("Radiology - Room 2")
-                            .serialNo("SN-4410923")
-                            .status("Available")
-                            .calibrationDueDate("Jul 02, 2026")
-                            .model("Ultrasound Pro")
-                            .supplier("Philips Healthcare")
-                            .purchaseDate("Mar 20, 2023")
-                            .warrantyExpiry("Mar 20, 2027")
-                            .depreciationPercentage(75)
-                            .initialValue(28000.0)
-                            .currentValue(21000.0)
-                            .createdAt(LocalDateTime.now())
-                            .updatedAt(LocalDateTime.now())
-                            .build(),
-                    Equipment.builder()
-                            .assetId("#EQ-05119")
-                            .name("Infusion Pump B4")
-                            .category("Monitoring")
-                            .department("ER")
-                            .location("ER - Bay 12")
-                            .serialNo("SN-1192847")
-                            .status("Maintenance")
-                            .calibrationDueDate("Sep 01, 2026")
-                            .model("Pump B4")
-                            .supplier("Baxter Medical")
-                            .purchaseDate("Nov 05, 2022")
-                            .warrantyExpiry("Nov 05, 2025")
-                            .depreciationPercentage(60)
-                            .initialValue(12000.0)
-                            .currentValue(7200.0)
-                            .alertMessage("Maintenance Required: Battery replacement")
-                            .createdAt(LocalDateTime.now())
-                            .updatedAt(LocalDateTime.now())
-                            .build(),
-                    Equipment.builder()
-                            .assetId("#EQ-08331")
-                            .name("Defibrillator Pro")
-                            .category("Life Support")
-                            .department("ER")
-                            .location("Storage Room B")
-                            .serialNo("SN-7729103")
-                            .status("Available")
-                            .calibrationDueDate("Nov 11, 2026")
-                            .model("Defib Pro 300")
-                            .supplier("Zoll Medical")
-                            .purchaseDate("Feb 14, 2024")
-                            .warrantyExpiry("Feb 14, 2028")
-                            .depreciationPercentage(90)
-                            .initialValue(18000.0)
-                            .currentValue(16200.0)
-                            .createdAt(LocalDateTime.now())
-                            .updatedAt(LocalDateTime.now())
-                            .build(),
-                    Equipment.builder()
-                            .assetId("#EQ-12005")
-                            .name("Infusion Pump Z")
-                            .category("Monitoring")
-                            .department("Biomed Workshop")
-                            .location("Biomed Workshop")
-                            .serialNo("SN-3391024")
-                            .status("Maintenance")
-                            .calibrationDueDate("Oct 10, 2026")
-                            .model("Pump Z-100")
-                            .supplier("Braun Healthcare")
-                            .purchaseDate("Jun 18, 2023")
-                            .warrantyExpiry("Jun 18, 2026")
-                            .depreciationPercentage(65)
-                            .initialValue(9500.0)
-                            .currentValue(6175.0)
-                            .alertMessage("Est. Return: Tomorrow")
-                            .createdAt(LocalDateTime.now())
-                            .updatedAt(LocalDateTime.now())
-                            .build(),
-                    Equipment.builder()
-                            .assetId("#EQ-14920")
-                            .name("Anesthesia Workstation")
-                            .category("Surgical")
-                            .department("Surgery")
-                            .location("OR - Suite 3")
-                            .serialNo("SN-8829104")
-                            .status("In Use")
-                            .calibrationDueDate("Dec 05, 2026")
-                            .model("Flow-i C30")
-                            .supplier("Getinge Group")
-                            .purchaseDate("Aug 01, 2023")
-                            .warrantyExpiry("Aug 01, 2027")
-                            .depreciationPercentage(85)
-                            .initialValue(65000.0)
-                            .currentValue(55250.0)
-                            .createdAt(LocalDateTime.now())
-                            .updatedAt(LocalDateTime.now())
-                            .build()
-            );
-            equipmentRepository.saveAll(seedData);
-        }
+        equipmentRepository.deleteAll();
     }
 
     @Override
@@ -171,8 +50,13 @@ public class EquipmentServiceImpl implements EquipmentService {
         }
 
         if (department != null && !department.trim().isEmpty() && !"All".equalsIgnoreCase(department)) {
+            String targetDept = department.trim().toLowerCase();
             list = list.stream()
-                    .filter(e -> e.getDepartment() != null && e.getDepartment().equalsIgnoreCase(department.trim()))
+                    .filter(e -> {
+                        if (e.getDepartment() == null) return false;
+                        String d = e.getDepartment().trim().toLowerCase();
+                        return d.equalsIgnoreCase(targetDept) || d.contains(targetDept) || targetDept.contains(d);
+                    })
                     .collect(Collectors.toList());
         }
 
@@ -287,13 +171,13 @@ public class EquipmentServiceImpl implements EquipmentService {
         long available = all.stream().filter(e -> "Available".equalsIgnoreCase(e.getStatus())).count();
         long maintenance = all.stream().filter(e -> "Maintenance".equalsIgnoreCase(e.getStatus())).count();
         
-        double operationalRate = total > 0 ? ((double) (inUse + available) / total) * 100.0 : 94.2;
+        double operationalRate = total > 0 ? ((double) (inUse + available) / total) * 100.0 : 0;
 
         return EquipmentStatsDto.builder()
-                .totalInventory(total > 0 ? total : 1240)
+                .totalInventory(total > 0 ? total : 0)
                 .operationalRate(Math.round(operationalRate * 10.0) / 10.0)
                 .underMaintenance(maintenance)
-                .calibrationDue(7)
+                .calibrationDue(0)
                 .build();
     }
 
