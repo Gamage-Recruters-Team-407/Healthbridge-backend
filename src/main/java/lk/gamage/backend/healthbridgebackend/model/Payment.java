@@ -46,4 +46,6 @@ public class Payment {
     private LocalDateTime createdAt;
 
     private LocalDateTime confirmedAt;
+
+    private Boolean emailSent;
 }
