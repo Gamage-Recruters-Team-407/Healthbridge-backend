@@ -90,6 +90,18 @@ class AppointmentChannelingServiceTest {
         service.cancel("a1","p1","changed plans"); verify(sessionService).release("s1"); assertEquals(AppointmentStatus.CANCELLED,a.getStatus());
     }
 
+    @Test void cancellationWithinTwentyFourHoursIsRejected() {
+        Appointment a=activeAppointment();
+        java.time.LocalDateTime soon=java.time.LocalDateTime.now().plusHours(2);
+        a.setAppointmentDate(soon.toLocalDate());
+        a.setAppointmentTime(soon.toLocalTime().withSecond(0).withNano(0).toString());
+        when(appointments.findById("a1")).thenReturn(Optional.of(a));
+        ConflictException error=assertThrows(ConflictException.class,()->service.cancel("a1","p1","changed plans"));
+        assertTrue(error.getMessage().contains("at least 24 hours"));
+        verify(appointments,never()).save(any());
+        verify(sessionService,never()).release(anyString());
+    }
+
     @Test void cancelledAppointmentNumberIsNotReused() {
         preparePatient(); DoctorSession s=session(1,2,SessionStatus.AVAILABLE); doReturn(s).when(sessionService).reserve("s1");
         when(appointments.save(any())).thenAnswer(inv->inv.getArgument(0));
@@ -132,5 +144,5 @@ class AppointmentChannelingServiceTest {
     private User patient(){User u=new User();u.setId("p1");u.setRole("PATIENT");u.setFullName("Patient One");return u;}
     private User doctor(){User u=new User();u.setId("d1");u.setRole("DOCTOR");u.setFullName("Dr Test");return u;}
     private DoctorSession session(int booked,int issued,SessionStatus status){return DoctorSession.builder().id("s1").doctorId("d1").hospitalId("h1").hospitalName("HealthBridge").specializationName("Cardiology").sessionDate(LocalDate.now().plusDays(1)).startTime(LocalTime.of(9,0)).maxAppointments(2).bookedCount(booked).lastIssuedAppointmentNumber(issued).status(status).build();}
-    private Appointment activeAppointment(){Appointment a=new Appointment();a.setId("a1");a.setSessionId("s1");a.setPatientId("p1");a.setDoctorId("d1");a.setStatus(AppointmentStatus.BOOKED);a.setAppointmentNumber(1);a.setAppointmentDate(LocalDate.now().plusDays(1));a.setAppointmentTime("09:00");return a;}
+    private Appointment activeAppointment(){Appointment a=new Appointment();a.setId("a1");a.setSessionId("s1");a.setPatientId("p1");a.setDoctorId("d1");a.setStatus(AppointmentStatus.BOOKED);a.setAppointmentNumber(1);a.setAppointmentDate(LocalDate.now().plusDays(2));a.setAppointmentTime("09:00");return a;}
 }

@@ -82,6 +82,12 @@ public class AppointmentServiceImpl implements AppointmentService {
         Appointment a = raw(id);
         if (!patientId.equals(a.getPatientId())) throw new AccessDeniedException("You may only cancel your own appointments.");
         if (!a.getStatus().isActive()) throw new ConflictException("Only active appointments can be cancelled.");
+        LocalTime appointmentTime = parseTime(a.getAppointmentTime());
+        if (a.getAppointmentDate() == null || appointmentTime == null)
+            throw new ConflictException("The appointment date or time is unavailable. Please contact the hospital.");
+        LocalDateTime appointmentDateTime = LocalDateTime.of(a.getAppointmentDate(), appointmentTime);
+        if (appointmentDateTime.isBefore(LocalDateTime.now().plusHours(24)))
+            throw new ConflictException("Appointments can only be cancelled at least 24 hours before the session starts.");
         a.setStatus(AppointmentStatus.CANCELLED); a.setActiveBookingKey(null);
         a.setCancellationReason(reason == null || reason.isBlank() ? "Cancelled by patient." : reason.trim());
         a.setCancelledAt(LocalDateTime.now()); a.setUpdatedAt(a.getCancelledAt());
