@@ -28,7 +28,7 @@ public class Payment {
 
     private String description;
 
-    private String category; // CONSULTATION, LAB_TEST, PRESCRIPTION, INSURANCE, OTHER
+    private String category; // CONSULTATION, LAB_TEST, PRESCRIPTION, INSURANCE, OTHER, X_RAY
 
     private BigDecimal amount;
 
