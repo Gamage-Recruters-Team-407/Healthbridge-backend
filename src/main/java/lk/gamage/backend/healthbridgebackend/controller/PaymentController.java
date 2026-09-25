@@ -3,9 +3,11 @@ package lk.gamage.backend.healthbridgebackend.controller;
 import jakarta.validation.Valid;
 import lk.gamage.backend.healthbridgebackend.dto.PaymentConfirmRequest;
 import lk.gamage.backend.healthbridgebackend.dto.PaymentRequest;
+import lk.gamage.backend.healthbridgebackend.dto.PaymentResponse;
 import lk.gamage.backend.healthbridgebackend.model.Payment;
 import lk.gamage.backend.healthbridgebackend.service.PaymentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -14,25 +16,31 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/payments")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
 public class PaymentController {
 
-    @Autowired
-    private PaymentService paymentService;
+    private final PaymentService paymentService;
 
-    /**
-     * POST /api/payments/initiate
-     * Patient submits payment details + credit card info.
-     * A 6-digit confirmation code is sent to their registered email.
-     */
+    // ============================================================
+    // INITIATE PAYMENT
+    // ============================================================
     @PostMapping("/initiate")
-    public ResponseEntity<?> initiatePayment(@Valid @RequestBody PaymentRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> initiatePayment(
+            @Valid @RequestBody PaymentRequest request,
+            BindingResult bindingResult) {
+
         if (bindingResult.hasErrors()) {
             Map<String, String> errors = new HashMap<>();
-            bindingResult.getFieldErrors().forEach(err -> errors.put(err.getField(), err.getDefaultMessage()));
-            return ResponseEntity.badRequest().body(Map.of("message", "Validation failed", "errors", errors));
+            bindingResult.getFieldErrors()
+                    .forEach(err -> errors.put(err.getField(), err.getDefaultMessage()));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Validation failed", "errors", errors));
         }
 
         try {
@@ -47,21 +55,24 @@ public class PaymentController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
+            log.error("Error initiating payment: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "An unexpected error occurred while processing payment"));
+                    .body(Map.of("message", "An unexpected error occurred"));
         }
     }
 
-    /**
-     * POST /api/payments/{id}/confirm
-     * Patient enters the 6-digit code to confirm payment.
-     */
+    // ============================================================
+    // CONFIRM PAYMENT (with code)
+    // ============================================================
     @PostMapping("/{id}/confirm")
-    public ResponseEntity<?> confirmPayment(@PathVariable String id,
-                                             @Valid @RequestBody PaymentConfirmRequest request,
-                                             BindingResult bindingResult) {
+    public ResponseEntity<?> confirmPayment(
+            @PathVariable String id,
+            @Valid @RequestBody PaymentConfirmRequest request,
+            BindingResult bindingResult) {
+
         if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Please enter a valid 6-digit confirmation code"));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Please enter a valid 6-digit confirmation code"));
         }
 
         try {
@@ -76,15 +87,59 @@ public class PaymentController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
+            log.error("Error confirming payment: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Payment confirmation failed"));
         }
     }
 
-    /**
-     * GET /api/payments/patient/{patientId}
-     * Get all payments for a patient.
-     */
+    // ============================================================
+    // SIMPLE CONFIRM (no code)
+    // ============================================================
+    @PostMapping("/confirm/{paymentId}")
+    public ResponseEntity<PaymentResponse> confirmPaymentSimple(
+            @PathVariable String paymentId) {
+        try {
+            Payment payment = paymentService.confirm(paymentId);
+            return ResponseEntity.ok(paymentService.mapToResponse(payment));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // ============================================================
+    // CANCEL PAYMENT
+    // ============================================================
+    @PostMapping("/cancel/{paymentId}")
+    public ResponseEntity<PaymentResponse> cancelPayment(
+            @PathVariable String paymentId) {
+        try {
+            Payment payment = paymentService.cancel(paymentId);
+            return ResponseEntity.ok(paymentService.mapToResponse(payment));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // ============================================================
+    // GET ALL PAYMENTS
+    // ============================================================
+    @GetMapping
+    public ResponseEntity<List<PaymentResponse>> getAllPayments() {
+        try {
+            List<PaymentResponse> payments = paymentService.getAllPayments().stream()
+                    .map(paymentService::mapToResponse)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(payments);
+        } catch (Exception e) {
+            log.error("Error getting all payments: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // ============================================================
+    // GET PAYMENTS BY PATIENT
+    // ============================================================
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<?> getPaymentsByPatient(@PathVariable String patientId) {
         try {
@@ -96,10 +151,9 @@ public class PaymentController {
         }
     }
 
-    /**
-     * GET /api/payments/{id}
-     * Get a single payment detail.
-     */
+    // ============================================================
+    // GET PAYMENT BY ID
+    // ============================================================
     @GetMapping("/{id}")
     public ResponseEntity<?> getPaymentById(@PathVariable String id) {
         try {
@@ -111,5 +165,12 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Failed to retrieve payment"));
         }
+    }
+
+    // ============================================================
+    // MAPPER HELPER
+    // ============================================================
+    private PaymentResponse mapToResponse(Payment payment) {
+        return paymentService.mapToResponse(payment);
     }
 }
