@@ -28,7 +28,7 @@ public class Payment {
 
     private String description;
 
-    private String category; // CONSULTATION, LAB_TEST, PRESCRIPTION, INSURANCE, OTHER
+    private String category; // CONSULTATION, LAB_TEST, PRESCRIPTION, INSURANCE, OTHER, X_RAY
 
     private BigDecimal amount;
 
@@ -46,4 +46,6 @@ public class Payment {
     private LocalDateTime createdAt;
 
     private LocalDateTime confirmedAt;
+
+    private Boolean emailSent;
 }
