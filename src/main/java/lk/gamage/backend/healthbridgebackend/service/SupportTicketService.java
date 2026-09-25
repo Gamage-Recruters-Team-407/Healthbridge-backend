@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -179,6 +181,20 @@ public class SupportTicketService {
         ticket.setUpdatedAt(LocalDateTime.now());
         return new TicketResponse(ticketRepository.save(ticket));
     }
+    public List<Map<String, Object>> getPublicFeedback() {
+    return ticketRepository.findAllByOrderByCreatedAtDesc()
+            .stream()
+            .filter(ticket -> ticket.getFeedbackRating() != null)
+            .map(ticket -> {
+                Map<String, Object> feedback = new HashMap<>();
+                feedback.put("userName", ticket.getUserName());
+                feedback.put("rating", ticket.getFeedbackRating());
+                feedback.put("comment", ticket.getFeedbackComment());
+                feedback.put("submittedAt", ticket.getFeedbackSubmittedAt());
+                return feedback;
+            })
+            .toList();
+}
 
     public TicketResponse addAdminReply(String ticketId, String message, MultipartFile image) {
         User admin = getCurrentUser();
@@ -280,4 +296,6 @@ public class SupportTicketService {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
+
+    
 }

@@ -125,4 +125,17 @@ public class SupportTicketController {
                     .body(Map.of("message", "Error deleting reply: " + e.getMessage()));
         }
     }
+
+@GetMapping("/feedback/public")
+public ResponseEntity<?> getPublicFeedback() {
+    try {
+        return ResponseEntity.ok(supportTicketService.getPublicFeedback());
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "Error retrieving feedback: " + e.getMessage()));
+    }
+}
+
+
+
 }

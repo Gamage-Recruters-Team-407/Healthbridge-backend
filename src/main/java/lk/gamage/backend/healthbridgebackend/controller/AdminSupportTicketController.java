@@ -30,6 +30,16 @@ public class AdminSupportTicketController {
         }
     }
 
+    @GetMapping("/feedback")
+    public ResponseEntity<?> getAllFeedback() {
+        try {
+            return ResponseEntity.ok(supportTicketService.getPublicFeedback());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error retrieving feedback: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getTicketById(@PathVariable String id) {
         try {
