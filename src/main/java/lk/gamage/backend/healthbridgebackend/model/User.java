@@ -51,6 +51,8 @@ public class User {
 
     private String address;
 
+    private String branch;
+
     private String emergencyContact;
 
     private String medicalHistory;
