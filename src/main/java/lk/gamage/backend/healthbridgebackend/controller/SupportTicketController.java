@@ -95,34 +95,6 @@ public class SupportTicketController {
         }
     }
 
-    @GetMapping("/{id}/feedback")
-    public ResponseEntity<?> getFeedback(@PathVariable String id) {
-        try {
-            return ResponseEntity.ok(supportTicketService.getFeedback(id));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving feedback: " + e.getMessage()));
-        }
-    }
-
-    @DeleteMapping("/{id}/feedback")
-    public ResponseEntity<?> deleteFeedback(@PathVariable String id) {
-        try {
-            return ResponseEntity.ok(supportTicketService.deleteFeedback(id));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error deleting feedback: " + e.getMessage()));
-        }
-    }
-
     @PutMapping("/{ticketId}/reply/{replyId}")
     public ResponseEntity<?> editReply(
             @PathVariable String ticketId,
@@ -153,4 +125,17 @@ public class SupportTicketController {
                     .body(Map.of("message", "Error deleting reply: " + e.getMessage()));
         }
     }
+
+@GetMapping("/feedback/public")
+public ResponseEntity<?> getPublicFeedback() {
+    try {
+        return ResponseEntity.ok(supportTicketService.getPublicFeedback());
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "Error retrieving feedback: " + e.getMessage()));
+    }
+}
+
+
+
 }

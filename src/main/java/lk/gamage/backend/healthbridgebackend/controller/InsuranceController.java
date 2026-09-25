@@ -11,6 +11,7 @@ import lk.gamage.backend.healthbridgebackend.dto.response.InsuranceReportRespons
 import lk.gamage.backend.healthbridgebackend.enums.PolicyStatus;
 import lk.gamage.backend.healthbridgebackend.service.FileStorageService;
 import lk.gamage.backend.healthbridgebackend.service.InsuranceService;
+import lk.gamage.backend.healthbridgebackend.service.InsuranceMessageService;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
@@ -23,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/insurance")
@@ -30,10 +32,14 @@ public class InsuranceController {
 
     private final InsuranceService insuranceService;
     private final FileStorageService fileStorageService;
+    private final InsuranceMessageService insuranceMessageService;
 
-    public InsuranceController(InsuranceService insuranceService, FileStorageService fileStorageService) {
+    public InsuranceController(InsuranceService insuranceService, 
+                               FileStorageService fileStorageService,
+                               InsuranceMessageService insuranceMessageService) {
         this.insuranceService = insuranceService;
         this.fileStorageService = fileStorageService;
+        this.insuranceMessageService = insuranceMessageService;
     }
 
     // ---- Policies ----
@@ -134,5 +140,12 @@ public class InsuranceController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(fileStorageService.getContentType(fileId)))
                 .body(resource);
+    }
+
+    @GetMapping("/messages/unread-count")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<Map<String, Long>> getUnreadMessagesCount(@org.springframework.security.core.annotation.AuthenticationPrincipal lk.gamage.backend.healthbridgebackend.security.CustomUserDetails user) {
+        long count = insuranceMessageService.getUnreadMessageCount(user.getId());
+        return ResponseEntity.ok(Map.of("count", count));
     }
 }

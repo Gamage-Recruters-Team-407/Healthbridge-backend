@@ -36,6 +36,11 @@ public class ApiResponseAdvice implements ResponseBodyAdvice<Object> {
         int statusCode = response instanceof ServletServerHttpResponse servletResponse
             ? servletResponse.getServletResponse().getStatus()
             : 200;
+
+        if (statusCode >= 400) {
+            return ApiResponse.error(body, "Operation unsuccessful", statusCode);
+        }
+
         return ApiResponse.success(body, "Operation successful", statusCode);
     }
 }
