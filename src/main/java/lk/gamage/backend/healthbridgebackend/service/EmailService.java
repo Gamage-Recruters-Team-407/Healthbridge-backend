@@ -21,15 +21,15 @@ public class EmailService {
     @Value("${spring.mail.username:healthbridge012@gmail.com}")
     private String fromEmail;
 
-    public void sendOtpEmail(String toEmail, String otp) {
+    public boolean sendOtpEmail(String toEmail, String otp) {
         log.info("==================================================");
         log.info("[Health Bridge OTP Verification]");
         log.info("Sending OTP code: {} to {}", otp, toEmail);
         log.info("==================================================");
 
         if (mailSender == null) {
-            log.warn("JavaMailSender is not configured. OTP printed to console.");
-            return;
+            log.warn("JavaMailSender is not configured. OTP printed to console: {}", otp);
+            return false;
         }
 
         try {
@@ -57,21 +57,23 @@ public class EmailService {
             helper.setText(htmlContent, true);
             mailSender.send(message);
             log.info("OTP email successfully dispatched to {}", toEmail);
+            return true;
 
         } catch (Exception e) {
-            log.error("Failed to send OTP email via SMTP to {}. OTP is: {}", toEmail, otp, e);
+            log.error("Failed to send OTP email via SMTP to {}. Reason: {}. Generated OTP is: {}", toEmail, e.getMessage(), otp);
+            return false;
         }
     }
 
-    public void sendPaymentConfirmationEmail(String toEmail, String code, String amount, String description) {
+    public boolean sendPaymentConfirmationEmail(String toEmail, String code, String amount, String description) {
         log.info("==================================================");
         log.info("[Health Bridge Payment Confirmation]");
         log.info("Sending payment OTP: {} to {} for amount: Rs. {}", code, toEmail, amount);
         log.info("==================================================");
 
         if (mailSender == null) {
-            log.warn("JavaMailSender is not configured. Payment OTP printed to console.");
-            return;
+            log.warn("JavaMailSender is not configured. Payment OTP printed to console: {}", code);
+            return false;
         }
 
         try {
@@ -111,9 +113,11 @@ public class EmailService {
             helper.setText(htmlContent, true);
             mailSender.send(message);
             log.info("Payment confirmation email successfully dispatched to {}", toEmail);
+            return true;
 
         } catch (Exception e) {
-            log.error("Failed to send payment confirmation email via SMTP to {}. Code is: {}", toEmail, code, e);
+            log.error("Failed to send payment confirmation email via SMTP to {}. Reason: {}. Generated Code is: {}", toEmail, e.getMessage(), code);
+            return false;
         }
     }
 }

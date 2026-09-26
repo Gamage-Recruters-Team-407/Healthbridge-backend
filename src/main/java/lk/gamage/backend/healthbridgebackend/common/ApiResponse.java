@@ -72,4 +72,24 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> of(T data, String message, int statusCode) {
         return success(data, message, statusCode);
     }
+
+    /**
+     * Build an error response with data
+     */
+    public static <T> ApiResponse<T> error(T data, String message, int statusCode) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .data(data)
+                .message(message)
+                .statusCode(statusCode)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * Build an error response (no data)
+     */
+    public static <T> ApiResponse<T> error(String message, int statusCode) {
+        return error(null, message, statusCode);
+    }
 }

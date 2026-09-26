@@ -87,6 +87,9 @@ public class AuthService {
             }
         }
         user.setRole(assignedRole);
+        if (request.getBranch() != null && !request.getBranch().trim().isEmpty()) {
+            user.setBranch(request.getBranch().trim());
+        }
         user.setProvider(AuthProvider.LOCAL);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
@@ -137,7 +140,7 @@ public class AuthService {
         );
     }
 
-    public void forgotPassword(ForgotPasswordRequest request) {
+    public java.util.Map<String, Object> forgotPassword(ForgotPasswordRequest request) {
         String normalizedEmail = request.getEmail().toLowerCase().trim();
         log.info("[Forgot Password] Request received for email: {}", normalizedEmail);
 
@@ -167,7 +170,15 @@ public class AuthService {
         log.info("[Forgot Password] Generated OTP: {} for email: {}, expiresAt: {}", otpString, normalizedEmail, otpToken.getExpiresAt());
 
         // Dispatch Email
-        emailService.sendOtpEmail(normalizedEmail, otpString);
+        boolean emailSent = emailService.sendOtpEmail(normalizedEmail, otpString);
+
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("otp", otpString);
+        result.put("emailSent", emailSent);
+        result.put("message", emailSent
+                ? "Verification code has been sent to your email"
+                : "Verification code generated (Email service daily limit reached; use development code)");
+        return result;
     }
 
     public boolean verifyOtp(OtpVerifyRequest request) {

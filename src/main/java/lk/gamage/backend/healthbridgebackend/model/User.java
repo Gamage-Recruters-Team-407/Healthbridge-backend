@@ -51,6 +51,8 @@ public class User {
 
     private String address;
 
+    private String branch;
+
     private String emergencyContact;
 
     private String medicalHistory;
@@ -74,4 +76,5 @@ public class User {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     private LocalDateTime updatedAt = LocalDateTime.now();
+
 }

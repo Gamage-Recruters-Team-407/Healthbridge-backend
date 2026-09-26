@@ -12,6 +12,8 @@ public class InsuranceClaimResponse {
     private String id;
     private String claimNumber;
     private String policyId;
+    private String policyNumber;
+    private String providerName;
     private String patientId;
     private String treatmentDescription;
     private Double claimAmount;
@@ -21,5 +23,4 @@ public class InsuranceClaimResponse {
     private String rejectionReason;
     private LocalDateTime submittedAt;
     private LocalDateTime reviewedAt;
-    
 }

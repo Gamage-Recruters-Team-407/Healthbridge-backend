@@ -22,6 +22,7 @@ public class RegisterRequest {
 
     private String confirmPassword;
     private String role;
+    private String branch;
 
     public RegisterRequest() {
     }
@@ -72,5 +73,13 @@ public class RegisterRequest {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
     }
 }

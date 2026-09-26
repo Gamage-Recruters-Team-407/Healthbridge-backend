@@ -64,8 +64,15 @@ public class AuthController {
         }
 
         try {
-            authService.forgotPassword(request);
-            return ResponseEntity.ok(Map.of("message", "Verification code has been sent to your email"));
+            Map<String, Object> result = authService.forgotPassword(request);
+            boolean emailSent = Boolean.TRUE.equals(result.get("emailSent"));
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("message", result.get("message"));
+            resp.put("emailSent", emailSent);
+            if (!emailSent && result.get("otp") != null) {
+                resp.put("devOtp", result.get("otp"));
+            }
+            return ResponseEntity.ok(resp);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
