@@ -139,11 +139,18 @@ public class InsuranceServiceImpl implements InsuranceService {
                 .map(fileStorageService::store)
                 .collect(Collectors.toList());
 
+        String hospital = (req.getHospitalName() != null && !req.getHospitalName().isBlank())
+                ? req.getHospitalName() : "HealthBridge Hospital";
+        String branch = (req.getBranch() != null && !req.getBranch().isBlank())
+                ? req.getBranch() : "Colombo";
+
         InsuranceClaim claim = InsuranceClaim.builder()
                 .claimNumber("CLM-" + LocalDate.now().getYear() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .policyId(policy.getId())
                 .patientId(patientId)
                 .treatmentDescription(req.getTreatmentDescription())
+                .hospitalName(hospital)
+                .branch(branch)
                 .claimAmount(req.getClaimAmount())
                 .documentFileIds(fileIds)
                 .status(ClaimStatus.SUBMITTED)
@@ -446,6 +453,8 @@ public class InsuranceServiceImpl implements InsuranceService {
                 .providerName(providerName)
                 .patientId(c.getPatientId())
                 .treatmentDescription(c.getTreatmentDescription())
+                .hospitalName(c.getHospitalName() != null ? c.getHospitalName() : "HealthBridge Hospital")
+                .branch(c.getBranch() != null ? c.getBranch() : "Colombo")
                 .claimAmount(c.getClaimAmount())
                 .approvedAmount(c.getApprovedAmount())
                 .documentFileIds(c.getDocumentFileIds())

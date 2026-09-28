@@ -16,6 +16,8 @@ public class InsuranceClaimResponse {
     private String providerName;
     private String patientId;
     private String treatmentDescription;
+    private String hospitalName;
+    private String branch;
     private Double claimAmount;
     private Double approvedAmount;
     private List<String> documentFileIds;
