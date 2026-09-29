@@ -279,25 +279,41 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            document.add(new Paragraph("OFFICIAL PRESCRIPTION"));
+            // Header
+            com.itextpdf.text.Font titleFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 18, com.itextpdf.text.Font.BOLD);
+            document.add(new Paragraph("OFFICIAL PRESCRIPTION", titleFont));
+            document.add(new Paragraph(" "));
+
+            // ✅ ADDED: Patient and Doctor Details
+            document.add(new Paragraph("Patient Name: " + (prescription.getPatientName() != null ? prescription.getPatientName() : "N/A")));
+            document.add(new Paragraph("Doctor Name: " + (prescription.getDoctorName() != null ? prescription.getDoctorName() : "N/A")));
             document.add(new Paragraph("Prescription Number: " + prescription.getPrescriptionNumber()));
             document.add(new Paragraph("Date Issued: " + prescription.getCreatedAt()));
-            document.add(new Paragraph("Status: " + prescription.getStatus()));
+            document.add(new Paragraph("Valid Until: " + prescription.getValidUntil()));
             document.add(new Paragraph("--------------------------------------------------"));
-            
-            // Add Scannable QR Code
+
+            // QR Code (Right aligned)
             String qrData = prescription.getQrCodeData() != null ? prescription.getQrCodeData() : prescription.getPrescriptionNumber();
             BarcodeQRCode qrCode = new BarcodeQRCode(qrData, 128, 128, null);
             Image qrCodeImage = qrCode.getImage();
-            qrCodeImage.setAlignment(Element.ALIGN_LEFT);
+            qrCodeImage.setAlignment(Element.ALIGN_RIGHT);
             qrCodeImage.setSpacingBefore(10f);
             qrCodeImage.setSpacingAfter(10f);
             document.add(qrCodeImage);
-            
-            document.add(new Paragraph("Medicines:"));
+
+            document.add(new Paragraph(" "));
+            com.itextpdf.text.Font sectionFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 12, com.itextpdf.text.Font.BOLD);
+            document.add(new Paragraph("Medicines:", sectionFont));
+
             for (PrescriptionItem item : prescription.getItems()) {
                 document.add(new Paragraph("• " + item.getMedicineName() + " - " + item.getDosage() + " (" + item.getFrequency() + ")"));
+                document.add(new Paragraph("  Duration: " + item.getDuration() + " | Qty: " + item.getQuantity()));
                 document.add(new Paragraph("  Instructions: " + item.getInstructions()));
+                document.add(new Paragraph(" "));
+            }
+
+            if (prescription.getNotes() != null && !prescription.getNotes().isEmpty()) {
+                document.add(new Paragraph("Doctor's Notes: " + prescription.getNotes()));
             }
 
             document.close();
