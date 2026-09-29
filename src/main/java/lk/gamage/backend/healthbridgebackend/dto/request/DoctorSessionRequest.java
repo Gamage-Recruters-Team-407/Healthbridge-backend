@@ -8,8 +8,8 @@ import java.time.LocalTime;
 
 public record DoctorSessionRequest(
         String doctorId,
-        String hospitalId,
-        String hospitalName,
+        @NotBlank String hospitalId,
+        @NotBlank String hospitalName,
         String specializationId,
         @NotBlank String specializationName,
         @NotNull LocalDate sessionDate,
