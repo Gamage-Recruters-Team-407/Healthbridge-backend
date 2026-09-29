@@ -87,6 +87,9 @@ public class AuthService {
             }
         }
         user.setRole(assignedRole);
+        if (request.getBranch() != null && !request.getBranch().trim().isEmpty()) {
+            user.setBranch(request.getBranch().trim());
+        }
         user.setProvider(AuthProvider.LOCAL);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());

@@ -122,6 +122,13 @@ public class InsuranceController {
         return ResponseEntity.ok(insuranceService.decideClaim(id, auth.getName(), decision));
     }
 
+    @PatchMapping("/claims/{id}/review")
+    @PreAuthorize("hasAnyRole('INSURANCE_OFFICER','ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<InsuranceClaimResponse> startClaimReview(
+            @PathVariable String id, Authentication auth) {
+        return ResponseEntity.ok(insuranceService.startClaimReview(id, auth.getName()));
+    }
+
     // ---- Reports ----
 
     @GetMapping("/reports/summary")
