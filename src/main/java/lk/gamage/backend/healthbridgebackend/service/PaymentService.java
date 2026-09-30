@@ -71,14 +71,14 @@ public class PaymentService {
                 savedPayment.getId(), patient.getFullName(),
                 patient.getEmail(), request.getAmount());
 
-        emailService.sendPaymentConfirmationEmail(
+        boolean emailSent = emailService.sendPaymentConfirmationEmail(
                 patient.getEmail(),
                 confirmationCode,
                 request.getAmount().toPlainString(),
                 request.getDescription()
         );
-
-        return savedPayment;
+        savedPayment.setEmailSent(emailSent);
+        return paymentRepository.save(savedPayment);
     }
 
     // ============================================================

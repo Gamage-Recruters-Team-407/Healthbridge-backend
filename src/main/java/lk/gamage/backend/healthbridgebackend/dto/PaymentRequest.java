@@ -20,7 +20,7 @@ public class PaymentRequest {
     @NotBlank(message = "Description is required")
     private String description;
 
-    private String category; // CONSULTATION, LAB_TEST, PRESCRIPTION, INSURANCE, OTHER
+    private String category; // CONSULTATION, LAB_TEST, PRESCRIPTION, INSURANCE, OTHER, X_RAY
 
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.01", message = "Amount must be greater than 0")

@@ -48,6 +48,7 @@ public class SecurityConfig {
                                 "/api/treatments/**",
                                 "/api/contacts/**",
                                 "/api/sos/**",
+                                "/api/tickets/feedback/public",
                                 "/ws/**"
                         ).permitAll()
                         .requestMatchers("/api/appointments/**", "/api/doctor-sessions/**").authenticated()
