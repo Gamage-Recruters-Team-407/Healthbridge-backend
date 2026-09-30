@@ -26,4 +26,6 @@ public class EquipmentRequestDto {
     private Double initialValue;
     private Double currentValue;
     private String alertMessage;
+    private String branchId;
+    private String branchCode;
 }
