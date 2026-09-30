@@ -48,6 +48,8 @@ public class BedServiceImpl implements BedService {
                 .ward(normalizeWard(request.getWard()))
                 .status(normalizeStatus(request.getStatus()))
                 .bedType(request.getBedType() != null ? request.getBedType().trim() : "Standard")
+                .branchId(request.getBranchId() != null ? request.getBranchId() : "BR-COL-01")
+                .branchCode(request.getBranchCode() != null ? request.getBranchCode() : "BR-COL-01")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -329,6 +331,8 @@ public class BedServiceImpl implements BedService {
                 .ward(bed.getWard())
                 .status(bed.getStatus())
                 .bedType(bed.getBedType())
+                .branchId(bed.getBranchId())
+                .branchCode(bed.getBranchCode())
                 .patient(pDto)
                 .createdAt(bed.getCreatedAt())
                 .updatedAt(bed.getUpdatedAt())

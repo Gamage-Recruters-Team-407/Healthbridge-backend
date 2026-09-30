@@ -13,36 +13,21 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "departments")
-public class Department {
+@Document(collection = "hospital_branches")
+public class Branch {
 
     @Id
     private String id;
-
-    private String departmentId;
-
-    private String name;
-
-    private String head;
-
-    private Integer doctorsCount;
-
-    private Integer staffCount;
-
-    private String location;
-
-    private String status;
-
-    private String description;
-
-    private String contactEmail;
-
-    private String contactPhone;
-
-    private String branchId;
     private String branchCode;
-
+    private String branchName;
+    private String hospitalId;
+    private String address;
+    private String city;
+    private String phone;
+    private String email;
+    private String status; // ACTIVE, INACTIVE
+    private Integer totalBeds;
+    private Boolean emergencyReady;
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 }

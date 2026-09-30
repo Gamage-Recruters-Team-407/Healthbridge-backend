@@ -115,6 +115,8 @@ public class EquipmentServiceImpl implements EquipmentService {
                 .initialValue(request.getInitialValue() != null ? request.getInitialValue() : 25000.0)
                 .currentValue(request.getCurrentValue() != null ? request.getCurrentValue() : 21250.0)
                 .alertMessage(request.getAlertMessage())
+                .branchId(request.getBranchId() != null ? request.getBranchId() : "BR-COL-01")
+                .branchCode(request.getBranchCode() != null ? request.getBranchCode() : "BR-COL-01")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -264,6 +266,8 @@ public class EquipmentServiceImpl implements EquipmentService {
                 .initialValue(e.getInitialValue())
                 .currentValue(e.getCurrentValue())
                 .alertMessage(e.getAlertMessage())
+                .branchId(e.getBranchId())
+                .branchCode(e.getBranchCode())
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();

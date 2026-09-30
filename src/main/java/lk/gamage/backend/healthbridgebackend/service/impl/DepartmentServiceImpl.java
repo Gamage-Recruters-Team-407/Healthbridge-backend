@@ -44,6 +44,10 @@ public class DepartmentServiceImpl implements DepartmentService {
         if (deptId == null || deptId.trim().isEmpty()) {
             long nextNum = departmentRepository.count() + 1;
             deptId = String.format("DEP-%03d", nextNum);
+            while (departmentRepository.existsByDepartmentId(deptId)) {
+                nextNum++;
+                deptId = String.format("DEP-%03d", nextNum);
+            }
         } else {
             if (departmentRepository.existsByDepartmentId(deptId.trim())) {
                 throw new AlreadyExistsException("Department ID '" + deptId.trim() + "' is already in use.");
@@ -63,6 +67,8 @@ public class DepartmentServiceImpl implements DepartmentService {
                 .description(request.getDescription() != null ? request.getDescription().trim() : null)
                 .contactEmail(request.getContactEmail() != null ? request.getContactEmail().trim() : null)
                 .contactPhone(request.getContactPhone() != null ? request.getContactPhone().trim() : null)
+                .branchId(request.getBranchId() != null ? request.getBranchId() : "BR-COL-01")
+                .branchCode(request.getBranchCode() != null ? request.getBranchCode() : "BR-COL-01")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -276,6 +282,8 @@ public class DepartmentServiceImpl implements DepartmentService {
                 .description(department.getDescription())
                 .contactEmail(department.getContactEmail())
                 .contactPhone(department.getContactPhone())
+                .branchId(department.getBranchId())
+                .branchCode(department.getBranchCode())
                 .createdAt(department.getCreatedAt())
                 .updatedAt(department.getUpdatedAt())
                 .build();
