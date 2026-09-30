@@ -24,7 +24,11 @@ public class BedServiceImpl implements BedService {
 
     @PostConstruct
     public void seedInitialData() {
-        bedRepository.deleteAll();
+        try {
+            bedRepository.deleteAll();
+        } catch (Exception e) {
+            System.err.println("⚠️ Could not clear initial beds database: " + e.getMessage());
+        }
     }
 
     @Override

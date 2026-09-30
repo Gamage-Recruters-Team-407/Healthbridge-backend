@@ -29,7 +29,11 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @PostConstruct
     public void seedInitialData() {
-        departmentRepository.deleteAll();
+        try {
+            departmentRepository.deleteAll();
+        } catch (Exception e) {
+            System.err.println("⚠️ Could not clear initial departments database: " + e.getMessage());
+        }
     }
 
     @Override
