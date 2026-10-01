@@ -30,9 +30,10 @@ public class MedicationReminderServiceImpl implements MedicationReminderService 
 
         List<MedicationReminder> newReminders = new ArrayList<>();
         LocalDate startDate = LocalDate.now();
-        int durationDays = 7; 
 
         for (PrescriptionItem item : prescription.getItems()) {
+            int durationDays = parseDurationToDays(item.getDuration());
+
             for (int i = 0; i < durationDays; i++) {
                 LocalDate currentDate = startDate.plusDays(i);
                 List<LocalTime> times = determineTimesFromFrequency(item.getFrequency());
@@ -103,6 +104,32 @@ public class MedicationReminderServiceImpl implements MedicationReminderService 
                 .medicineName(saved.getMedicineName())
                 .status(saved.getStatus())
                 .build();
+    }
+
+    private int parseDurationToDays(String durationStr) {
+        if (durationStr == null || durationStr.trim().isEmpty()) {
+            return 7; 
+        }
+        
+        String upper = durationStr.toUpperCase().trim();
+        try {
+            String numberPart = upper.replaceAll("[^0-9]", "");
+            if (numberPart.isEmpty()) return 7;
+            
+            int amount = Integer.parseInt(numberPart);
+            
+            if (upper.contains("YEAR")) {
+                return amount * 365;
+            } else if (upper.contains("MONTH")) {
+                return amount * 30;
+            } else if (upper.contains("WEEK")) {
+                return amount * 7;
+            } else {
+                return amount;
+            }
+        } catch (Exception e) {
+            return 7;
+        }
     }
 
     private List<LocalTime> determineTimesFromFrequency(String frequency) {

@@ -97,4 +97,22 @@ public class CloudinaryService {
             );
         }
     }
+    public void deleteFile(String publicId) {
+    try {
+
+        cloudinary.uploader().destroy(
+                publicId,
+                ObjectUtils.asMap(
+                        "resource_type", "raw"
+                )
+        );
+
+    } catch (Exception e) {
+
+        throw new RuntimeException(
+                "Failed to delete file from Cloudinary: "
+                        + e.getMessage()
+        );
+    }
+}
 }
