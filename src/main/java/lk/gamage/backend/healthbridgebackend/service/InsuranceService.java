@@ -29,5 +29,6 @@ public interface InsuranceService {
     List<InsuranceClaimResponse> getClaimsForPatient(String patientId);
     List<InsuranceClaimResponse> getAllClaims();
     InsuranceClaimResponse decideClaim(String claimId, String officerId, ClaimDecisionRequest decision);
+    InsuranceClaimResponse startClaimReview(String claimId, String officerId);
     InsuranceReportResponse getInsuranceReportSummary(LocalDate startDate, LocalDate endDate);
 }

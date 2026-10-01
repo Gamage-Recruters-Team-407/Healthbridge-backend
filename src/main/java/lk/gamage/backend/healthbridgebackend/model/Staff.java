@@ -43,6 +43,9 @@ public class Staff {
     private String locationFloor;
     private String accountStatus;
 
+    private String branchId;
+    private String branchCode;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

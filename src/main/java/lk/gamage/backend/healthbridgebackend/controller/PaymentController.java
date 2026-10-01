@@ -45,13 +45,18 @@ public class PaymentController {
 
         try {
             Payment payment = paymentService.initiatePayment(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "message", "Payment initiated. A 6-digit confirmation code has been sent to your registered email.",
-                    "paymentId", payment.getId(),
-                    "maskedCard", payment.getMaskedCardNumber(),
-                    "amount", payment.getAmount(),
-                    "status", payment.getStatus()
-            ));
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("message", "Payment initiated. A 6-digit confirmation code has been sent to your registered email.");
+            resp.put("paymentId", payment.getId());
+            resp.put("maskedCard", payment.getMaskedCardNumber());
+            resp.put("amount", payment.getAmount());
+            resp.put("status", payment.getStatus());
+            boolean emailSent = Boolean.TRUE.equals(payment.getEmailSent());
+            resp.put("emailSent", emailSent);
+            if (!emailSent && payment.getConfirmationCode() != null) {
+                resp.put("devOtp", payment.getConfirmationCode());
+            }
+            return ResponseEntity.status(HttpStatus.CREATED).body(resp);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
