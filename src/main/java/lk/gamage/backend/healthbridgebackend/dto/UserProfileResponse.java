@@ -12,7 +12,7 @@ public class UserProfileResponse {
     private String fullName;
     private String email;
     private String phoneNumber;
-    private Role role;
+    private String role;
     private AuthProvider provider;
     private String googleId;
     private String picture;
@@ -22,6 +22,9 @@ public class UserProfileResponse {
     private String address;
     private String emergencyContact;
     private String medicalHistory;
+    private java.util.List<String> allergies;
+    private java.util.List<String> conditions;
+    private String accountStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -40,9 +43,13 @@ public class UserProfileResponse {
         this.dateOfBirth = user.getDateOfBirth();
         this.gender = user.getGender();
         this.bloodGroup = user.getBloodGroup();
+        if (user.getBloodType() != null) this.bloodGroup = user.getBloodType(); // support both
         this.address = user.getAddress();
         this.emergencyContact = user.getEmergencyContact();
         this.medicalHistory = user.getMedicalHistory();
+        this.allergies = user.getAllergies();
+        this.conditions = user.getConditions();
+        this.accountStatus = user.getAccountStatus();
         this.createdAt = user.getCreatedAt();
         this.updatedAt = user.getUpdatedAt();
     }
@@ -79,11 +86,11 @@ public class UserProfileResponse {
         this.phoneNumber = phoneNumber;
     }
 
-    public Role getRole() {
+    public String getRole() {
         return role;
     }
 
-    public void setRole(Role role) {
+    public void setRole(String role) {
         this.role = role;
     }
 
@@ -157,6 +164,30 @@ public class UserProfileResponse {
 
     public void setMedicalHistory(String medicalHistory) {
         this.medicalHistory = medicalHistory;
+    }
+
+    public java.util.List<String> getAllergies() {
+        return allergies;
+    }
+
+    public void setAllergies(java.util.List<String> allergies) {
+        this.allergies = allergies;
+    }
+
+    public java.util.List<String> getConditions() {
+        return conditions;
+    }
+
+    public void setConditions(java.util.List<String> conditions) {
+        this.conditions = conditions;
+    }
+
+    public String getAccountStatus() {
+        return accountStatus;
+    }
+
+    public void setAccountStatus(String accountStatus) {
+        this.accountStatus = accountStatus;
     }
 
     public LocalDateTime getCreatedAt() {

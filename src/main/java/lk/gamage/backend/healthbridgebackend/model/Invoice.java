@@ -1,7 +1,5 @@
 package lk.gamage.backend.healthbridgebackend.model;
 
-import lk.gamage.backend.healthbridgebackend.model.enums.InvoiceStatus;
-import lk.gamage.backend.healthbridgebackend.model.enums.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,21 +28,25 @@ public class Invoice {
 
     private String hospitalId;
 
-    private BigDecimal subTotal;
+    private LocalDateTime issueDate;
+
+    private LocalDateTime dueDate;
+
+    private BigDecimal subtotal;
 
     private BigDecimal discount;
 
     private BigDecimal tax;
 
-    private BigDecimal totalAmount;
+    private BigDecimal total;
 
-    private InvoiceStatus status;
+    private BigDecimal paidAmount;
 
-    private PaymentStatus paymentStatus;
+    private BigDecimal balance;
 
-    private LocalDateTime invoiceDate;
+    private String status;
 
-    private LocalDateTime createdAt;
+    private String paymentStatus;
 
-    private LocalDateTime updatedAt;
+    private String notes;
 }

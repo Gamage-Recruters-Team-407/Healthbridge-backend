@@ -5,8 +5,11 @@ import com.mongodb.client.MongoClients;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.convert.MongoConverter;
+import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 
 @Configuration
 public class MongoConfig extends AbstractMongoClientConfiguration {
@@ -31,5 +34,9 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
     @Bean
     public MongoTemplate mongoTemplate() {
         return new MongoTemplate(mongoClient(), getDatabaseName());
+    }
+
+    public GridFsTemplate gridFsTemplate(MongoDatabaseFactory dbFactory, MongoConverter converter) {
+        return new GridFsTemplate(dbFactory, converter);
     }
 }

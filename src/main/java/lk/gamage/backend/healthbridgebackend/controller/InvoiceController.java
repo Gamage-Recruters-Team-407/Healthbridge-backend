@@ -1,6 +1,7 @@
 package lk.gamage.backend.healthbridgebackend.controller;
-import lk.gamage.backend.healthbridgebackend.dto.InvoiceRequest;
-import lk.gamage.backend.healthbridgebackend.model.Invoice;
+
+import lk.gamage.backend.healthbridgebackend.dto.request.InvoiceRequest;
+import lk.gamage.backend.healthbridgebackend.dto.response.InvoiceResponse;
 import lk.gamage.backend.healthbridgebackend.service.InvoiceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,7 @@ public class InvoiceController {
     private final InvoiceService invoiceService;
 
     @PostMapping
-    public ResponseEntity<Invoice> createInvoice(
+    public ResponseEntity<InvoiceResponse> createInvoice(
             @RequestBody InvoiceRequest request) {
 
         return ResponseEntity
@@ -27,35 +28,39 @@ public class InvoiceController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Invoice>> getAllInvoices() {
+    public ResponseEntity<List<InvoiceResponse>> getAllInvoices() {
 
         return ResponseEntity.ok(
-                invoiceService.getAllInvoices());
+                invoiceService.getAllInvoices()
+        );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Invoice> getInvoice(
+    public ResponseEntity<InvoiceResponse> getInvoice(
             @PathVariable String id) {
 
         return ResponseEntity.ok(
-                invoiceService.getInvoice(id));
+                invoiceService.getInvoice(id)
+        );
     }
 
     @GetMapping("/patient/{patientId}")
-    public ResponseEntity<List<Invoice>> getPatientInvoices(
+    public ResponseEntity<List<InvoiceResponse>> getPatientInvoices(
             @PathVariable String patientId) {
 
         return ResponseEntity.ok(
-                invoiceService.getPatientInvoices(patientId));
+                invoiceService.getPatientInvoices(patientId)
+        );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Invoice> updateInvoice(
+    public ResponseEntity<InvoiceResponse> updateInvoice(
             @PathVariable String id,
             @RequestBody InvoiceRequest request) {
 
         return ResponseEntity.ok(
-                invoiceService.updateInvoice(id, request));
+                invoiceService.updateInvoice(id, request)
+        );
     }
 
     @DeleteMapping("/{id}")
@@ -64,6 +69,8 @@ public class InvoiceController {
 
         invoiceService.deleteInvoice(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }
