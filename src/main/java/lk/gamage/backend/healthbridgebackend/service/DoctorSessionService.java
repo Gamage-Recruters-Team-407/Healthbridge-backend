@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 public class DoctorSessionService {
     public static final String HOSPITAL_ID = "healthbridge-hospital";
     public static final String HOSPITAL_NAME = "HealthBridge Hospital";
+    private static final String DEFAULT_APPOINTMENT_TYPE = "IN_PERSON";
     private final DoctorSessionRepository repository;
     private final UserRepository userRepository;
     private final MongoTemplate mongoTemplate;
@@ -51,7 +52,8 @@ public class DoctorSessionService {
                 .specializationId(trimToNull(r.specializationId())).specializationName(r.specializationName().trim())
                 .sessionDate(r.sessionDate()).startTime(r.startTime()).endTime(r.endTime())
                 .maxAppointments(r.maxAppointments()).bookedCount(0).lastIssuedAppointmentNumber(0).currentQueueNumber(0)
-                .status(SessionStatus.AVAILABLE).notes(trimToNull(r.notes())).createdAt(now).updatedAt(now).build();
+                .status(SessionStatus.AVAILABLE).notes(trimToNull(r.notes())).appointmentType(normalizeAppointmentType(r.appointmentType()))
+                .createdAt(now).updatedAt(now).build();
         return toResponse(repository.save(session));
     }
 
@@ -64,7 +66,9 @@ public class DoctorSessionService {
         session.setHospitalId(HOSPITAL_ID); session.setHospitalName(HOSPITAL_NAME);
         session.setSpecializationId(trimToNull(r.specializationId())); session.setSpecializationName(r.specializationName().trim());
         session.setSessionDate(r.sessionDate()); session.setStartTime(r.startTime()); session.setEndTime(r.endTime());
-        session.setMaxAppointments(r.maxAppointments()); session.setNotes(trimToNull(r.notes())); session.setUpdatedAt(LocalDateTime.now());
+        session.setMaxAppointments(r.maxAppointments()); session.setNotes(trimToNull(r.notes()));
+        session.setAppointmentType(normalizeAppointmentType(r.appointmentType()));
+        session.setUpdatedAt(LocalDateTime.now());
         if (session.getBookedCount() >= session.getMaxAppointments()) session.setStatus(SessionStatus.FULL);
         else if (session.getStatus() == SessionStatus.FULL) session.setStatus(SessionStatus.AVAILABLE);
         return toResponse(repository.save(session));
@@ -181,7 +185,7 @@ public class DoctorSessionService {
                 hospitalId, hospitalName, s.getSessionDate(), s.getSessionDate().getDayOfWeek().toString(),
                 s.getStartTime(), s.getEndTime(), s.getMaxAppointments(), s.getBookedCount(),
                 Math.max(s.getMaxAppointments() - s.getBookedCount(), 0), s.getLastIssuedAppointmentNumber(),
-                s.getCurrentQueueNumber(), effective, s.getNotes());
+                s.getCurrentQueueNumber(), effective, s.getNotes(), normalizeAppointmentType(s.getAppointmentType()));
     }
 
     private void validateRequest(DoctorSessionRequest r) {
@@ -189,6 +193,9 @@ public class DoctorSessionService {
         if (r.maxAppointments() <= 0) throw new BadRequestException("Maximum appointments must be greater than zero.");
         if (r.sessionDate() != null && r.sessionDate().isBefore(LocalDate.now())) throw new BadRequestException("Session date cannot be in the past.");
         if (r.endTime() != null && !r.endTime().isAfter(r.startTime())) throw new BadRequestException("End time must be after start time.");
+        if (r.appointmentType() != null && !r.appointmentType().isBlank()
+                && !"VIDEO".equalsIgnoreCase(r.appointmentType()) && !"IN_PERSON".equalsIgnoreCase(r.appointmentType()))
+            throw new BadRequestException("appointmentType must be either VIDEO or IN_PERSON.");
     }
     private void assertNoOverlap(String doctorId, LocalDate date, LocalTime start, LocalTime end, String ignoredId) {
         LocalTime requestedEnd = end == null ? start.plusMinutes(1) : end;
@@ -202,4 +209,8 @@ public class DoctorSessionService {
         if (!"DOCTOR".equalsIgnoreCase(user.getRole())) throw new AccessDeniedException("Only doctors can manage sessions.");
     }
     private String trimToNull(String value) { return value == null || value.isBlank() ? null : value.trim(); }
+    /** Normalizes to "VIDEO" or "IN_PERSON", defaulting older/blank values to IN_PERSON. */
+    private String normalizeAppointmentType(String value) {
+        return value != null && value.equalsIgnoreCase("VIDEO") ? "VIDEO" : DEFAULT_APPOINTMENT_TYPE;
+    }
 }

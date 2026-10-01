@@ -49,7 +49,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         a.setDoctorName(userRepository.findById(reserved.getDoctorId()).map(User::getFullName).orElse("Doctor"));
         a.setDoctorSpecialization(reserved.getSpecializationName());
         a.setAppointmentDate(reserved.getSessionDate()); a.setAppointmentTime(reserved.getStartTime().toString());
-        a.setAppointmentType("IN_PERSON"); a.setStatus(AppointmentStatus.BOOKED);
+        a.setAppointmentType(reserved.getAppointmentType() != null ? reserved.getAppointmentType() : "IN_PERSON");
+        a.setStatus(AppointmentStatus.BOOKED);
         a.setAppointmentNumber(reserved.getLastIssuedAppointmentNumber());
         a.setReferenceNumber(reference(reserved)); a.setActiveBookingKey(reserved.getId() + ":" + patientId);
         a.setPatientName(r.patientName().trim()); a.setPatientPhone(r.patientPhone().trim());
@@ -110,6 +111,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         a.setHospital(target.getHospitalName()); a.setDoctorSpecialization(target.getSpecializationName());
         a.setDoctorName(userRepository.findById(target.getDoctorId()).map(User::getFullName).orElse("Doctor"));
         a.setAppointmentDate(target.getSessionDate()); a.setAppointmentTime(target.getStartTime().toString());
+        a.setAppointmentType(target.getAppointmentType() != null ? target.getAppointmentType() : "IN_PERSON");
         a.setAppointmentNumber(target.getLastIssuedAppointmentNumber()); a.setActiveBookingKey(target.getId() + ":" + patientId);
         a.setUpdatedAt(LocalDateTime.now());
         try {

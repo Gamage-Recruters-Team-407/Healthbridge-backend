@@ -16,4 +16,6 @@ public record DoctorSessionRequest(
         @NotNull LocalTime startTime,
         LocalTime endTime,
         @Positive int maxAppointments,
-        String notes) { }
+        String notes,
+        /** "VIDEO" or "IN_PERSON". Optional — defaults to IN_PERSON if blank. */
+        String appointmentType) { }
