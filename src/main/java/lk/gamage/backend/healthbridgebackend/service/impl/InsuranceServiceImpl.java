@@ -229,6 +229,18 @@ public class InsuranceServiceImpl implements InsuranceService {
     }
 
     @Override
+    public InsuranceClaimResponse startClaimReview(String claimId, String officerId) {
+        InsuranceClaim claim = findClaimOrThrow(claimId);
+        if (claim.getStatus() == ClaimStatus.SUBMITTED) {
+            claim.setStatus(ClaimStatus.UNDER_REVIEW);
+            claim.setReviewedByOfficerId(officerId);
+            claim.setUpdatedAt(LocalDateTime.now());
+            claim = claimRepo.save(claim);
+        }
+        return toInsuranceClaimResponse(claim);
+    }
+
+    @Override
     public InsuranceReportResponse getInsuranceReportSummary(LocalDate startDate, LocalDate endDate) {
         List<InsuranceClaim> allClaims = claimRepo.findAll();
         List<InsurancePolicy> allPolicies = policyRepo.findAll();

@@ -1,25 +1,33 @@
 package lk.gamage.backend.healthbridgebackend.controller;
 
-import lk.gamage.backend.healthbridgebackend.dto.request.AppointmentRequest;
-import lk.gamage.backend.healthbridgebackend.dto.response.AppointmentResponse;
-import lk.gamage.backend.healthbridgebackend.model.Appointment;
+import jakarta.validation.Valid;
+import java.util.List;
+import lk.gamage.backend.healthbridgebackend.dto.request.AppointmentBookingRequest;
+import lk.gamage.backend.healthbridgebackend.dto.request.AppointmentRescheduleRequest;
+import lk.gamage.backend.healthbridgebackend.dto.response.AppointmentBookingResponse;
+import lk.gamage.backend.healthbridgebackend.security.CustomUserDetails;
 import lk.gamage.backend.healthbridgebackend.service.AppointmentService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/appointments")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003"})
 public class AppointmentController {
     private final AppointmentService service;
     public AppointmentController(AppointmentService service) { this.service = service; }
-    @GetMapping public List<AppointmentResponse> getAll(@RequestParam(required = false) String patientId, @RequestParam(required = false) String doctorId, @RequestParam(required = false) String status) { return service.find(patientId, doctorId, status).stream().map(this::toResponse).toList(); }
-    @GetMapping("/{id}") public AppointmentResponse get(@PathVariable String id) { return toResponse(service.findById(id)); }
-    @PostMapping @ResponseStatus(HttpStatus.CREATED) public AppointmentResponse create(@RequestBody AppointmentRequest request) { return toResponse(service.create(request)); }
-    @PutMapping("/{id}") public AppointmentResponse reschedule(@PathVariable String id, @RequestBody AppointmentRequest request) { return toResponse(service.reschedule(id, request)); }
-    @PatchMapping("/{id}/cancel") public AppointmentResponse cancel(@PathVariable String id, @RequestParam(required = false) String reason) { return toResponse(service.cancel(id, reason)); }
-    @PatchMapping("/{id}/decision") public AppointmentResponse decide(@PathVariable String id, @RequestParam String decision) { return toResponse(service.decide(id, decision)); }
-    @PatchMapping("/{id}/complete") public AppointmentResponse complete(@PathVariable String id) { return toResponse(service.complete(id)); }
-    private AppointmentResponse toResponse(Appointment a) { return new AppointmentResponse(a.getId(), a.getPatientId(), a.getDoctorId(), a.getDoctorName(), a.getDoctorSpecialization(), a.getHospital(), a.getAppointmentDate(), a.getAppointmentTime(), a.getAppointmentType(), a.getReason(), a.getStatus(), a.getDoctorDecision(), a.getCancellationReason(), a.getCreatedAt(), a.getUpdatedAt()); }
+
+    @PostMapping("/book") @ResponseStatus(HttpStatus.CREATED) @PreAuthorize("hasRole('PATIENT')")
+    public AppointmentBookingResponse book(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody AppointmentBookingRequest request) { return service.book(user.getId(), request); }
+    @GetMapping("/my") @PreAuthorize("hasRole('PATIENT')")
+    public List<AppointmentBookingResponse> mine(@AuthenticationPrincipal CustomUserDetails user) { return service.findMine(user.getId()); }
+    @GetMapping("/{id}") @PreAuthorize("isAuthenticated()")
+    public AppointmentBookingResponse get(@AuthenticationPrincipal CustomUserDetails user, @PathVariable String id) { return service.findOwned(id, user.getId(), user.getRole()); }
+    @PatchMapping("/{id}/cancel") @PreAuthorize("hasRole('PATIENT')")
+    public AppointmentBookingResponse cancel(@AuthenticationPrincipal CustomUserDetails user, @PathVariable String id, @RequestParam(required=false) String reason) { return service.cancel(id, user.getId(), reason); }
+    @PatchMapping("/{id}/reschedule") @PreAuthorize("hasRole('PATIENT')")
+    public AppointmentBookingResponse reschedule(@AuthenticationPrincipal CustomUserDetails user, @PathVariable String id, @Valid @RequestBody AppointmentRescheduleRequest request) { return service.reschedule(id, user.getId(), request.sessionId()); }
+    @PatchMapping("/{id}/queue-status") @PreAuthorize("hasRole('DOCTOR')")
+    public AppointmentBookingResponse queueStatus(@AuthenticationPrincipal CustomUserDetails user, @PathVariable String id, @RequestParam String status) { return service.updateQueueAppointment(id, user.getId(), status); }
 }
