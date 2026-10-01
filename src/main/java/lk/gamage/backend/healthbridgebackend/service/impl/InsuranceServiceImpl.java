@@ -41,15 +41,18 @@ public class InsuranceServiceImpl implements InsuranceService {
     private final InsuranceClaimRepository claimRepo;
     private final FileStorageService fileStorageService;
     private final CloudinaryService cloudinaryService;
+    private final FraudDetectionService fraudDetectionService;
 
     public InsuranceServiceImpl(InsurancePolicyRepository policyRepo,
                                  InsuranceClaimRepository claimRepo,
                                  FileStorageService fileStorageService,
-                                 CloudinaryService cloudinaryService) {
+                                 CloudinaryService cloudinaryService,
+                                 FraudDetectionService fraudDetectionService) {
         this.policyRepo = policyRepo;
         this.claimRepo = claimRepo;
         this.fileStorageService = fileStorageService;
         this.cloudinaryService = cloudinaryService;
+        this.fraudDetectionService = fraudDetectionService;
     }
 
     @Override
