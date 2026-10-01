@@ -20,6 +20,7 @@ public class InsuranceClaimResponse {
     private String branch;
     private Double claimAmount;
     private Double approvedAmount;
+    private List<String> documentUrls;
     private List<String> documentFileIds;
     private ClaimStatus status;
     private String rejectionReason;

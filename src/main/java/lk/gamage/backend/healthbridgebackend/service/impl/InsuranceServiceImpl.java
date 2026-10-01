@@ -16,6 +16,7 @@ import lk.gamage.backend.healthbridgebackend.model.InsuranceClaim;
 import lk.gamage.backend.healthbridgebackend.model.InsurancePolicy;
 import lk.gamage.backend.healthbridgebackend.repository.InsuranceClaimRepository;
 import lk.gamage.backend.healthbridgebackend.repository.InsurancePolicyRepository;
+import lk.gamage.backend.healthbridgebackend.service.CloudinaryService;
 import lk.gamage.backend.healthbridgebackend.service.FileStorageService;
 import lk.gamage.backend.healthbridgebackend.service.InsuranceService;
 import org.springframework.stereotype.Service;
@@ -34,13 +35,16 @@ public class InsuranceServiceImpl implements InsuranceService {
     private final InsurancePolicyRepository policyRepo;
     private final InsuranceClaimRepository claimRepo;
     private final FileStorageService fileStorageService;
+    private final CloudinaryService cloudinaryService;
 
     public InsuranceServiceImpl(InsurancePolicyRepository policyRepo,
                                  InsuranceClaimRepository claimRepo,
-                                 FileStorageService fileStorageService) {
+                                 FileStorageService fileStorageService,
+                                 CloudinaryService cloudinaryService) {
         this.policyRepo = policyRepo;
         this.claimRepo = claimRepo;
         this.fileStorageService = fileStorageService;
+        this.cloudinaryService = cloudinaryService;
     }
 
     @Override
@@ -135,9 +139,35 @@ public class InsuranceServiceImpl implements InsuranceService {
             throw new BadRequestException("At least one supporting document is required");
         }
 
-        List<String> fileIds = documents.stream()
-                .map(fileStorageService::store)
-                .collect(Collectors.toList());
+        List<String> documentUrls = new ArrayList<>();
+        List<String> documentPublicIds = new ArrayList<>();
+        List<String> fileIds = new ArrayList<>();
+
+        for (MultipartFile doc : documents) {
+            if (doc != null && !doc.isEmpty()) {
+                boolean uploadedToCloudinary = false;
+                try {
+                    Map<String, String> uploadResult = cloudinaryService.uploadFile(doc, "insurance/claims");
+                    if (uploadResult != null && uploadResult.get("url") != null) {
+                        documentUrls.add(uploadResult.get("url"));
+                        if (uploadResult.get("publicId") != null) {
+                            documentPublicIds.add(uploadResult.get("publicId"));
+                        }
+                        uploadedToCloudinary = true;
+                    }
+                } catch (Exception e) {
+                    // Fallback to GridFS file storage if Cloudinary upload encounters an issue
+                }
+
+                if (!uploadedToCloudinary) {
+                    try {
+                        String storedFileId = fileStorageService.store(doc);
+                        fileIds.add(storedFileId);
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        }
 
         String hospital = (req.getHospitalName() != null && !req.getHospitalName().isBlank())
                 ? req.getHospitalName() : "HealthBridge Hospital";
@@ -152,6 +182,8 @@ public class InsuranceServiceImpl implements InsuranceService {
                 .hospitalName(hospital)
                 .branch(branch)
                 .claimAmount(req.getClaimAmount())
+                .documentUrls(documentUrls)
+                .documentPublicIds(documentPublicIds)
                 .documentFileIds(fileIds)
                 .status(ClaimStatus.SUBMITTED)
                 .submittedAt(LocalDateTime.now())
@@ -457,7 +489,8 @@ public class InsuranceServiceImpl implements InsuranceService {
                 .branch(c.getBranch() != null ? c.getBranch() : "Colombo")
                 .claimAmount(c.getClaimAmount())
                 .approvedAmount(c.getApprovedAmount())
-                .documentFileIds(c.getDocumentFileIds())
+                .documentUrls(c.getDocumentUrls() != null ? c.getDocumentUrls() : new ArrayList<>())
+                .documentFileIds(c.getDocumentFileIds() != null ? c.getDocumentFileIds() : new ArrayList<>())
                 .status(c.getStatus())
                 .rejectionReason(c.getRejectionReason())
                 .submittedAt(c.getSubmittedAt())
