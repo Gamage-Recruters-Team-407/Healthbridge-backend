@@ -126,10 +126,21 @@ public class InvoiceServiceImpl implements InvoiceService {
         // ✅ Calculate total from prescription items
         if (prescription.getItems() != null && !prescription.getItems().isEmpty()) {
             for (PrescriptionItem item : prescription.getItems()) {
-                Medicine medicine = medicineRepository.findById(item.getMedicineId())
-                        .orElse(null);
+                Medicine medicine = null;
+                if (item.getMedicineId() != null && !item.getMedicineId().isBlank()) {
+                    medicine = medicineRepository.findById(item.getMedicineId()).orElse(null);
+                    if (medicine == null) {
+                        medicine = medicineRepository.findByMedicineCode(item.getMedicineId()).orElse(null);
+                    }
+                }
+                if (medicine == null && item.getMedicineName() != null && !item.getMedicineName().isBlank()) {
+                    List<Medicine> matches = medicineRepository.findByNameContainingIgnoreCase(item.getMedicineName());
+                    if (!matches.isEmpty()) {
+                        medicine = matches.get(0);
+                    }
+                }
 
-                if (medicine != null) {
+                if (medicine != null && medicine.getUnitPrice() > 0) {
                     BigDecimal itemPrice = BigDecimal.valueOf(medicine.getUnitPrice())
                             .multiply(BigDecimal.valueOf(item.getQuantity()));
                     subtotal = subtotal.add(itemPrice);

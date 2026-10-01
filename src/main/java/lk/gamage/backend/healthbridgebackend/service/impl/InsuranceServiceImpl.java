@@ -18,9 +18,12 @@ import lk.gamage.backend.healthbridgebackend.repository.InsuranceClaimRepository
 import lk.gamage.backend.healthbridgebackend.repository.InsurancePolicyRepository;
 import lk.gamage.backend.healthbridgebackend.service.CloudinaryService;
 import lk.gamage.backend.healthbridgebackend.service.FileStorageService;
+import lk.gamage.backend.healthbridgebackend.service.FraudDetectionService;
 import lk.gamage.backend.healthbridgebackend.service.InsuranceService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -31,6 +34,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class InsuranceServiceImpl implements InsuranceService {
+
+    private static final Logger log = LoggerFactory.getLogger(InsuranceServiceImpl.class);
 
     private final InsurancePolicyRepository policyRepo;
     private final InsuranceClaimRepository claimRepo;
@@ -190,7 +195,15 @@ public class InsuranceServiceImpl implements InsuranceService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        return toInsuranceClaimResponse(claimRepo.save(claim));
+        InsuranceClaim savedClaim = claimRepo.save(claim);
+        try {
+            fraudDetectionService.analyzeClaimForFraud(savedClaim.getId());
+        } catch (RuntimeException exception) {
+            // Claim submission must remain available if fraud analysis is temporarily unavailable.
+            log.error("Fraud analysis failed claimId={}", savedClaim.getId(), exception);
+        }
+
+        return toInsuranceClaimResponse(savedClaim);
     }
 
     @Override
