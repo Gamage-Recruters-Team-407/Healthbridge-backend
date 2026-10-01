@@ -25,6 +25,9 @@ public class UserService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private AuditLogService auditLogService;
+
     public UserProfileResponse getProfileByEmail(String email) {
         User user = userRepository.findByEmail(email.toLowerCase().trim())
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
@@ -168,5 +171,69 @@ public class UserService {
         return users.stream()
                 .map(UserProfileResponse::new)
                 .collect(Collectors.toList());
+    }
+
+    // --- SUPER ADMIN ACTIONS ---
+
+    public UserProfileResponse updateUserStatus(String id, String status) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+        
+        user.setAccountStatus(status);
+        user.setUpdatedAt(LocalDateTime.now());
+        
+        User savedUser = userRepository.save(user);
+
+        // Record in Audit Log
+        lk.gamage.backend.healthbridgebackend.dto.AuditLogDto logDto = new lk.gamage.backend.healthbridgebackend.dto.AuditLogDto();
+        logDto.setUser("Super Admin");
+        logDto.setRole("Super Admin");
+        logDto.setEvent("User Status Update");
+        logDto.setModule("User Management");
+        logDto.setActionDetails("Updated user " + user.getEmail() + " status to " + status);
+        logDto.setRefId(id);
+        logDto.setIpDevice("System");
+        logDto.setStatus("Success");
+        logDto.setSeverity("High");
+        auditLogService.logAction(logDto);
+
+        return new UserProfileResponse(savedUser);
+    }
+
+    public void deleteUser(String id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+        userRepository.delete(user);
+
+        // Record in Audit Log
+        lk.gamage.backend.healthbridgebackend.dto.AuditLogDto logDto = new lk.gamage.backend.healthbridgebackend.dto.AuditLogDto();
+        logDto.setUser("Super Admin");
+        logDto.setRole("Super Admin");
+        logDto.setEvent("User Deleted");
+        logDto.setModule("User Management");
+        logDto.setActionDetails("Deleted user " + user.getEmail() + " permanently.");
+        logDto.setRefId(id);
+        logDto.setIpDevice("System");
+        logDto.setStatus("Success");
+        logDto.setSeverity("Critical");
+        auditLogService.logAction(logDto);
+    }
+
+    public UserProfileResponse updateUserDetails(String id, UserProfileUpdateRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+
+        if (request.getFullName() != null) user.setFullName(request.getFullName());
+        if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
+        if (request.getDateOfBirth() != null) user.setDateOfBirth(request.getDateOfBirth());
+        if (request.getGender() != null) user.setGender(request.getGender());
+        if (request.getBloodGroup() != null) user.setBloodGroup(request.getBloodGroup());
+        if (request.getAddress() != null) user.setAddress(request.getAddress());
+        if (request.getEmergencyContact() != null) user.setEmergencyContact(request.getEmergencyContact());
+        if (request.getMedicalHistory() != null) user.setMedicalHistory(request.getMedicalHistory());
+
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
     }
 }
