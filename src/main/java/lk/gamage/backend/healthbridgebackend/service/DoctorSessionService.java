@@ -28,8 +28,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class DoctorSessionService {
-    public static final String HOSPITAL_ID = "healthbridge-hospital";
-    public static final String HOSPITAL_NAME = "HealthBridge Hospital";
     private final DoctorSessionRepository repository;
     private final UserRepository userRepository;
     private final MongoTemplate mongoTemplate;
@@ -177,8 +175,10 @@ public class DoctorSessionService {
     public DoctorSessionResponse toResponse(DoctorSession s) {
         String doctorName = userRepository.findById(s.getDoctorId()).map(User::getFullName).orElse("Doctor");
         SessionStatus effective = s.getSessionDate().isBefore(LocalDate.now()) ? SessionStatus.COMPLETED : s.getStatus();
-        String hospitalId = s.getHospitalId() == null || s.getHospitalId().isBlank() ? HOSPITAL_ID : s.getHospitalId();
-        String hospitalName = s.getHospitalName() == null || s.getHospitalName().isBlank() ? HOSPITAL_NAME : s.getHospitalName();
+        // Branch information is supplied by Hospital Management and stored on the session.
+        // Do not invent a default hospital for legacy records that have no branch assigned.
+        String hospitalId = s.getHospitalId();
+        String hospitalName = s.getHospitalName();
         return new DoctorSessionResponse(s.getId(), s.getDoctorId(), doctorName, s.getSpecializationId(), s.getSpecializationName(),
                 hospitalId, hospitalName, s.getSessionDate(), s.getSessionDate().getDayOfWeek().toString(),
                 s.getStartTime(), s.getEndTime(), s.getMaxAppointments(), s.getBookedCount(),
