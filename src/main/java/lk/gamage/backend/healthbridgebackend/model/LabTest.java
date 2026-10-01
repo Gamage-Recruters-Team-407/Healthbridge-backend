@@ -33,3 +33,4 @@ public class LabTest {
     public enum TestPriority { ROUTINE, URGENT, STAT }
     public enum TestStatus { REQUESTED, SAMPLE_COLLECTED, PROCESSING, COMPLETED, CANCELLED }
 }
+
