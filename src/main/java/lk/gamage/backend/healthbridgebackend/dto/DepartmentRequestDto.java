@@ -21,4 +21,6 @@ public class DepartmentRequestDto {
     private String description;
     private String contactEmail;
     private String contactPhone;
+    private String branchId;
+    private String branchCode;
 }

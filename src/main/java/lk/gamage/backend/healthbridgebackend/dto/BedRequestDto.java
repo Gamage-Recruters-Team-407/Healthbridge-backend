@@ -16,4 +16,6 @@ public class BedRequestDto {
     private String ward;
     private String status;
     private String bedType;
+    private String branchId;
+    private String branchCode;
 }

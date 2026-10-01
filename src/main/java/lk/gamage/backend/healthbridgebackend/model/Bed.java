@@ -29,6 +29,9 @@ public class Bed {
 
     private String bedType; // e.g. "ICU Standard", "Electric ICU", "General Standard", etc.
 
+    private String branchId;
+    private String branchCode;
+
     private PatientInfo patient;
 
     private LocalDateTime createdAt;

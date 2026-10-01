@@ -29,15 +29,11 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @PostConstruct
     public void seedInitialData() {
-        departmentRepository.deleteAll();
-        List<Department> initialDepartments = Arrays.asList(
-                Department.builder().departmentId("DEP-001").name("Cardiology").head("Dr. Nimal Perera").doctorsCount(12).staffCount(24).location("Floor 02").status("Active").contactEmail("cardiology@healthbridge.lk").contactPhone("+94 11 234 5671").description("Specialized unit for cardiovascular disease diagnosis, treatment, and cardiac care.").createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                Department.builder().departmentId("DEP-002").name("Neurology").head("Dr. Sarah Fernando").doctorsCount(8).staffCount(18).location("Floor 03").status("Active").contactEmail("neurology@healthbridge.lk").contactPhone("+94 11 234 5672").description("Comprehensive neurological disorders, brain injury, and spinal treatment center.").createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                Department.builder().departmentId("DEP-003").name("Pediatrics").head("Dr. Ayesha Silva").doctorsCount(10).staffCount(22).location("Floor 01").status("Active").contactEmail("pediatrics@healthbridge.lk").contactPhone("+94 11 234 5673").description("Dedicated medical care for infants, children, and adolescents.").createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                Department.builder().departmentId("DEP-004").name("Emergency").head("Dr. Champa Wickramasinghe").doctorsCount(15).staffCount(45).location("Ground Floor").status("Active").contactEmail("emergency@healthbridge.lk").contactPhone("+94 11 234 5677").description("24/7 acute emergency care and intensive trauma response unit.").createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build(),
-                Department.builder().departmentId("DEP-005").name("Orthopedics").head("Dr. Ruwan Bandara").doctorsCount(14).staffCount(30).location("Floor 02").status("Active").contactEmail("orthopedics@healthbridge.lk").contactPhone("+94 11 234 5675").description("Bone, joint, and musculoskeletal system trauma and surgical specialists.").createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build()
-        );
-        departmentRepository.saveAll(initialDepartments);
+        try {
+            departmentRepository.deleteAll();
+        } catch (Exception e) {
+            System.err.println("⚠️ Could not clear initial departments database: " + e.getMessage());
+        }
     }
 
     @Override
@@ -48,6 +44,10 @@ public class DepartmentServiceImpl implements DepartmentService {
         if (deptId == null || deptId.trim().isEmpty()) {
             long nextNum = departmentRepository.count() + 1;
             deptId = String.format("DEP-%03d", nextNum);
+            while (departmentRepository.existsByDepartmentId(deptId)) {
+                nextNum++;
+                deptId = String.format("DEP-%03d", nextNum);
+            }
         } else {
             if (departmentRepository.existsByDepartmentId(deptId.trim())) {
                 throw new AlreadyExistsException("Department ID '" + deptId.trim() + "' is already in use.");
@@ -67,6 +67,8 @@ public class DepartmentServiceImpl implements DepartmentService {
                 .description(request.getDescription() != null ? request.getDescription().trim() : null)
                 .contactEmail(request.getContactEmail() != null ? request.getContactEmail().trim() : null)
                 .contactPhone(request.getContactPhone() != null ? request.getContactPhone().trim() : null)
+                .branchId(request.getBranchId() != null ? request.getBranchId() : "BR-COL-01")
+                .branchCode(request.getBranchCode() != null ? request.getBranchCode() : "BR-COL-01")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -280,6 +282,8 @@ public class DepartmentServiceImpl implements DepartmentService {
                 .description(department.getDescription())
                 .contactEmail(department.getContactEmail())
                 .contactPhone(department.getContactPhone())
+                .branchId(department.getBranchId())
+                .branchCode(department.getBranchCode())
                 .createdAt(department.getCreatedAt())
                 .updatedAt(department.getUpdatedAt())
                 .build();

@@ -129,6 +129,8 @@ public class StaffServiceImpl implements StaffService {
                 .emergencyContactPhone(request.getEmergencyContactPhone() != null ? request.getEmergencyContactPhone().trim() : null)
                 .locationFloor(request.getLocationFloor() != null ? request.getLocationFloor().trim() : null)
                 .accountStatus(request.getAccountStatus() != null ? request.getAccountStatus().trim() : "Active")
+                .branchId(request.getBranchId() != null ? request.getBranchId() : "BR-COL-01")
+                .branchCode(request.getBranchCode() != null ? request.getBranchCode() : "BR-COL-01")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -332,6 +334,8 @@ public class StaffServiceImpl implements StaffService {
                 .emergencyContactPhone(staff.getEmergencyContactPhone())
                 .locationFloor(staff.getLocationFloor())
                 .accountStatus(staff.getAccountStatus() != null ? staff.getAccountStatus() : "Active")
+                .branchId(staff.getBranchId())
+                .branchCode(staff.getBranchCode())
                 .createdAt(staff.getCreatedAt())
                 .updatedAt(staff.getUpdatedAt())
                 .build();

@@ -23,6 +23,7 @@ public class UserProfileResponse {
     private String gender;
     private String bloodGroup;
     private String address;
+    private String branch;
     private String emergencyContact;
     private String medicalHistory;
     private java.util.List<String> allergies;
@@ -52,6 +53,7 @@ public class UserProfileResponse {
         this.bloodGroup = user.getBloodGroup();
         if (user.getBloodType() != null) this.bloodGroup = user.getBloodType(); // support both
         this.address = user.getAddress();
+        this.branch = user.getBranch();
         this.emergencyContact = user.getEmergencyContact();
         this.medicalHistory = user.getMedicalHistory();
         this.allergies = user.getAllergies();
@@ -159,6 +161,14 @@ public class UserProfileResponse {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
     }
 
     public String getEmergencyContact() {
