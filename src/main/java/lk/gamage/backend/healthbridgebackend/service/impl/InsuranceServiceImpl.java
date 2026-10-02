@@ -16,10 +16,14 @@ import lk.gamage.backend.healthbridgebackend.model.InsuranceClaim;
 import lk.gamage.backend.healthbridgebackend.model.InsurancePolicy;
 import lk.gamage.backend.healthbridgebackend.repository.InsuranceClaimRepository;
 import lk.gamage.backend.healthbridgebackend.repository.InsurancePolicyRepository;
+import lk.gamage.backend.healthbridgebackend.service.CloudinaryService;
 import lk.gamage.backend.healthbridgebackend.service.FileStorageService;
+import lk.gamage.backend.healthbridgebackend.service.FraudDetectionService;
 import lk.gamage.backend.healthbridgebackend.service.InsuranceService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -31,16 +35,24 @@ import java.util.stream.Collectors;
 @Service
 public class InsuranceServiceImpl implements InsuranceService {
 
+    private static final Logger log = LoggerFactory.getLogger(InsuranceServiceImpl.class);
+
     private final InsurancePolicyRepository policyRepo;
     private final InsuranceClaimRepository claimRepo;
     private final FileStorageService fileStorageService;
+    private final CloudinaryService cloudinaryService;
+    private final FraudDetectionService fraudDetectionService;
 
     public InsuranceServiceImpl(InsurancePolicyRepository policyRepo,
                                  InsuranceClaimRepository claimRepo,
-                                 FileStorageService fileStorageService) {
+                                 FileStorageService fileStorageService,
+                                 CloudinaryService cloudinaryService,
+                                 FraudDetectionService fraudDetectionService) {
         this.policyRepo = policyRepo;
         this.claimRepo = claimRepo;
         this.fileStorageService = fileStorageService;
+        this.cloudinaryService = cloudinaryService;
+        this.fraudDetectionService = fraudDetectionService;
     }
 
     @Override
@@ -135,23 +147,66 @@ public class InsuranceServiceImpl implements InsuranceService {
             throw new BadRequestException("At least one supporting document is required");
         }
 
-        List<String> fileIds = documents.stream()
-                .map(fileStorageService::store)
-                .collect(Collectors.toList());
+        List<String> documentUrls = new ArrayList<>();
+        List<String> documentPublicIds = new ArrayList<>();
+        List<String> fileIds = new ArrayList<>();
+
+        for (MultipartFile doc : documents) {
+            if (doc != null && !doc.isEmpty()) {
+                boolean uploadedToCloudinary = false;
+                try {
+                    Map<String, String> uploadResult = cloudinaryService.uploadFile(doc, "insurance/claims");
+                    if (uploadResult != null && uploadResult.get("url") != null) {
+                        documentUrls.add(uploadResult.get("url"));
+                        if (uploadResult.get("publicId") != null) {
+                            documentPublicIds.add(uploadResult.get("publicId"));
+                        }
+                        uploadedToCloudinary = true;
+                    }
+                } catch (Exception e) {
+                    // Fallback to GridFS file storage if Cloudinary upload encounters an issue
+                }
+
+                if (!uploadedToCloudinary) {
+                    try {
+                        String storedFileId = fileStorageService.store(doc);
+                        fileIds.add(storedFileId);
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        }
+
+        String hospital = (req.getHospitalName() != null && !req.getHospitalName().isBlank())
+                ? req.getHospitalName() : "HealthBridge Hospital";
+        String branch = (req.getBranch() != null && !req.getBranch().isBlank())
+                ? req.getBranch() : "Colombo";
 
         InsuranceClaim claim = InsuranceClaim.builder()
                 .claimNumber("CLM-" + LocalDate.now().getYear() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .policyId(policy.getId())
                 .patientId(patientId)
                 .treatmentDescription(req.getTreatmentDescription())
+                .hospitalName(hospital)
+                .branch(branch)
                 .claimAmount(req.getClaimAmount())
+                .documentUrls(documentUrls)
+                .documentPublicIds(documentPublicIds)
                 .documentFileIds(fileIds)
                 .status(ClaimStatus.SUBMITTED)
                 .submittedAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        return toInsuranceClaimResponse(claimRepo.save(claim));
+        InsuranceClaim savedClaim = claimRepo.save(claim);
+        try {
+            fraudDetectionService.analyzeClaimForFraud(savedClaim.getId());
+        } catch (RuntimeException exception) {
+            // Claim submission must remain available if fraud analysis is temporarily unavailable.
+            log.error("Fraud analysis failed claimId={}", savedClaim.getId(), exception);
+        }
+
+        return toInsuranceClaimResponse(savedClaim);
     }
 
     @Override
@@ -446,9 +501,12 @@ public class InsuranceServiceImpl implements InsuranceService {
                 .providerName(providerName)
                 .patientId(c.getPatientId())
                 .treatmentDescription(c.getTreatmentDescription())
+                .hospitalName(c.getHospitalName() != null ? c.getHospitalName() : "HealthBridge Hospital")
+                .branch(c.getBranch() != null ? c.getBranch() : "Colombo")
                 .claimAmount(c.getClaimAmount())
                 .approvedAmount(c.getApprovedAmount())
-                .documentFileIds(c.getDocumentFileIds())
+                .documentUrls(c.getDocumentUrls() != null ? c.getDocumentUrls() : new ArrayList<>())
+                .documentFileIds(c.getDocumentFileIds() != null ? c.getDocumentFileIds() : new ArrayList<>())
                 .status(c.getStatus())
                 .rejectionReason(c.getRejectionReason())
                 .submittedAt(c.getSubmittedAt())

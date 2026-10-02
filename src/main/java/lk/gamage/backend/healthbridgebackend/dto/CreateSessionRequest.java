@@ -1,6 +1,5 @@
 package lk.gamage.backend.healthbridgebackend.dto;
 
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lk.gamage.backend.healthbridgebackend.model.ConsultationType;
@@ -24,7 +23,6 @@ public class CreateSessionRequest {
     private ConsultationType consultationType;
 
     @NotNull(message = "scheduledStartTime is required")
-    @Future(message = "scheduledStartTime must be in the future")
     private LocalDateTime scheduledStartTime;
 
     private boolean recordingEnabled;
