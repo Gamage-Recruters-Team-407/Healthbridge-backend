@@ -2,18 +2,28 @@ package lk.gamage.backend.healthbridgebackend.service;
 
 import lk.gamage.backend.healthbridgebackend.dto.UserProfileResponse;
 import lk.gamage.backend.healthbridgebackend.dto.UserProfileUpdateRequest;
+import lk.gamage.backend.healthbridgebackend.model.LocalizationPrefs;
+import lk.gamage.backend.healthbridgebackend.model.NotificationPrefs;
+import lk.gamage.backend.healthbridgebackend.model.PrivacyPrefs;
 import lk.gamage.backend.healthbridgebackend.model.User;
 import lk.gamage.backend.healthbridgebackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     public UserProfileResponse getProfileByEmail(String email) {
         User user = userRepository.findByEmail(email.toLowerCase().trim())
@@ -60,5 +70,103 @@ public class UserService {
         User savedUser = userRepository.save(user);
 
         return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse deactivateAccount(String email) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setAccountStatus("Inactive");
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse reactivateAccount(String email) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setAccountStatus("Active");
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse updateTwoFactor(String email, boolean enabled) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setTwoFactorEnabled(enabled);
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse updateNotificationPrefs(String email, NotificationPrefs prefs) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setNotificationPrefs(prefs);
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse updatePrivacyPrefs(String email, PrivacyPrefs prefs) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setPrivacyPrefs(prefs);
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse updateLocalizationPrefs(String email, LocalizationPrefs prefs) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setLocalizationPrefs(prefs);
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse updateProfilePicture(String email, MultipartFile file) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("No file uploaded");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Only image files are allowed");
+        }
+
+        if (file.getSize() > 5 * 1024 * 1024) { // 5MB limit
+            throw new IllegalArgumentException("Image must be smaller than 5MB");
+        }
+
+        Map<String, String> result = cloudinaryService.uploadFile(file, "profile-pictures");
+        user.setPicture(result.get("url"));
+        user.setUpdatedAt(LocalDateTime.now());
+
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    public UserProfileResponse removeProfilePicture(String email) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+
+        user.setPicture(null);
+        user.setUpdatedAt(LocalDateTime.now());
+
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser);
+    }
+
+    // Get All Users
+    public List<UserProfileResponse> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(UserProfileResponse::new)
+                .collect(Collectors.toList());
     }
 }

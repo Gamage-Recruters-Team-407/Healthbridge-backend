@@ -9,6 +9,4 @@ public interface BillingItemRepository
         extends MongoRepository<BillingItem, String> {
 
     List<BillingItem> findByInvoiceId(String invoiceId);
-
-    void deleteByInvoiceId(String invoiceId);
 }
