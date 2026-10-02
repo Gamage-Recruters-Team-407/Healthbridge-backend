@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 public class RiskScoreStatisticsResponse {
     
     private Long highRiskPatients;
-    private Long highRiskDoctors;
     private Long totalActiveScores;
     private Long patientsWithIncreasingRisk;
     

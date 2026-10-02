@@ -9,16 +9,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RiskScoreStatistics {
     private Long highRiskPatients;
-    private Long highRiskDoctors;
     private Long totalActiveScores;
     private Long patientsWithIncreasingRisk;
 
     public Double getHighRiskPercentage() {
         if (totalActiveScores == 0) return 0.0;
-        return ((highRiskPatients + highRiskDoctors) / (double) totalActiveScores) * 100;
+        return (highRiskPatients / (double) totalActiveScores) * 100;
     }
 
     public Long getTotalHighRiskEntities() {
-        return highRiskPatients + highRiskDoctors;
+        return highRiskPatients;
     }
 }

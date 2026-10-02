@@ -13,6 +13,9 @@ public interface TelemedicineSessionRepository extends MongoRepository<Telemedic
 
     Optional<TelemedicineSession> findByAppointmentId(String appointmentId);
 
+    /** Tolerates duplicate rows for one appointment (findBy... would throw IncorrectResultSizeDataAccessException). */
+    Optional<TelemedicineSession> findFirstByAppointmentId(String appointmentId);
+
     List<TelemedicineSession> findByPatientIdOrderByScheduledStartTimeDesc(String patientId);
 
     List<TelemedicineSession> findByDoctorIdOrderByScheduledStartTimeDesc(String doctorId);

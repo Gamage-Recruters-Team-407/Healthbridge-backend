@@ -53,7 +53,6 @@ public class FraudMapper {
                 .doctorId(riskScore.getDoctorId())
                 .policyId(riskScore.getPolicyId())
                 .patientRiskScore(riskScore.getPatientRiskScore())
-                .doctorRiskScore(riskScore.getDoctorRiskScore())
                 .claimRiskScore(riskScore.getClaimRiskScore())
                 .claimAmountScore(riskScore.getClaimAmountScore())
                 .frequencyScore(riskScore.getFrequencyScore())
@@ -102,7 +101,6 @@ public class FraudMapper {
 
         return RiskScoreStatisticsResponse.builder()
                 .highRiskPatients(statistics.getHighRiskPatients())
-                .highRiskDoctors(statistics.getHighRiskDoctors())
                 .totalActiveScores(statistics.getTotalActiveScores())
                 .patientsWithIncreasingRisk(statistics.getPatientsWithIncreasingRisk())
                 .highRiskPercentage(statistics.getHighRiskPercentage())

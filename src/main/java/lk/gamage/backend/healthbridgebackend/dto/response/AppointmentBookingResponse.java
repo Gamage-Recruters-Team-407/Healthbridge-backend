@@ -11,4 +11,4 @@ public record AppointmentBookingResponse(
         String specialization, LocalDate date, LocalTime sessionTime,
         int currentQueueNumber, AppointmentStatus status,
         String patientPhone, String patientNicOrPassport, String patientEmail,
-        String patientAddress, String cancelReason) { }
+        String patientAddress, String cancelReason, String appointmentType) { }
