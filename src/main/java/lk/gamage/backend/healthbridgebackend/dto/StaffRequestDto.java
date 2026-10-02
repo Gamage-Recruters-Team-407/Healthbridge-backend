@@ -34,4 +34,6 @@ public class StaffRequestDto {
     private String emergencyContactPhone;
     private String locationFloor;
     private String accountStatus;
+    private String branchId;
+    private String branchCode;
 }

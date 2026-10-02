@@ -11,6 +11,8 @@ import lk.gamage.backend.healthbridgebackend.service.RiskScoreStatistics;
 import lk.gamage.backend.healthbridgebackend.service.RiskScoreBreakdown;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -18,6 +20,10 @@ import java.util.stream.Collectors;
 
 @Service
 public class RiskScoringServiceImpl implements RiskScoringService {
+
+    private static final Logger log = LoggerFactory.getLogger(RiskScoringServiceImpl.class);
+    private static final Set<String> RISK_RELEVANT_ALERT_STATUSES = Set.of(
+            "PENDING", "UNDER_REVIEW", "CONFIRMED_FRAUD", "ESCALATED");
 
     @Autowired
     private RiskScoreRepository riskScoreRepository;
@@ -40,7 +46,9 @@ public class RiskScoringServiceImpl implements RiskScoringService {
                     .orElseThrow(() -> new RuntimeException("Claim not found"));
 
             // Check if there are fraud alerts for this claim
-            List<FraudAlert> alerts = fraudAlertRepository.findByClaimId(claimId);
+            List<FraudAlert> alerts = fraudAlertRepository.findByClaimId(claimId).stream()
+                .filter(this::isRiskRelevantAlert)
+                .collect(Collectors.toList());
 
             Double claimRiskScore = 0.0;
             if (!alerts.isEmpty()) {
@@ -59,7 +67,7 @@ public class RiskScoringServiceImpl implements RiskScoringService {
                     .build();
 
         } catch (Exception e) {
-            System.err.println("Error calculating claim risk score: " + e.getMessage());
+            log.error("Failed to calculate claim risk score claimId={}", claimId, e);
             return null;
         }
     }
@@ -68,8 +76,14 @@ public class RiskScoringServiceImpl implements RiskScoringService {
     public RiskScore calculatePatientRiskScore(String patientId) {
         try {
             // Get patient's claim history
-            List<InsuranceClaim> claims = claimRepository.findByPatientId(patientId);
-            List<FraudAlert> alerts = fraudAlertRepository.findByPatientId(patientId);
+            LocalDateTime lastYear = LocalDateTime.now().minusYears(1);
+            List<InsuranceClaim> claims = claimRepository.findByPatientId(patientId).stream()
+                .filter(claim -> claim.getSubmittedAt() != null
+                    && claim.getSubmittedAt().isAfter(lastYear))
+                .collect(Collectors.toList());
+            List<FraudAlert> alerts = fraudAlertRepository.findByPatientId(patientId).stream()
+                .filter(this::isRiskRelevantAlert)
+                .collect(Collectors.toList());
 
             if (claims.isEmpty()) {
                 return null; // No claims, no risk
@@ -102,13 +116,18 @@ public class RiskScoringServiceImpl implements RiskScoringService {
             }
 
             // Count flagged claims
-            Integer flaggedCount = (int) alerts.stream()
-                    .filter(a -> a.getPatientId().equals(patientId))
+                Integer flaggedCount = (int) alerts.stream()
+                    .map(FraudAlert::getClaimId)
+                    .filter(Objects::nonNull)
+                    .distinct()
                     .count();
 
             // Count confirmed fraud
-            Integer confirmedFraudCount = (int) alerts.stream()
-                    .filter(a -> a.getPatientId().equals(patientId) && a.getStatus().equals("CONFIRMED_FRAUD"))
+                Integer confirmedFraudCount = (int) alerts.stream()
+                    .filter(a -> "CONFIRMED_FRAUD".equals(a.getStatus()))
+                    .map(FraudAlert::getClaimId)
+                    .filter(Objects::nonNull)
+                    .distinct()
                     .count();
 
             Integer rejectedClaimsLastYear = claimRepository.countByPatientIdAndStatusAndSubmittedAtAfter(
@@ -136,14 +155,9 @@ public class RiskScoringServiceImpl implements RiskScoringService {
                     .build();
 
         } catch (Exception e) {
-            System.err.println("Error calculating patient risk score: " + e.getMessage());
+            log.error("Failed to calculate patient risk score patientId={}", patientId, e);
             return null;
         }
-    }
-
-    @Override
-    public RiskScore calculateDoctorRiskScore(String doctorId) {
-        return null; // Claims currently do not carry doctor IDs.
     }
 
     @Override
@@ -165,29 +179,7 @@ public class RiskScoringServiceImpl implements RiskScoringService {
             return calculatePatientRiskScore(patientId);
 
         } catch (Exception e) {
-            System.err.println("Error getting patient risk score: " + e.getMessage());
-            return null;
-        }
-    }
-
-    @Override
-    public RiskScore getDoctorRiskScore(String doctorId) {
-        try {
-            Optional<RiskScore> existingScore = riskScoreRepository.findByDoctorId(doctorId);
-
-            if (existingScore.isPresent()) {
-                RiskScore score = existingScore.get();
-                if (score.getNextCalculationAt() != null && 
-                    LocalDateTime.now().isAfter(score.getNextCalculationAt())) {
-                    return calculateDoctorRiskScore(doctorId);
-                }
-                return score;
-            }
-
-            return calculateDoctorRiskScore(doctorId);
-
-        } catch (Exception e) {
-            System.err.println("Error getting doctor risk score: " + e.getMessage());
+            log.error("Failed to retrieve patient risk score patientId={}", patientId, e);
             return null;
         }
     }
@@ -197,7 +189,7 @@ public class RiskScoringServiceImpl implements RiskScoringService {
         try {
             return riskScoreRepository.findByPolicyId(policyId).orElse(null);
         } catch (Exception e) {
-            System.err.println("Error getting policy risk score: " + e.getMessage());
+            log.error("Failed to retrieve policy risk score policyId={}", policyId, e);
             return null;
         }
     }
@@ -212,8 +204,6 @@ public class RiskScoringServiceImpl implements RiskScoringService {
                     .map(InsuranceClaim::getPatientId)
                     .collect(Collectors.toSet());
 
-                Set<String> doctorIds = Collections.emptySet();
-
             // Recalculate all patient scores
             patientIds.forEach(patientId -> {
                 RiskScore score = calculatePatientRiskScore(patientId);
@@ -222,18 +212,10 @@ public class RiskScoringServiceImpl implements RiskScoringService {
                 }
             });
 
-            // Recalculate all doctor scores
-            doctorIds.forEach(doctorId -> {
-                RiskScore score = calculateDoctorRiskScore(doctorId);
-                if (score != null) {
-                    riskScoreRepository.save(score);
-                }
-            });
-
-            System.out.println("Recalculated " + patientIds.size() + " patient and " + doctorIds.size() + " doctor risk scores");
+            log.info("Recalculated patient risk scores count={}", patientIds.size());
 
         } catch (Exception e) {
-            System.err.println("Error recalculating risk scores: " + e.getMessage());
+            log.error("Failed to recalculate patient risk scores", e);
         }
     }
 
@@ -242,17 +224,7 @@ public class RiskScoringServiceImpl implements RiskScoringService {
         try {
             return riskScoreRepository.findByPatientRiskScoreGreaterThanAndIsActive(MEDIUM_RISK_THRESHOLD, true);
         } catch (Exception e) {
-            System.err.println("Error getting high-risk patients: " + e.getMessage());
-            return new ArrayList<>();
-        }
-    }
-
-    @Override
-    public List<RiskScore> getHighRiskDoctors() {
-        try {
-            return riskScoreRepository.findByDoctorRiskScoreGreaterThanAndIsActive(MEDIUM_RISK_THRESHOLD, true);
-        } catch (Exception e) {
-            System.err.println("Error getting high-risk doctors: " + e.getMessage());
+            log.error("Failed to retrieve high-risk patients", e);
             return new ArrayList<>();
         }
     }
@@ -262,17 +234,7 @@ public class RiskScoringServiceImpl implements RiskScoringService {
         try {
             return riskScoreRepository.findIncreasingSuspiciousPatients();
         } catch (Exception e) {
-            System.err.println("Error getting increasing risk patients: " + e.getMessage());
-            return new ArrayList<>();
-        }
-    }
-
-    @Override
-    public List<RiskScore> getSuspiciousDoctors() {
-        try {
-            return riskScoreRepository.findSuspiciousDoctors();
-        } catch (Exception e) {
-            System.err.println("Error getting suspicious doctors: " + e.getMessage());
+            log.error("Failed to retrieve increasing-risk patients", e);
             return new ArrayList<>();
         }
     }
@@ -281,15 +243,14 @@ public class RiskScoringServiceImpl implements RiskScoringService {
     public RiskScoreStatistics getRiskScoreStatistics() {
         try {
             Long highRiskPatients = riskScoreRepository.countByPatientRiskScoreGreaterThan(MEDIUM_RISK_THRESHOLD);
-            Long highRiskDoctors = riskScoreRepository.countByDoctorRiskScoreGreaterThan(MEDIUM_RISK_THRESHOLD);
             Long totalScores = riskScoreRepository.countByIsActive(true);
             Long increasingTrend = (long) riskScoreRepository.findIncreasingSuspiciousPatients().size();
 
-            return new RiskScoreStatistics(highRiskPatients, highRiskDoctors, totalScores, increasingTrend);
+            return new RiskScoreStatistics(highRiskPatients, totalScores, increasingTrend);
 
         } catch (Exception e) {
-            System.err.println("Error getting risk score statistics: " + e.getMessage());
-            return new RiskScoreStatistics(0L, 0L, 0L, 0L);
+            log.error("Failed to retrieve risk score statistics", e);
+            return new RiskScoreStatistics(0L, 0L, 0L);
         }
     }
 
@@ -300,7 +261,7 @@ public class RiskScoringServiceImpl implements RiskScoringService {
 
             allScores.forEach(score -> {
                 if (score.getPreviousRiskScore() != null) {
-                    Double current = score.getPatientRiskScore() != null ? score.getPatientRiskScore() : score.getDoctorRiskScore();
+                    Double current = score.getPatientRiskScore();
                     if (current > score.getPreviousRiskScore()) {
                         score.setRiskTrend("INCREASING");
                     } else if (current < score.getPreviousRiskScore()) {
@@ -312,10 +273,10 @@ public class RiskScoringServiceImpl implements RiskScoringService {
                 }
             });
 
-            System.out.println("Updated risk trends for " + allScores.size() + " scores");
+            log.info("Updated risk trends count={}", allScores.size());
 
         } catch (Exception e) {
-            System.err.println("Error updating risk trends: " + e.getMessage());
+            log.error("Failed to update risk trends", e);
         }
     }
 
@@ -337,30 +298,7 @@ public class RiskScoringServiceImpl implements RiskScoringService {
             );
 
         } catch (Exception e) {
-            System.err.println("Error getting patient risk breakdown: " + e.getMessage());
-            return null;
-        }
-    }
-
-    @Override
-    public RiskScoreBreakdown getDoctorRiskBreakdown(String doctorId) {
-        try {
-            RiskScore score = getDoctorRiskScore(doctorId);
-            if (score == null) {
-                return null;
-            }
-
-            return new RiskScoreBreakdown(
-                    score.getDoctorRiskScore(),
-                    null,
-                    null,
-                    null,
-                    score.getFlaggedClaimsCount(),
-                    score.getRiskTrend()
-            );
-
-        } catch (Exception e) {
-            System.err.println("Error getting doctor risk breakdown: " + e.getMessage());
+            log.error("Failed to retrieve patient risk breakdown patientId={}", patientId, e);
             return null;
         }
     }
@@ -374,29 +312,30 @@ public class RiskScoringServiceImpl implements RiskScoringService {
                 riskScoreRepository.delete(score);
             });
 
-            System.out.println("Archived " + inactiveScores.size() + " inactive scores");
+            log.info("Archived inactive risk scores count={}", inactiveScores.size());
 
         } catch (Exception e) {
-            System.err.println("Error archiving inactive scores: " + e.getMessage());
+            log.error("Failed to archive inactive risk scores", e);
         }
     }
 
     // Helper methods
-    private Double calculateClaimAmountAnomaly(List<InsuranceClaim> claims) {
-        if (claims.isEmpty()) return 0.0;
+        private Double calculateClaimAmountAnomaly(List<InsuranceClaim> claims) {
+        List<Double> amounts = claims.stream()
+            .map(InsuranceClaim::getClaimAmount)
+            .filter(Objects::nonNull)
+            .filter(amount -> amount >= 0)
+            .collect(Collectors.toList());
+        if (amounts.isEmpty()) return 0.0;
 
-        Double mean = claims.stream().mapToDouble(InsuranceClaim::getClaimAmount).average().orElse(0.0);
-        Double stdDev = calculateStdDeviation(
-                claims.stream().map(InsuranceClaim::getClaimAmount).collect(Collectors.toList()),
-                mean
-        );
+        Double mean = amounts.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        Double stdDev = calculateStdDeviation(amounts, mean);
+        Long outliers = amounts.stream()
+            .filter(amount -> Math.abs(amount - mean) > 2 * stdDev)
+            .count();
 
-        Long outliers = claims.stream()
-                .filter(c -> Math.abs(c.getClaimAmount() - mean) > 2 * stdDev)
-                .count();
-
-        return Math.min((outliers / (double) claims.size()) * 100, 100.0);
-    }
+        return Math.min((outliers / (double) amounts.size()) * 100, 100.0);
+        }
 
     private Double calculateFrequencyScore(List<InsuranceClaim> claims) {
         if (claims.isEmpty()) return 0.0;
@@ -413,6 +352,7 @@ public class RiskScoringServiceImpl implements RiskScoringService {
     }
 
     private Double calculateDocumentationScore(List<InsuranceClaim> claims) {
+        if (claims.isEmpty()) return 0.0;
         Long claimsWithoutDocs = claims.stream()
                 .filter(c -> c.getDocumentFileIds() == null || c.getDocumentFileIds().isEmpty())
                 .count();
@@ -423,7 +363,12 @@ public class RiskScoringServiceImpl implements RiskScoringService {
     private Double calculateFlaggedClaimsScore(List<FraudAlert> alerts, List<InsuranceClaim> claims) {
         if (claims.isEmpty()) return 0.0;
 
-        Double flaggedPercentage = (alerts.size() / (double) claims.size()) * 100;
+        long distinctFlaggedClaims = alerts.stream()
+            .map(FraudAlert::getClaimId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .count();
+        Double flaggedPercentage = (distinctFlaggedClaims / (double) claims.size()) * 100;
         return Math.min(flaggedPercentage, 100.0);
     }
 
@@ -452,5 +397,8 @@ public class RiskScoringServiceImpl implements RiskScoringService {
                 .orElse(0.0);
 
         return Math.sqrt(variance);
+    }
+    private boolean isRiskRelevantAlert(FraudAlert alert) {
+        return alert != null && RISK_RELEVANT_ALERT_STATUSES.contains(alert.getStatus());
     }
 }

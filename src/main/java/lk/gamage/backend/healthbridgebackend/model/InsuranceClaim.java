@@ -26,10 +26,14 @@ public class InsuranceClaim {
     private String patientId;
 
     private String treatmentDescription;
+    private String hospitalName;
+    private String branch;
     private Double claimAmount;
     private Double approvedAmount;
 
-    private List<String> documentFileIds;  // GridFS file ids
+    private List<String> documentUrls;     // Cloudinary secure URLs
+    private List<String> documentPublicIds;  // Cloudinary public IDs
+    private List<String> documentFileIds;  // Legacy GridFS file ids (if any)
 
     private ClaimStatus status;
 

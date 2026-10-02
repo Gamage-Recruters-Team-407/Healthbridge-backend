@@ -19,6 +19,8 @@ public class BedResponseDto {
     private String ward;
     private String status;
     private String bedType;
+    private String branchId;
+    private String branchCode;
     private PatientInfoDto patient;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

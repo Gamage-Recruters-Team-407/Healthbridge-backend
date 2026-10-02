@@ -14,7 +14,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @CompoundIndexes({
     @CompoundIndex(name = "session_number_unique", def = "{'sessionId': 1, 'appointmentNumber': 1}", unique = true, sparse = true),
     @CompoundIndex(name = "session_status_idx", def = "{'sessionId': 1, 'status': 1}"),
-    @CompoundIndex(name = "patient_status_idx", def = "{'patientId': 1, 'status': 1}")
+    @CompoundIndex(name = "patient_status_idx", def = "{'patientId': 1, 'status': 1}"),
+    @CompoundIndex(name = "hospital_date_idx", def = "{'hospitalId': 1, 'appointmentDate': 1}")
 })
 public class Appointment {
     @Id

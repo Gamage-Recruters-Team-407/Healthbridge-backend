@@ -38,6 +38,8 @@ public class StaffResponseDto {
     private String emergencyContactPhone;
     private String locationFloor;
     private String accountStatus;
+    private String branchId;
+    private String branchCode;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

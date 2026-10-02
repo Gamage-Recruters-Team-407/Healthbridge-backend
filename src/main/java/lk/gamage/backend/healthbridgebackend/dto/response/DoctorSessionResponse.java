@@ -11,4 +11,4 @@ public record DoctorSessionResponse(
         LocalDate sessionDate, String dayOfWeek, LocalTime startTime, LocalTime endTime,
         int maxAppointments, int activeAppointments, int remainingAppointments,
         int lastIssuedAppointmentNumber, int currentQueueNumber,
-        SessionStatus status, String notes) { }
+        SessionStatus status, String notes, String appointmentType) { }

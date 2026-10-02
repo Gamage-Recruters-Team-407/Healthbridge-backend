@@ -3,6 +3,7 @@ package lk.gamage.backend.healthbridgebackend.repository;
 import lk.gamage.backend.healthbridgebackend.model.FraudAlert;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.mongodb.repository.Update;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,9 @@ public interface FraudAlertRepository extends MongoRepository<FraudAlert, String
 
     // Find alerts for a specific claim
     List<FraudAlert> findByClaimId(String claimId);
+
+    // Find an existing detection result for idempotent claim analysis
+    Optional<FraudAlert> findByClaimIdAndAlertType(String claimId, String alertType);
 
     // Find alerts for a patient by status
     List<FraudAlert> findByPatientIdAndStatus(String patientId, String status);
@@ -38,12 +42,6 @@ public interface FraudAlertRepository extends MongoRepository<FraudAlert, String
 
     // Count pending alerts
     Long countByStatus(String status);
-
-    // Find alerts for a specific doctor
-    List<FraudAlert> findByDoctorId(String doctorId);
-
-    // Find alerts for doctor by status
-    List<FraudAlert> findByDoctorIdAndStatus(String doctorId, String status);
 
     // Find alerts by alert type
     List<FraudAlert> findByAlertType(String alertType);
@@ -76,4 +74,12 @@ public interface FraudAlertRepository extends MongoRepository<FraudAlert, String
 
     // Check if alert exists for a claim
     Boolean existsByClaimId(String claimId);
+
+    @Query("{ 'createdAt': { $lt: ?0 }, 'status': { $in: ?1 } }")
+    @Update("{ '$set': { 'status': ?2, 'updatedAt': ?3 } }")
+    long archiveResolvedOrFalsePositiveAlerts(
+            LocalDateTime cutoff,
+            List<String> statuses,
+            String archivedStatus,
+            LocalDateTime updatedAt);
 }

@@ -34,6 +34,9 @@ public class Equipment {
     private Double initialValue; // e.g. 45000.0
     private Double currentValue; // e.g. 36900.0
     private String alertMessage; // e.g. Low Stock: O2 Sensors (2 units remaining)
+
+    private String branchId;
+    private String branchCode;
     
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

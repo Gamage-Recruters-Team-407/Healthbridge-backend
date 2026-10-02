@@ -28,8 +28,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class DoctorSessionService {
-    public static final String HOSPITAL_ID = "healthbridge-hospital";
-    public static final String HOSPITAL_NAME = "HealthBridge Hospital";
+    private static final String DEFAULT_APPOINTMENT_TYPE = "IN_PERSON";
+
     private final DoctorSessionRepository repository;
     private final UserRepository userRepository;
     private final MongoTemplate mongoTemplate;
@@ -47,11 +47,12 @@ public class DoctorSessionService {
         assertNoOverlap(doctorId, r.sessionDate(), r.startTime(), r.endTime(), null);
         LocalDateTime now = LocalDateTime.now();
         DoctorSession session = DoctorSession.builder().doctorId(doctorId)
-                .hospitalId(HOSPITAL_ID).hospitalName(HOSPITAL_NAME)
+                .hospitalId(r.hospitalId().trim()).hospitalName(r.hospitalName().trim())
                 .specializationId(trimToNull(r.specializationId())).specializationName(r.specializationName().trim())
                 .sessionDate(r.sessionDate()).startTime(r.startTime()).endTime(r.endTime())
                 .maxAppointments(r.maxAppointments()).bookedCount(0).lastIssuedAppointmentNumber(0).currentQueueNumber(0)
-                .status(SessionStatus.AVAILABLE).notes(trimToNull(r.notes())).createdAt(now).updatedAt(now).build();
+                .status(SessionStatus.AVAILABLE).notes(trimToNull(r.notes())).appointmentType(normalizeAppointmentType(r.appointmentType()))
+                .createdAt(now).updatedAt(now).build();
         return toResponse(repository.save(session));
     }
 
@@ -60,11 +61,15 @@ public class DoctorSessionService {
         DoctorSession session = owned(id, doctorId);
         if (session.getSessionDate().isBefore(LocalDate.now())) throw new BadRequestException("Past sessions cannot be edited.");
         if (r.maxAppointments() < session.getBookedCount()) throw new ConflictException("Maximum appointments cannot be lower than active bookings.");
+        if (session.getBookedCount() > 0 && !r.hospitalId().trim().equalsIgnoreCase(session.getHospitalId()))
+            throw new ConflictException("A session with active bookings cannot be moved to another hospital branch.");
         assertNoOverlap(doctorId, r.sessionDate(), r.startTime(), r.endTime(), id);
-        session.setHospitalId(HOSPITAL_ID); session.setHospitalName(HOSPITAL_NAME);
+        session.setHospitalId(r.hospitalId().trim()); session.setHospitalName(r.hospitalName().trim());
         session.setSpecializationId(trimToNull(r.specializationId())); session.setSpecializationName(r.specializationName().trim());
         session.setSessionDate(r.sessionDate()); session.setStartTime(r.startTime()); session.setEndTime(r.endTime());
-        session.setMaxAppointments(r.maxAppointments()); session.setNotes(trimToNull(r.notes())); session.setUpdatedAt(LocalDateTime.now());
+        session.setMaxAppointments(r.maxAppointments()); session.setNotes(trimToNull(r.notes()));
+        session.setAppointmentType(normalizeAppointmentType(r.appointmentType()));
+        session.setUpdatedAt(LocalDateTime.now());
         if (session.getBookedCount() >= session.getMaxAppointments()) session.setStatus(SessionStatus.FULL);
         else if (session.getStatus() == SessionStatus.FULL) session.setStatus(SessionStatus.AVAILABLE);
         return toResponse(repository.save(session));
@@ -175,20 +180,27 @@ public class DoctorSessionService {
     public DoctorSessionResponse toResponse(DoctorSession s) {
         String doctorName = userRepository.findById(s.getDoctorId()).map(User::getFullName).orElse("Doctor");
         SessionStatus effective = s.getSessionDate().isBefore(LocalDate.now()) ? SessionStatus.COMPLETED : s.getStatus();
-        String hospitalId = s.getHospitalId() == null || s.getHospitalId().isBlank() ? HOSPITAL_ID : s.getHospitalId();
-        String hospitalName = s.getHospitalName() == null || s.getHospitalName().isBlank() ? HOSPITAL_NAME : s.getHospitalName();
+        // Branch information is supplied by Hospital Management and stored on the session.
+        // Do not invent a default hospital for legacy records that have no branch assigned.
+        String hospitalId = s.getHospitalId();
+        String hospitalName = s.getHospitalName();
         return new DoctorSessionResponse(s.getId(), s.getDoctorId(), doctorName, s.getSpecializationId(), s.getSpecializationName(),
                 hospitalId, hospitalName, s.getSessionDate(), s.getSessionDate().getDayOfWeek().toString(),
                 s.getStartTime(), s.getEndTime(), s.getMaxAppointments(), s.getBookedCount(),
                 Math.max(s.getMaxAppointments() - s.getBookedCount(), 0), s.getLastIssuedAppointmentNumber(),
-                s.getCurrentQueueNumber(), effective, s.getNotes());
+                s.getCurrentQueueNumber(), effective, s.getNotes(), normalizeAppointmentType(s.getAppointmentType()));
     }
 
     private void validateRequest(DoctorSessionRequest r) {
         if (r == null) throw new BadRequestException("Session details are required.");
+        if (r.hospitalId() == null || r.hospitalId().isBlank()) throw new BadRequestException("Hospital branch is required.");
+        if (r.hospitalName() == null || r.hospitalName().isBlank()) throw new BadRequestException("Hospital branch name is required.");
         if (r.maxAppointments() <= 0) throw new BadRequestException("Maximum appointments must be greater than zero.");
         if (r.sessionDate() != null && r.sessionDate().isBefore(LocalDate.now())) throw new BadRequestException("Session date cannot be in the past.");
         if (r.endTime() != null && !r.endTime().isAfter(r.startTime())) throw new BadRequestException("End time must be after start time.");
+        if (r.appointmentType() != null && !r.appointmentType().isBlank()
+                && !"VIDEO".equalsIgnoreCase(r.appointmentType()) && !"IN_PERSON".equalsIgnoreCase(r.appointmentType()))
+            throw new BadRequestException("appointmentType must be either VIDEO or IN_PERSON.");
     }
     private void assertNoOverlap(String doctorId, LocalDate date, LocalTime start, LocalTime end, String ignoredId) {
         LocalTime requestedEnd = end == null ? start.plusMinutes(1) : end;
@@ -202,4 +214,10 @@ public class DoctorSessionService {
         if (!"DOCTOR".equalsIgnoreCase(user.getRole())) throw new AccessDeniedException("Only doctors can manage sessions.");
     }
     private String trimToNull(String value) { return value == null || value.isBlank() ? null : value.trim(); }
+    /** Normalizes to "VIDEO" or "IN_PERSON", defaulting older/blank values to IN_PERSON. */
+    private String normalizeAppointmentType(String value) {
+        if (value == null || value.isBlank()) return DEFAULT_APPOINTMENT_TYPE;
+        String normalized = value.trim();
+        return "VIDEO".equalsIgnoreCase(normalized) ? "VIDEO" : DEFAULT_APPOINTMENT_TYPE;
+    }
 }

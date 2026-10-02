@@ -13,17 +13,27 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import lk.gamage.backend.healthbridgebackend.security.CustomUserDetails;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jakarta.validation.Valid;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/fraud/alerts")
-@CrossOrigin(origins = "http://localhost:3000")
+@PreAuthorize("hasAnyRole('INSURANCE_OFFICER', 'ADMIN', 'SUPER_ADMIN')")
 public class FraudAlertController {
+
+    private static final Logger log = LoggerFactory.getLogger(FraudAlertController.class);
+    private static final int MAX_BULK_CLAIMS = 100;
 
     @Autowired
     private FraudDetectionService fraudDetectionService;
@@ -49,8 +59,9 @@ public class FraudAlertController {
                     "data", responses
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve pending fraud alerts", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving pending alerts: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to retrieve pending alerts."));
         }
     }
 
@@ -72,8 +83,9 @@ public class FraudAlertController {
                     "data", responses
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve high-risk fraud alerts", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving high-risk alerts: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to retrieve high-risk alerts."));
         }
     }
 
@@ -83,6 +95,10 @@ public class FraudAlertController {
      */
     @GetMapping("/recent")
     public ResponseEntity<?> getRecentAlerts(@RequestParam(defaultValue = "7") Integer days) {
+        if (days == null || days < 1 || days > 365) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "days must be between 1 and 365"));
+        }
         try {
             List<FraudAlert> alerts = fraudDetectionService.getRecentAlerts(days);
             List<FraudAlertResponse> responses = alerts.stream()
@@ -96,8 +112,9 @@ public class FraudAlertController {
                     "data", responses
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve recent fraud alerts days={}", days, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving recent alerts: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to retrieve recent alerts."));
         }
     }
 
@@ -120,8 +137,9 @@ public class FraudAlertController {
                     "data", responses
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve patient fraud alerts patientId={}", patientId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving patient alerts: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to retrieve patient alerts."));
         }
     }
 
@@ -144,32 +162,9 @@ public class FraudAlertController {
                     "data", responses
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve claim fraud alerts claimId={}", claimId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving claim alerts: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Get alerts for a specific doctor
-     * GET /api/fraud/alerts/doctor/{doctorId}
-     */
-    @GetMapping("/doctor/{doctorId}")
-    public ResponseEntity<?> getAlertsByDoctorId(@PathVariable String doctorId) {
-        try {
-            List<FraudAlert> alerts = fraudDetectionService.getAlertsByDoctorId(doctorId);
-            List<FraudAlertResponse> responses = alerts.stream()
-                    .map(fraudMapper::toFraudAlertResponse)
-                    .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(Map.of(
-                    "message", "Doctor alerts retrieved successfully",
-                    "doctorId", doctorId,
-                    "count", responses.size(),
-                    "data", responses
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving doctor alerts: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to retrieve claim alerts."));
         }
     }
 
@@ -181,15 +176,23 @@ public class FraudAlertController {
     public ResponseEntity<?> analyzeClaim(@PathVariable String claimId) {
         try {
             FraudAlert alert = fraudDetectionService.analyzeClaimForFraud(claimId);
-            
-            return ResponseEntity.ok(Map.of(
-                    "message", alert != null ? "Fraud detected" : "No fraud detected",
-                    "claimId", claimId,
-                    "alert", alert != null ? fraudMapper.toFraudAlertResponse(alert) : null
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", alert != null ? "Fraud detected" : "No fraud detected");
+            response.put("claimId", claimId);
+            response.put("alert", alert != null ? fraudMapper.toFraudAlertResponse(alert) : null);
+            return ResponseEntity.ok(response);
+        } catch (lk.gamage.backend.healthbridgebackend.exception.FraudDetectionException e) {
+            // Not found or incomplete claim data is an expected business outcome, not a server fault.
+            log.warn("Fraud analysis skipped for claimId={}: {}", claimId, e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", e.getMessage());
+            response.put("claimId", claimId);
+            response.put("alert", null);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
+            log.error("Failed to analyze claim claimId={}", claimId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error analyzing claim: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to analyze claim."));
         }
     }
 
@@ -201,7 +204,8 @@ public class FraudAlertController {
     public ResponseEntity<?> reviewAlert(
             @PathVariable String alertId,
             @Valid @RequestBody AlertReviewRequest request,
-            BindingResult bindingResult) {
+            BindingResult bindingResult,
+            Authentication authentication) {
         
         if (bindingResult.hasErrors()) {
             Map<String, String> errors = new HashMap<>();
@@ -215,7 +219,8 @@ public class FraudAlertController {
             FraudAlert reviewedAlert = fraudDetectionService.reviewAlert(
                     alertId,
                     request.getStatus(),
-                    request.getReviewNotes()
+                    request.getReviewNotes(),
+                    getAuthenticatedUserId(authentication)
             );
             
             return ResponseEntity.ok(Map.of(
@@ -223,9 +228,17 @@ public class FraudAlertController {
                     "data", fraudMapper.toFraudAlertResponse(reviewedAlert)
             ));
         } catch (Exception e) {
+            log.error("Failed to review fraud alert alertId={}", alertId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error reviewing alert: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to review alert."));
         }
+    }
+
+    private String getAuthenticatedUserId(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+            return userDetails.getId();
+        }
+        throw new IllegalStateException("Authenticated reviewer identity is unavailable");
     }
 
     /**
@@ -242,8 +255,9 @@ public class FraudAlertController {
                     "data", fraudMapper.toFraudAlertStatisticsResponse(statistics)
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve fraud alert statistics", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving statistics: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to retrieve fraud statistics."));
         }
     }
 
@@ -259,20 +273,41 @@ public class FraudAlertController {
                         .body(Map.of("message", "Claim IDs list cannot be empty"));
             }
 
-            List<FraudAlert> alerts = fraudDetectionService.analyzeBulkClaims(claimIds);
+            List<String> uniqueClaimIds = new ArrayList<>(new LinkedHashSet<>(claimIds));
+            if (uniqueClaimIds.size() > MAX_BULK_CLAIMS) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "A maximum of " + MAX_BULK_CLAIMS + " unique claim IDs is allowed"));
+            }
+
+            List<FraudAlert> alerts = new ArrayList<>();
+            List<Map<String, String>> failures = new ArrayList<>();
+            for (String claimId : uniqueClaimIds) {
+                try {
+                    FraudAlert alert = fraudDetectionService.analyzeClaimForFraud(claimId);
+                    if (alert != null) {
+                        alerts.add(alert);
+                    }
+                } catch (Exception exception) {
+                    log.error("Bulk fraud analysis failed claimId={}", claimId, exception);
+                    failures.add(Map.of("claimId", String.valueOf(claimId), "message", "Analysis failed"));
+                }
+            }
             List<FraudAlertResponse> responses = alerts.stream()
                     .map(fraudMapper::toFraudAlertResponse)
                     .collect(Collectors.toList());
             
             return ResponseEntity.ok(Map.of(
                     "message", "Bulk analysis completed successfully",
-                    "processedCount", claimIds.size(),
+                        "processedCount", uniqueClaimIds.size() - failures.size(),
+                        "failedCount", failures.size(),
                     "fraudDetectedCount", responses.size(),
+                        "failures", failures,
                     "data", responses
             ));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error in bulk analysis: " + e.getMessage()));
+                    log.error("Bulk fraud analysis request failed", e);
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("message", "Unable to complete bulk analysis."));
         }
     }
 }

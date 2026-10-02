@@ -24,6 +24,8 @@ public class DepartmentResponseDto {
     private String description;
     private String contactEmail;
     private String contactPhone;
+    private String branchId;
+    private String branchCode;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

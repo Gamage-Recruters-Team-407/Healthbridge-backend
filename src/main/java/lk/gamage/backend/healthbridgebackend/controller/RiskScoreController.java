@@ -11,7 +11,10 @@ import lk.gamage.backend.healthbridgebackend.service.RiskScoreStatistics;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -19,8 +22,10 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/fraud/risk-scores")
-@CrossOrigin(origins = "http://localhost:3000")
+@PreAuthorize("hasAnyRole('INSURANCE_OFFICER', 'ADMIN', 'SUPER_ADMIN')")
 public class RiskScoreController {
+
+    private static final Logger log = LoggerFactory.getLogger(RiskScoreController.class);
 
     @Autowired
     private RiskScoringService riskScoringService;
@@ -47,32 +52,9 @@ public class RiskScoreController {
                     "data", fraudMapper.toRiskScoreResponse(score)
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve patient risk score patientId={}", patientId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving patient risk score: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Get risk score for a specific doctor
-     * GET /api/fraud/risk-scores/doctor/{doctorId}
-     */
-    @GetMapping("/doctor/{doctorId}")
-    public ResponseEntity<?> getDoctorRiskScore(@PathVariable String doctorId) {
-        try {
-            RiskScore score = riskScoringService.getDoctorRiskScore(doctorId);
-            
-            if (score == null) {
-                return ResponseEntity.notFound().build();
-            }
-            
-            return ResponseEntity.ok(Map.of(
-                    "message", "Doctor risk score retrieved successfully",
-                    "doctorId", doctorId,
-                    "data", fraudMapper.toRiskScoreResponse(score)
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving doctor risk score: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to retrieve patient risk score."));
         }
     }
 
@@ -95,8 +77,9 @@ public class RiskScoreController {
                     "data", fraudMapper.toRiskScoreResponse(score)
             ));
         } catch (Exception e) {
+            log.error("Failed to calculate claim risk score claimId={}", claimId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error calculating claim risk score: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to calculate claim risk score."));
         }
     }
 
@@ -118,31 +101,9 @@ public class RiskScoreController {
                     "data", responses
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve high-risk patients", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving high-risk patients: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Get all high-risk doctors
-     * GET /api/fraud/risk-scores/high-risk/doctors
-     */
-    @GetMapping("/high-risk/doctors")
-    public ResponseEntity<?> getHighRiskDoctors() {
-        try {
-            List<RiskScore> scores = riskScoringService.getHighRiskDoctors();
-            List<RiskScoreResponse> responses = scores.stream()
-                    .map(fraudMapper::toRiskScoreResponse)
-                    .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(Map.of(
-                    "message", "High-risk doctors retrieved successfully",
-                    "count", responses.size(),
-                    "data", responses
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving high-risk doctors: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to retrieve high-risk patients."));
         }
     }
 
@@ -164,31 +125,9 @@ public class RiskScoreController {
                     "data", responses
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve increasing-risk patients", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving increasing risk patients: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Get suspicious doctors
-     * GET /api/fraud/risk-scores/suspicious/doctors
-     */
-    @GetMapping("/suspicious/doctors")
-    public ResponseEntity<?> getSuspiciousDoctors() {
-        try {
-            List<RiskScore> scores = riskScoringService.getSuspiciousDoctors();
-            List<RiskScoreResponse> responses = scores.stream()
-                    .map(fraudMapper::toRiskScoreResponse)
-                    .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(Map.of(
-                    "message", "Suspicious doctors retrieved successfully",
-                    "count", responses.size(),
-                    "data", responses
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving suspicious doctors: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to retrieve increasing-risk patients."));
         }
     }
 
@@ -211,32 +150,9 @@ public class RiskScoreController {
                     "data", fraudMapper.toRiskScoreBreakdownResponse(breakdown)
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve risk breakdown patientId={}", patientId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving risk breakdown: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Get risk score breakdown for a doctor
-     * GET /api/fraud/risk-scores/doctor/{doctorId}/breakdown
-     */
-    @GetMapping("/doctor/{doctorId}/breakdown")
-    public ResponseEntity<?> getDoctorRiskBreakdown(@PathVariable String doctorId) {
-        try {
-            RiskScoreBreakdown breakdown = riskScoringService.getDoctorRiskBreakdown(doctorId);
-            
-            if (breakdown == null) {
-                return ResponseEntity.notFound().build();
-            }
-            
-            return ResponseEntity.ok(Map.of(
-                    "message", "Doctor risk breakdown retrieved successfully",
-                    "doctorId", doctorId,
-                    "data", fraudMapper.toRiskScoreBreakdownResponse(breakdown)
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving risk breakdown: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to retrieve risk breakdown."));
         }
     }
 
@@ -254,8 +170,9 @@ public class RiskScoreController {
                     "data", fraudMapper.toRiskScoreStatisticsResponse(statistics)
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve risk statistics", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error retrieving statistics: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to retrieve risk statistics."));
         }
     }
 
@@ -272,8 +189,9 @@ public class RiskScoreController {
                     "message", "All risk scores recalculated successfully"
             ));
         } catch (Exception e) {
+            log.error("Failed to recalculate risk scores", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error recalculating risk scores: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to recalculate risk scores."));
         }
     }
 
@@ -290,8 +208,9 @@ public class RiskScoreController {
                     "message", "Risk trends updated successfully"
             ));
         } catch (Exception e) {
+            log.error("Failed to update risk trends", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error updating risk trends: " + e.getMessage()));
+                    .body(Map.of("message", "Unable to update risk trends."));
         }
     }
 }
