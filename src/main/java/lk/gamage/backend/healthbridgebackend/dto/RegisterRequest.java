@@ -21,6 +21,8 @@ public class RegisterRequest {
     private String password;
 
     private String confirmPassword;
+    private String role;
+    private String branch;
 
     public RegisterRequest() {
     }
@@ -63,5 +65,21 @@ public class RegisterRequest {
 
     public void setConfirmPassword(String confirmPassword) {
         this.confirmPassword = confirmPassword;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
     }
 }
