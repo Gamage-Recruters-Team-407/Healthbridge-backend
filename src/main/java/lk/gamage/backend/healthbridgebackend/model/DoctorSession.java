@@ -38,6 +38,8 @@ public class DoctorSession {
     private int currentQueueNumber;
     private SessionStatus status;
     private String notes;
+    /** "VIDEO" or "IN_PERSON". Defaults to IN_PERSON for older documents that predate this field. */
+    private String appointmentType;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

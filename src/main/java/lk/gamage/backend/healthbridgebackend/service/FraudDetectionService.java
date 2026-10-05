@@ -1,6 +1,7 @@
 package lk.gamage.backend.healthbridgebackend.service;
 
 import lk.gamage.backend.healthbridgebackend.model.FraudAlert;
+import lk.gamage.backend.healthbridgebackend.enums.AlertStatus;
 
 import java.util.List;
 
@@ -30,8 +31,6 @@ public interface FraudDetectionService {
     /**
      * Check for suspicious patterns in a doctor's claim submissions
      */
-    FraudAlert checkDoctorPatterns(String doctorId);
-
     /**
      * Check if documentation is complete and matches the claim
      */
@@ -68,14 +67,9 @@ public interface FraudDetectionService {
     List<FraudAlert> getAlertsByClaimId(String claimId);
 
     /**
-     * Get alerts for a specific doctor
-     */
-    List<FraudAlert> getAlertsByDoctorId(String doctorId);
-
-    /**
      * Review an alert and mark as confirmed fraud or false positive
      */
-    FraudAlert reviewAlert(String alertId, String status, String reviewNotes);
+    FraudAlert reviewAlert(String alertId, AlertStatus status, String reviewNotes, String reviewerId);
 
     /**
      * Get alert statistics (total, by status, by severity)

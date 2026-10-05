@@ -6,7 +6,6 @@ public enum FraudAlertType {
     HIGH_FREQUENCY("High Claim Frequency"),
     UNBILLED_PROCEDURE("Unbilled Procedure"),
     FALSE_HISTORY("False Medical History"),
-    DOCTOR_PATTERN_ANOMALY("Doctor Pattern Anomaly"),
     DOCUMENTATION_MISMATCH("Documentation Mismatch"),
     PHARMACY_ABUSE("Pharmacy Abuse"),
     UNUSUAL_DIAGNOSIS("Unusual Diagnosis"),

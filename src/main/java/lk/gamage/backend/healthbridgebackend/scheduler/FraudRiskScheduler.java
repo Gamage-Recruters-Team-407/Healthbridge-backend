@@ -5,12 +5,16 @@ import lk.gamage.backend.healthbridgebackend.service.RiskScoringService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Service
 public class FraudRiskScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(FraudRiskScheduler.class);
 
     @Autowired
     private RiskScoringService riskScoringService;
@@ -26,18 +30,16 @@ public class FraudRiskScheduler {
     public void recalculateAllRiskScores() {
         try {
             LocalDateTime startTime = LocalDateTime.now();
-            System.out.println("[SCHEDULER] Started risk score recalculation at " + startTime);
+            log.info("Started risk score recalculation startTime={}", startTime);
             
             riskScoringService.recalculateAllRiskScores();
             
             LocalDateTime endTime = LocalDateTime.now();
             long durationSeconds = java.time.temporal.ChronoUnit.SECONDS.between(startTime, endTime);
-            System.out.println("[SCHEDULER] Completed risk score recalculation at " + endTime + 
-                    " (Duration: " + durationSeconds + "s)");
+                log.info("Completed risk score recalculation endTime={} durationSeconds={}", endTime, durationSeconds);
             
         } catch (Exception e) {
-            System.err.println("[SCHEDULER ERROR] Error during risk score recalculation: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Risk score recalculation failed", e);
         }
     }
 
@@ -48,15 +50,14 @@ public class FraudRiskScheduler {
     @Scheduled(cron = "0 0 3 * * *")
     public void updateAllRiskTrends() {
         try {
-            System.out.println("[SCHEDULER] Started risk trend update at " + LocalDateTime.now());
+            log.info("Started risk trend update");
             
             riskScoringService.updateAllRiskTrends();
             
-            System.out.println("[SCHEDULER] Completed risk trend update at " + LocalDateTime.now());
+            log.info("Completed risk trend update");
             
         } catch (Exception e) {
-            System.err.println("[SCHEDULER ERROR] Error updating risk trends: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Risk trend update failed", e);
         }
     }
 
@@ -67,16 +68,15 @@ public class FraudRiskScheduler {
     @Scheduled(cron = "0 0 4 * * *")
     public void archiveOldAlerts() {
         try {
-            System.out.println("[SCHEDULER] Started old alerts archival at " + LocalDateTime.now());
+            log.info("Started old fraud alert archival");
             
             // Archive alerts resolved more than 90 days ago
             fraudDetectionService.archiveOldAlerts(90);
             
-            System.out.println("[SCHEDULER] Completed old alerts archival at " + LocalDateTime.now());
+            log.info("Completed old fraud alert archival");
             
         } catch (Exception e) {
-            System.err.println("[SCHEDULER ERROR] Error archiving old alerts: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Fraud alert archival failed", e);
         }
     }
 
@@ -87,15 +87,14 @@ public class FraudRiskScheduler {
     @Scheduled(cron = "0 0 5 * * *")
     public void archiveInactiveScores() {
         try {
-            System.out.println("[SCHEDULER] Started inactive scores archival at " + LocalDateTime.now());
+            log.info("Started inactive risk score archival");
             
             riskScoringService.archiveInactiveScores();
             
-            System.out.println("[SCHEDULER] Completed inactive scores archival at " + LocalDateTime.now());
+            log.info("Completed inactive risk score archival");
             
         } catch (Exception e) {
-            System.err.println("[SCHEDULER ERROR] Error archiving inactive scores: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Inactive risk score archival failed", e);
         }
     }
 
@@ -105,7 +104,7 @@ public class FraudRiskScheduler {
     @Scheduled(cron = "0 0 6 ? * SUN")
     public void weeklyMaintenance() {
         try {
-            System.out.println("[SCHEDULER] Started weekly maintenance at " + LocalDateTime.now());
+            log.info("Started weekly fraud maintenance");
             
             // Run all maintenance tasks
             recalculateAllRiskScores();
@@ -113,11 +112,10 @@ public class FraudRiskScheduler {
             archiveOldAlerts();
             archiveInactiveScores();
             
-            System.out.println("[SCHEDULER] Completed weekly maintenance at " + LocalDateTime.now());
+            log.info("Completed weekly fraud maintenance");
             
         } catch (Exception e) {
-            System.err.println("[SCHEDULER ERROR] Error during weekly maintenance: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Weekly fraud maintenance failed", e);
         }
     }
 }

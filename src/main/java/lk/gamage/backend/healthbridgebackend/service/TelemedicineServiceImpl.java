@@ -33,6 +33,12 @@ public class TelemedicineServiceImpl implements TelemedicineService {
     @Override
     @Transactional
     public SessionResponse createSession(CreateSessionRequest request) {
+        // Patient and doctor can both press "Join" - return the existing room instead of creating a second one.
+        java.util.Optional<TelemedicineSession> existing = sessionRepository.findFirstByAppointmentId(request.getAppointmentId());
+        if (existing.isPresent()) {
+            return toResponse(existing.get());
+        }
+
         TelemedicineSession session = TelemedicineSession.builder()
                 .appointmentId(request.getAppointmentId())
                 .patientId(request.getPatientId())
@@ -100,7 +106,7 @@ public class TelemedicineServiceImpl implements TelemedicineService {
 
     @Override
     public SessionResponse getSessionByAppointmentId(String appointmentId) {
-        TelemedicineSession session = sessionRepository.findByAppointmentId(appointmentId)
+        TelemedicineSession session = sessionRepository.findFirstByAppointmentId(appointmentId)
                 .orElseThrow(() -> new TelemedicineSessionNotFoundException(appointmentId));
         return toResponse(session);
     }
@@ -112,6 +118,11 @@ public class TelemedicineServiceImpl implements TelemedicineService {
 
         if (session.getStatus() == SessionStatus.CANCELLED) {
             throw new InvalidSessionStateException("Cannot end a cancelled session");
+        }
+
+        // Both participants hang up -> the second call must not create another ConsultationSession or AI summary.
+        if (session.getStatus() == SessionStatus.COMPLETED) {
+            return toResponse(session);
         }
 
         LocalDateTime endTime = LocalDateTime.now();
