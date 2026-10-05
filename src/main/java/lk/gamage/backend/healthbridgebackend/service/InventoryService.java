@@ -1,31 +1,21 @@
 package lk.gamage.backend.healthbridgebackend.service;
 
 import lk.gamage.backend.healthbridgebackend.dto.InventoryRequest;
-import lk.gamage.backend.healthbridgebackend.model.HospitalInventory;
+import lk.gamage.backend.healthbridgebackend.dto.InventoryResponse;
 
 import java.util.List;
 
 public interface InventoryService {
 
-    HospitalInventory create(InventoryRequest request);
+    InventoryResponse addStock(InventoryRequest request);
 
-    HospitalInventory getById(String id);
+    InventoryResponse updateStock(String id, InventoryRequest request);
 
-    List<HospitalInventory> getAll();
+    InventoryResponse getById(String id);
 
-    HospitalInventory update(
-            String id,
-            InventoryRequest request);
+    List<InventoryResponse> getByPharmacy(String pharmacyId);
+
+    List<InventoryResponse> getLowStockAlerts(String pharmacyId);
 
     void delete(String id);
-
-    HospitalInventory stockIn(
-            String id,
-            int quantity);
-
-    HospitalInventory stockOut(
-            String id,
-            int quantity);
-
-    List<HospitalInventory> getLowStock();
 }

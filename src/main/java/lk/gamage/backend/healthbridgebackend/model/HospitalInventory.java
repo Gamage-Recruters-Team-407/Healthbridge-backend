@@ -1,6 +1,5 @@
 package lk.gamage.backend.healthbridgebackend.model;
 
-import lk.gamage.backend.healthbridgebackend.model.enums.InventoryStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,7 +8,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -21,27 +19,25 @@ public class HospitalInventory {
     @Id
     private String id;
 
+    private String hospitalId;
+
     private String itemCode;
 
     private String itemName;
 
     private String category;
 
-    private String supplier;
-
     private Integer quantity;
 
-    private Integer minimumStock;
+    private Integer reorderLevel;
 
     private String unit;
 
-    private Double unitCost;
+    private String supplier;
 
     private LocalDate expiryDate;
 
-    private InventoryStatus status;
+    private Double unitCost;
 
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
+    private String location;
 }
