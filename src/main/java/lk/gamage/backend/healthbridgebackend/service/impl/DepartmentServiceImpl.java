@@ -26,6 +26,8 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
 
+
+
     @Override
     public DepartmentResponseDto createDepartment(DepartmentRequestDto request) {
         validateRequest(request, null);
