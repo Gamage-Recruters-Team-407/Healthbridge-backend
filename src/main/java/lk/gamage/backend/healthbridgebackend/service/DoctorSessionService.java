@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import lk.gamage.backend.healthbridgebackend.dto.request.DoctorSessionRequest;
 import lk.gamage.backend.healthbridgebackend.dto.response.DoctorSessionResponse;
+import lk.gamage.backend.healthbridgebackend.dto.response.PublicDoctorSessionResponse;
 import lk.gamage.backend.healthbridgebackend.enums.SessionStatus;
 import lk.gamage.backend.healthbridgebackend.exception.BadRequestException;
 import lk.gamage.backend.healthbridgebackend.exception.ConflictException;
@@ -151,7 +152,8 @@ public class DoctorSessionService {
 
     public void release(String id) {
         DoctorSession current = require(id);
-        Update update = new Update().inc("bookedCount", -1).set("updatedAt", LocalDateTime.now());
+        int nextActiveCount = Math.max(0, current.getBookedCount() - 1);
+        Update update = new Update().inc("bookedCount", -1).set("lastIssuedAppointmentNumber", nextActiveCount).set("updatedAt", LocalDateTime.now());
         if (current.getStatus() == SessionStatus.FULL) update.set("status", SessionStatus.AVAILABLE);
         mongoTemplate.updateFirst(Query.query(Criteria.where("id").is(id).and("bookedCount").gt(0)), update, DoctorSession.class);
     }
@@ -189,6 +191,16 @@ public class DoctorSessionService {
                 s.getStartTime(), s.getEndTime(), s.getMaxAppointments(), s.getBookedCount(),
                 Math.max(s.getMaxAppointments() - s.getBookedCount(), 0), s.getLastIssuedAppointmentNumber(),
                 s.getCurrentQueueNumber(), effective, s.getNotes(), normalizeAppointmentType(s.getAppointmentType()));
+    }
+
+    public PublicDoctorSessionResponse toPublicResponse(DoctorSession s) {
+        String doctorName = userRepository.findById(s.getDoctorId()).map(User::getFullName).orElse("Doctor");
+        SessionStatus effective = s.getSessionDate().isBefore(LocalDate.now()) ? SessionStatus.COMPLETED : s.getStatus();
+        return new PublicDoctorSessionResponse(s.getId(), s.getDoctorId(), doctorName,
+                s.getSpecializationName(), s.getHospitalName(), s.getSessionDate(),
+                s.getSessionDate().getDayOfWeek().toString(), s.getStartTime(), s.getEndTime(),
+                Math.max(s.getMaxAppointments() - s.getBookedCount(), 0), effective,
+                normalizeAppointmentType(s.getAppointmentType()));
     }
 
     private void validateRequest(DoctorSessionRequest r) {
