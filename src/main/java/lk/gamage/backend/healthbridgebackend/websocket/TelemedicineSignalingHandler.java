@@ -40,8 +40,20 @@ public class TelemedicineSignalingHandler extends TextWebSocketHandler {
         rooms.computeIfAbsent(roomCode, k -> new CopyOnWriteArraySet<>()).add(session);
         log.info("Session {} joined telemedicine room {}", session.getId(), roomCode);
 
-        broadcastToOthers(session, roomCode, new SignalingMessage(
-                "peer-joined", session.getId(), roomCode, null));
+        SignalingMessage joined = new SignalingMessage("peer-joined", session.getId(), roomCode, null);
+        broadcastToOthers(session, roomCode, joined);
+
+        // If someone is already in the room, tell the newcomer too. Otherwise, when the
+        // initiator (patient) arrives second, it never learns the doctor is waiting and no offer is sent.
+        boolean othersPresent = rooms.get(roomCode).stream()
+                .anyMatch(p -> !p.getId().equals(session.getId()) && p.isOpen());
+        if (othersPresent) {
+            try {
+                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(joined)));
+            } catch (IOException e) {
+                log.error("Failed to notify new peer in room {}", roomCode, e);
+            }
+        }
     }
 
     @Override

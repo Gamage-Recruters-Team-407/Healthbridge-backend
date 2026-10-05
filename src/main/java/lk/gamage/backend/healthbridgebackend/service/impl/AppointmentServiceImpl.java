@@ -150,7 +150,14 @@ public class AppointmentServiceImpl implements AppointmentService {
                 a.getSessionId(), a.getPatientId(), a.getPatientName(), a.getDoctorId(), a.getDoctorName(), a.getHospitalId(), a.getHospital(),
                 a.getDoctorSpecialization(), a.getAppointmentDate(), s == null ? parseTime(a.getAppointmentTime()) : s.getStartTime(),
                 s == null ? 0 : s.getCurrentQueueNumber(), a.getStatus(), a.getPatientPhone(), a.getPatientNicOrPassport(),
-                a.getPatientEmail(), a.getPatientAddress(), a.getCancellationReason());
+                a.getPatientEmail(), a.getPatientAddress(), a.getCancellationReason(),
+                resolveAppointmentType(a, s));
+    }
+    /** Appointment's own type wins; falls back to the session's type, then IN_PERSON (covers older records). */
+    private String resolveAppointmentType(Appointment a, DoctorSession s) {
+        String type = a.getAppointmentType();
+        if (type == null || type.isBlank()) type = s != null ? s.getAppointmentType() : null;
+        return "VIDEO".equalsIgnoreCase(type) ? "VIDEO" : "IN_PERSON";
     }
     private User requirePatient(String id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Patient not found: " + id));

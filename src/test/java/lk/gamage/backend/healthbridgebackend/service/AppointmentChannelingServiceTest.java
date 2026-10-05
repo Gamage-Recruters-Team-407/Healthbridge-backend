@@ -9,6 +9,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import lk.gamage.backend.healthbridgebackend.dto.request.AppointmentBookingRequest;
+import lk.gamage.backend.healthbridgebackend.dto.request.DoctorSessionRequest;
 import lk.gamage.backend.healthbridgebackend.enums.AppointmentStatus;
 import lk.gamage.backend.healthbridgebackend.enums.SessionStatus;
 import lk.gamage.backend.healthbridgebackend.exception.ConflictException;
@@ -102,10 +103,17 @@ class AppointmentChannelingServiceTest {
         verify(sessionService,never()).release(anyString());
     }
 
-    @Test void cancelledAppointmentNumberIsNotReused() {
-        preparePatient(); DoctorSession s=session(1,2,SessionStatus.AVAILABLE); doReturn(s).when(sessionService).reserve("s1");
-        when(appointments.save(any())).thenAnswer(inv->inv.getArgument(0));
-        assertEquals(2,service.book("p1",request()).appointmentNumber());
+    @Test void cancelledAppointmentsDoNotInflateTheNextActiveQueueNumber() {
+        DoctorSession session = session(1, 1, SessionStatus.AVAILABLE);
+        when(sessions.findById("s1")).thenReturn(Optional.of(session));
+        sessionService.release("s1");
+
+        ArgumentCaptor<Query> query = ArgumentCaptor.forClass(Query.class);
+        ArgumentCaptor<Update> update = ArgumentCaptor.forClass(Update.class);
+        verify(mongo).updateFirst(query.capture(), update.capture(), eq(DoctorSession.class));
+
+        org.bson.Document updateDoc = update.getValue().getUpdateObject();
+        assertEquals(0, updateDoc.get("$set", org.bson.Document.class).getInteger("lastIssuedAppointmentNumber"));
     }
 
     @Test void unauthorizedPatientCannotViewAnotherPatientsAppointment() {
@@ -116,6 +124,25 @@ class AppointmentChannelingServiceTest {
     @Test void doctorCannotManageAnotherDoctorsSession() {
         when(sessions.findById("s1")).thenReturn(Optional.of(session(0,0,SessionStatus.AVAILABLE)));
         assertThrows(AccessDeniedException.class,()->sessionService.owned("s1","other-doctor"));
+    }
+
+    @Test void doctorSessionUsesSelectedHospitalBranch() {
+        when(users.findById("d1")).thenReturn(Optional.of(doctor()));
+        when(sessions.findByDoctorIdAndSessionDate(eq("d1"), any())).thenReturn(List.of());
+        when(sessions.save(any())).thenAnswer(inv -> { DoctorSession saved = inv.getArgument(0); saved.setId("s1"); return saved; });
+
+        var result = sessionService.create("d1", sessionRequest("HOSP-004", "Asiri Central Hospital"));
+
+        assertEquals("HOSP-004", result.hospitalId());
+        assertEquals("Asiri Central Hospital", result.hospitalName());
+    }
+
+    @Test void sessionWithBookingsCannotMoveToAnotherHospitalBranch() {
+        DoctorSession existing = session(1, 1, SessionStatus.AVAILABLE);
+        when(sessions.findById("s1")).thenReturn(Optional.of(existing));
+
+        assertThrows(ConflictException.class,
+                () -> sessionService.update("d1", "s1", sessionRequest("HOSP-002", "St. Mary's Medical Center")));
     }
 
     @Test void concurrentBookingsCannotExceedCapacityBecauseFilterUsesMongoExpression() {
@@ -144,5 +171,6 @@ class AppointmentChannelingServiceTest {
     private User patient(){User u=new User();u.setId("p1");u.setRole("PATIENT");u.setFullName("Patient One");return u;}
     private User doctor(){User u=new User();u.setId("d1");u.setRole("DOCTOR");u.setFullName("Dr Test");return u;}
     private DoctorSession session(int booked,int issued,SessionStatus status){return DoctorSession.builder().id("s1").doctorId("d1").hospitalId("h1").hospitalName("HealthBridge").specializationName("Cardiology").sessionDate(LocalDate.now().plusDays(1)).startTime(LocalTime.of(9,0)).maxAppointments(2).bookedCount(booked).lastIssuedAppointmentNumber(issued).status(status).build();}
+    private DoctorSessionRequest sessionRequest(String hospitalId, String hospitalName){return new DoctorSessionRequest(null,hospitalId,hospitalName,null,"Cardiology",LocalDate.now().plusDays(1),LocalTime.of(9,0),LocalTime.of(10,0),10,null);}
     private Appointment activeAppointment(){Appointment a=new Appointment();a.setId("a1");a.setSessionId("s1");a.setPatientId("p1");a.setDoctorId("d1");a.setStatus(AppointmentStatus.BOOKED);a.setAppointmentNumber(1);a.setAppointmentDate(LocalDate.now().plusDays(2));a.setAppointmentTime("09:00");return a;}
 }
