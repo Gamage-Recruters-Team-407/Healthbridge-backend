@@ -103,10 +103,17 @@ class AppointmentChannelingServiceTest {
         verify(sessionService,never()).release(anyString());
     }
 
-    @Test void cancelledAppointmentNumberIsNotReused() {
-        preparePatient(); DoctorSession s=session(1,2,SessionStatus.AVAILABLE); doReturn(s).when(sessionService).reserve("s1");
-        when(appointments.save(any())).thenAnswer(inv->inv.getArgument(0));
-        assertEquals(2,service.book("p1",request()).appointmentNumber());
+    @Test void cancelledAppointmentsDoNotInflateTheNextActiveQueueNumber() {
+        DoctorSession session = session(1, 1, SessionStatus.AVAILABLE);
+        when(sessions.findById("s1")).thenReturn(Optional.of(session));
+        sessionService.release("s1");
+
+        ArgumentCaptor<Query> query = ArgumentCaptor.forClass(Query.class);
+        ArgumentCaptor<Update> update = ArgumentCaptor.forClass(Update.class);
+        verify(mongo).updateFirst(query.capture(), update.capture(), eq(DoctorSession.class));
+
+        org.bson.Document updateDoc = update.getValue().getUpdateObject();
+        assertEquals(0, updateDoc.get("$set", org.bson.Document.class).getInteger("lastIssuedAppointmentNumber"));
     }
 
     @Test void unauthorizedPatientCannotViewAnotherPatientsAppointment() {
