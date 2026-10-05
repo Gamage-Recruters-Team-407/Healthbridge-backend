@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDateTime;
 import lk.gamage.backend.healthbridgebackend.dto.ErrorResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -36,6 +37,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/public/doctor-sessions/**",
                                 "/api/departments/**",
                                 "/api/beds/**",
                                 "/api/staff/**",
@@ -51,6 +53,7 @@ public class SecurityConfig {
                                 "/api/tickets/feedback/public",
                                 "/ws/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/branches", "/api/branches/**").permitAll()
                         .requestMatchers("/api/appointments/**", "/api/doctor-sessions/**").authenticated()
                         .requestMatchers("/api/lab/results/patient/**").authenticated()
                         .requestMatchers("/api/lab/**").hasAnyRole("LAB_OFFICER", "ADMIN", "SUPER_ADMIN")
