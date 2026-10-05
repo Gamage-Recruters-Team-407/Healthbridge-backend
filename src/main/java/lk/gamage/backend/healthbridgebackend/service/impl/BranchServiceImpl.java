@@ -1,6 +1,5 @@
 package lk.gamage.backend.healthbridgebackend.service.impl;
 
-import jakarta.annotation.PostConstruct;
 import lk.gamage.backend.healthbridgebackend.dto.BranchRequestDto;
 import lk.gamage.backend.healthbridgebackend.dto.BranchResponseDto;
 import lk.gamage.backend.healthbridgebackend.exception.AlreadyExistsException;
@@ -21,62 +20,6 @@ import java.util.stream.Collectors;
 public class BranchServiceImpl implements BranchService {
 
     private final BranchRepository branchRepository;
-
-    @PostConstruct
-    public void seedInitialBranches() {
-        try {
-            if (branchRepository.count() == 0) {
-                Branch b1 = Branch.builder()
-                        .branchCode("BR-COL-01")
-                        .branchName("Colombo Central Branch")
-                        .hospitalId("HOSP-001")
-                        .address("123 Galle Road, Colombo 03")
-                        .city("Colombo")
-                        .phone("+94-11-2345678")
-                        .email("colombo@healthbridge.lk")
-                        .status("ACTIVE")
-                        .totalBeds(150)
-                        .emergencyReady(true)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
-                        .build();
-
-                Branch b2 = Branch.builder()
-                        .branchCode("BR-KAN-01")
-                        .branchName("Kandy Hill Capital Branch")
-                        .hospitalId("HOSP-002")
-                        .address("45 William Gopallawa Mawatha, Kandy")
-                        .city("Kandy")
-                        .phone("+94-81-2234567")
-                        .email("kandy@healthbridge.lk")
-                        .status("ACTIVE")
-                        .totalBeds(90)
-                        .emergencyReady(true)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
-                        .build();
-
-                Branch b3 = Branch.builder()
-                        .branchCode("BR-GAL-01")
-                        .branchName("Galle Coastal Branch")
-                        .hospitalId("HOSP-003")
-                        .address("88 Matara Road, Galle")
-                        .city("Galle")
-                        .phone("+94-91-2244556")
-                        .email("galle@healthbridge.lk")
-                        .status("ACTIVE")
-                        .totalBeds(75)
-                        .emergencyReady(false)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
-                        .build();
-
-                branchRepository.saveAll(List.of(b1, b2, b3));
-            }
-        } catch (Exception e) {
-            System.err.println("⚠️ Could not seed branch data: " + e.getMessage());
-        }
-    }
 
     @Override
     public List<BranchResponseDto> getAllBranches() {

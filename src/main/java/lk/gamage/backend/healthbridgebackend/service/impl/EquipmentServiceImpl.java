@@ -14,7 +14,6 @@ import lk.gamage.backend.healthbridgebackend.service.EquipmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,11 +32,6 @@ public class EquipmentServiceImpl implements EquipmentService {
 
     @Autowired
     private DepartmentRepository departmentRepository;
-
-    @PostConstruct
-    public void seedInitialData() {
-        equipmentRepository.deleteAll();
-    }
 
     @Override
     public List<EquipmentResponseDto> getAllEquipment(String category, String department, String status, String search) {
