@@ -46,11 +46,29 @@ public class SOSService {
             return userRepository.save(mockUser);
         });
 
+        List<String> allergies = user.getAllergies();
+        List<String> conditions = user.getConditions();
+        
+        // Remove updateDb mock data
+        if (allergies != null && allergies.size() == 1 && "Peanuts".equals(allergies.get(0))) {
+            allergies = List.of();
+        }
+        if (conditions != null && conditions.size() == 1 && "Asthma".equals(conditions.get(0))) {
+            if (user.getMedicalHistory() != null && !user.getMedicalHistory().trim().isEmpty()) {
+                conditions = List.of(user.getMedicalHistory().trim());
+            } else {
+                conditions = List.of();
+            }
+        }
+
         SOSAlert.PatientInfo patientInfo = SOSAlert.PatientInfo.builder()
-                .name(user.getFirstName() + " " + user.getLastName())
-                .bloodType(user.getBloodType())
-                .allergies(user.getAllergies())
-                .conditions(user.getConditions())
+                .name(user.getFullName() != null ? user.getFullName() : (
+                    (user.getFirstName() != null ? user.getFirstName() : "") + " " + 
+                    (user.getLastName() != null ? user.getLastName() : "")
+                ).trim())
+                .bloodType(user.getBloodType() != null ? user.getBloodType() : user.getBloodGroup())
+                .allergies(allergies != null ? allergies : List.of())
+                .conditions(conditions != null ? conditions : List.of())
                 .build();
 
         SOSAlert.Location location = SOSAlert.Location.builder()
@@ -81,11 +99,22 @@ public class SOSService {
         return alert;
     }
 
+    public SOSAlert updateStatus(String alertId, String status) {
+        SOSAlert alert = getAlert(alertId);
+        alert.setStatus(status);
+        if ("ARRIVED".equals(status)) {
+            alert.setResolvedAt(Instant.now());
+        }
+        alert = sosRepository.save(alert);
+        messagingTemplate.convertAndSend("/topic/alerts/update", alert);
+        return alert;
+    }
+
     public SOSAlert cancelSOS(String alertId) {
         Optional<SOSAlert> optionalAlert = sosRepository.findById(alertId);
         if (optionalAlert.isPresent()) {
             SOSAlert alert = optionalAlert.get();
-            if ("ACTIVE".equals(alert.getStatus())) {
+            if ("ACTIVE".equals(alert.getStatus()) || "DISPATCHED".equals(alert.getStatus())) {
                 alert.setStatus("CANCELLED");
                 alert.setResolvedAt(Instant.now());
                 alert = sosRepository.save(alert);
@@ -107,6 +136,10 @@ public class SOSService {
 
     public List<SOSAlert> getHistory(String userId) {
         return sosRepository.findByUserId(userId);
+    }
+
+    public List<SOSAlert> getActiveAlerts() {
+        return sosRepository.findByStatus("ACTIVE");
     }
 
     // ========================================================================

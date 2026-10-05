@@ -46,6 +46,34 @@ public class SOSController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{alertId}/dispatch")
+    public ResponseEntity<TriggerSOSResponse> dispatchSOS(@PathVariable String alertId) {
+        SOSAlert alert = sosService.updateStatus(alertId, "DISPATCHED");
+        TriggerSOSResponse response = TriggerSOSResponse.builder()
+                .alertId(alert.getId())
+                .status(alert.getStatus())
+                .message("Ambulance dispatched.")
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{alertId}/arrive")
+    public ResponseEntity<TriggerSOSResponse> arriveSOS(@PathVariable String alertId) {
+        SOSAlert alert = sosService.updateStatus(alertId, "ARRIVED");
+        TriggerSOSResponse response = TriggerSOSResponse.builder()
+                .alertId(alert.getId())
+                .status(alert.getStatus())
+                .message("Ambulance arrived.")
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<List<SOSAlert>> getActiveAlerts() {
+        List<SOSAlert> activeAlerts = sosService.getActiveAlerts();
+        return ResponseEntity.ok(activeAlerts);
+    }
+
     @GetMapping("/{alertId}")
     public ResponseEntity<SOSAlert> getAlertStatus(@PathVariable String alertId) {
         SOSAlert alert = sosService.getAlert(alertId);

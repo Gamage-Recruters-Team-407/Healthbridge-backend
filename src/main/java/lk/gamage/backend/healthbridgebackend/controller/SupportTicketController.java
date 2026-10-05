@@ -1,5 +1,6 @@
 package lk.gamage.backend.healthbridgebackend.controller;
 
+import lk.gamage.backend.healthbridgebackend.dto.request.SubmitTicketFeedbackRequest;
 import lk.gamage.backend.healthbridgebackend.dto.request.UpdateTicketReplyRequest;
 import lk.gamage.backend.healthbridgebackend.model.TicketCategory;
 import lk.gamage.backend.healthbridgebackend.service.SupportTicketService;
@@ -77,6 +78,23 @@ public class SupportTicketController {
         }
     }
 
+    @PostMapping("/{id}/feedback")
+    public ResponseEntity<?> submitFeedback(
+            @PathVariable String id,
+            @RequestBody SubmitTicketFeedbackRequest request) {
+        try {
+            return ResponseEntity.ok(supportTicketService.submitFeedback(
+                    id, request.getRating(), request.getComment()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error submitting feedback: " + e.getMessage()));
+        }
+    }
+
     @PutMapping("/{ticketId}/reply/{replyId}")
     public ResponseEntity<?> editReply(
             @PathVariable String ticketId,
@@ -107,4 +125,17 @@ public class SupportTicketController {
                     .body(Map.of("message", "Error deleting reply: " + e.getMessage()));
         }
     }
+
+@GetMapping("/feedback/public")
+public ResponseEntity<?> getPublicFeedback() {
+    try {
+        return ResponseEntity.ok(supportTicketService.getPublicFeedback());
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "Error retrieving feedback: " + e.getMessage()));
+    }
+}
+
+
+
 }

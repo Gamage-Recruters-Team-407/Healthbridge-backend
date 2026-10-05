@@ -7,6 +7,7 @@ import lk.gamage.backend.healthbridgebackend.model.User;
 import lk.gamage.backend.healthbridgebackend.repository.NotificationRepository;
 import lk.gamage.backend.healthbridgebackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,6 +21,9 @@ public class NotificationService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     public void sendCriticalResultAlert(LabResult saved) {
         // TODO: implement actual notification logic (email/SMS/push)
@@ -50,13 +54,27 @@ public class NotificationService {
     }
 
     public void notifySupportTicket(String recipientId, String title, String message, String ticketId) {
-        notificationRepository.save(Notification.builder()
+        Notification notification = notificationRepository.save(Notification.builder()
                 .recipientId(recipientId)
                 .type("SUPPORT_TICKET")
                 .title(title)
                 .message(message)
                 .referenceType("SUPPORT_TICKET")
                 .referenceId(ticketId)
+                .read(false)
+                .createdAt(LocalDateTime.now())
+                .build());
+            messagingTemplate.convertAndSend("/topic/notifications/" + recipientId, notification);
+    }
+
+    public void notifyAppointment(String recipientId, String title, String message, String appointmentId) {
+        notificationRepository.save(Notification.builder()
+                .recipientId(recipientId)
+                .type("APPOINTMENT")
+                .title(title)
+                .message(message)
+                .referenceType("APPOINTMENT")
+                .referenceId(appointmentId)
                 .read(false)
                 .createdAt(LocalDateTime.now())
                 .build());

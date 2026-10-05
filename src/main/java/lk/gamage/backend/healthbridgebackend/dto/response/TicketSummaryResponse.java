@@ -17,6 +17,8 @@ public class TicketSummaryResponse {
     private TicketCategory category;
     private String contactNumber;
     private TicketStatus status;
+    private Integer feedbackRating;
+    private boolean hasFeedback;
     private boolean hasAttachment;
     private int replyCount;
     private LocalDateTime createdAt;
@@ -33,6 +35,8 @@ public class TicketSummaryResponse {
         this.category = ticket.getCategory();
         this.contactNumber = ticket.getContactNumber();
         this.status = ticket.getStatus();
+        this.feedbackRating = ticket.getFeedbackRating();
+        this.hasFeedback = ticket.getFeedbackRating() != null;
         this.hasAttachment = ticket.getAttachmentUrl() != null && !ticket.getAttachmentUrl().isBlank();
         this.replyCount = ticket.getReplies() == null ? 0 : ticket.getReplies().size();
         this.createdAt = ticket.getCreatedAt();
@@ -59,6 +63,12 @@ public class TicketSummaryResponse {
 
     public TicketStatus getStatus() { return status; }
     public void setStatus(TicketStatus status) { this.status = status; }
+
+    public Integer getFeedbackRating() { return feedbackRating; }
+    public void setFeedbackRating(Integer feedbackRating) { this.feedbackRating = feedbackRating; }
+
+    public boolean isHasFeedback() { return hasFeedback; }
+    public void setHasFeedback(boolean hasFeedback) { this.hasFeedback = hasFeedback; }
 
     public boolean isHasAttachment() { return hasAttachment; }
     public void setHasAttachment(boolean hasAttachment) { this.hasAttachment = hasAttachment; }

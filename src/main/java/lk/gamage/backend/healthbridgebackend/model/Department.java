@@ -39,6 +39,9 @@ public class Department {
 
     private String contactPhone;
 
+    private String branchId;
+    private String branchCode;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

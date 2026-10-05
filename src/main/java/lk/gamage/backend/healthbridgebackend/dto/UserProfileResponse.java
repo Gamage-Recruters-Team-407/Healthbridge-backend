@@ -1,6 +1,9 @@
 package lk.gamage.backend.healthbridgebackend.dto;
 
 import lk.gamage.backend.healthbridgebackend.model.AuthProvider;
+import lk.gamage.backend.healthbridgebackend.model.LocalizationPrefs;
+import lk.gamage.backend.healthbridgebackend.model.NotificationPrefs;
+import lk.gamage.backend.healthbridgebackend.model.PrivacyPrefs;
 import lk.gamage.backend.healthbridgebackend.model.Role;
 import lk.gamage.backend.healthbridgebackend.model.User;
 
@@ -20,11 +23,16 @@ public class UserProfileResponse {
     private String gender;
     private String bloodGroup;
     private String address;
+    private String branch;
     private String emergencyContact;
     private String medicalHistory;
     private java.util.List<String> allergies;
     private java.util.List<String> conditions;
     private String accountStatus;
+    private boolean twoFactorEnabled;
+    private NotificationPrefs notificationPrefs;
+    private PrivacyPrefs privacyPrefs;
+    private LocalizationPrefs localizationPrefs;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -45,11 +53,16 @@ public class UserProfileResponse {
         this.bloodGroup = user.getBloodGroup();
         if (user.getBloodType() != null) this.bloodGroup = user.getBloodType(); // support both
         this.address = user.getAddress();
+        this.branch = user.getBranch();
         this.emergencyContact = user.getEmergencyContact();
         this.medicalHistory = user.getMedicalHistory();
         this.allergies = user.getAllergies();
         this.conditions = user.getConditions();
         this.accountStatus = user.getAccountStatus();
+        this.twoFactorEnabled = user.isTwoFactorEnabled();
+        this.notificationPrefs = user.getNotificationPrefs();
+        this.privacyPrefs = user.getPrivacyPrefs();
+        this.localizationPrefs = user.getLocalizationPrefs();
         this.createdAt = user.getCreatedAt();
         this.updatedAt = user.getUpdatedAt();
     }
@@ -150,6 +163,14 @@ public class UserProfileResponse {
         this.address = address;
     }
 
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
+    }
+
     public String getEmergencyContact() {
         return emergencyContact;
     }
@@ -188,6 +209,38 @@ public class UserProfileResponse {
 
     public void setAccountStatus(String accountStatus) {
         this.accountStatus = accountStatus;
+    }
+
+    public boolean isTwoFactorEnabled() {
+        return twoFactorEnabled;
+    }
+
+    public void setTwoFactorEnabled(boolean twoFactorEnabled) {
+        this.twoFactorEnabled = twoFactorEnabled;
+    }
+
+    public NotificationPrefs getNotificationPrefs() {
+        return notificationPrefs;
+    }
+
+    public void setNotificationPrefs(NotificationPrefs notificationPrefs) {
+        this.notificationPrefs = notificationPrefs;
+    }
+
+    public PrivacyPrefs getPrivacyPrefs() {
+        return privacyPrefs;
+    }
+
+    public void setPrivacyPrefs(PrivacyPrefs privacyPrefs) {
+        this.privacyPrefs = privacyPrefs;
+    }
+
+    public LocalizationPrefs getLocalizationPrefs() {
+        return localizationPrefs;
+    }
+
+    public void setLocalizationPrefs(LocalizationPrefs localizationPrefs) {
+        this.localizationPrefs = localizationPrefs;
     }
 
     public LocalDateTime getCreatedAt() {
