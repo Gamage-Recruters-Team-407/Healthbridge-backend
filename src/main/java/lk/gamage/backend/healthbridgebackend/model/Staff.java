@@ -23,7 +23,7 @@ public class Staff {
     private String firstName;
     private String lastName;
     private String role;
-    private String department;
+    private String branch;
     private String email;
     private String phone;
     private String extension;
