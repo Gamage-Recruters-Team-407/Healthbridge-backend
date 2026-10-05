@@ -39,3 +39,7 @@ build/
 .env.local
 !.env.example
 
+# Application configuration (contains secrets)
+src/main/resources/application.properties
+application.properties
+
