@@ -1,6 +1,5 @@
 package lk.gamage.backend.healthbridgebackend.service.impl;
 
-import jakarta.annotation.PostConstruct;
 import lk.gamage.backend.healthbridgebackend.dto.*;
 import lk.gamage.backend.healthbridgebackend.exception.AlreadyExistsException;
 import lk.gamage.backend.healthbridgebackend.exception.BadRequestException;
@@ -21,15 +20,6 @@ import java.util.stream.Collectors;
 public class BedServiceImpl implements BedService {
 
     private final BedRepository bedRepository;
-
-    @PostConstruct
-    public void seedInitialData() {
-        try {
-            bedRepository.deleteAll();
-        } catch (Exception e) {
-            System.err.println("⚠️ Could not clear initial beds database: " + e.getMessage());
-        }
-    }
 
     @Override
     public BedResponseDto createBed(BedRequestDto request) {
