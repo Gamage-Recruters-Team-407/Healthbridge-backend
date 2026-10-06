@@ -21,11 +21,11 @@ public class StaffController {
 
     @GetMapping
     public ResponseEntity<List<StaffResponseDto>> getAllStaff(
-            @RequestParam(required = false) String branch,
+            @RequestParam(required = false) String department,
             @RequestParam(required = false) String dutyStatus,
             @RequestParam(required = false) String accountStatus,
             @RequestParam(required = false) String search) {
-        return ResponseEntity.ok(staffService.getAllStaff(branch, dutyStatus, accountStatus, search));
+        return ResponseEntity.ok(staffService.getAllStaff(department, dutyStatus, accountStatus, search));
     }
 
     @GetMapping("/stats")

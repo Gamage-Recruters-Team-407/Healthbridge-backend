@@ -19,7 +19,7 @@ public class StaffResponseDto {
     private String firstName;
     private String lastName;
     private String role;
-    private String branch;
+    private String department;
     private String email;
     private String phone;
     private String extension;

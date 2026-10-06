@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface StaffService {
 
-    List<StaffResponseDto> getAllStaff(String branch, String dutyStatus, String accountStatus, String search);
+    List<StaffResponseDto> getAllStaff(String department, String dutyStatus, String accountStatus, String search);
 
     StaffResponseDto getStaffById(String id);
 

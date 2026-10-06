@@ -16,7 +16,7 @@ public interface StaffRepository extends MongoRepository<Staff, String> {
 
     boolean existsByEmailIgnoreCase(String email);
 
-    List<Staff> findByBranchIgnoreCase(String branch);
+    List<Staff> findByDepartmentIgnoreCase(String department);
 
     List<Staff> findByDutyStatusIgnoreCase(String dutyStatus);
 

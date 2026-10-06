@@ -34,12 +34,12 @@ public class StaffServiceImpl implements StaffService {
     }
 
     @Override
-    public List<StaffResponseDto> getAllStaff(String branch, String dutyStatus, String accountStatus, String search) {
+    public List<StaffResponseDto> getAllStaff(String department, String dutyStatus, String accountStatus, String search) {
         List<Staff> staffList = staffRepository.findAll();
 
-        if (branch != null && !branch.trim().isEmpty() && !"All".equalsIgnoreCase(branch)) {
+        if (department != null && !department.trim().isEmpty() && !"All".equalsIgnoreCase(department)) {
             staffList = staffList.stream()
-                    .filter(s -> s.getBranch() != null && s.getBranch().equalsIgnoreCase(branch.trim()))
+                    .filter(s -> s.getDepartment() != null && s.getDepartment().equalsIgnoreCase(department.trim()))
                     .collect(Collectors.toList());
         }
 
@@ -62,7 +62,7 @@ public class StaffServiceImpl implements StaffService {
                             (s.getLastName() != null && s.getLastName().toLowerCase().contains(lowerSearch)) ||
                             (s.getStaffId() != null && s.getStaffId().toLowerCase().contains(lowerSearch)) ||
                             (s.getRole() != null && s.getRole().toLowerCase().contains(lowerSearch)) ||
-                            (s.getBranch() != null && s.getBranch().toLowerCase().contains(lowerSearch)) ||
+                            (s.getDepartment() != null && s.getDepartment().toLowerCase().contains(lowerSearch)) ||
                             (s.getEmail() != null && s.getEmail().toLowerCase().contains(lowerSearch)))
                     .collect(Collectors.toList());
         }
@@ -110,7 +110,7 @@ public class StaffServiceImpl implements StaffService {
                 .firstName(request.getFirstName().trim())
                 .lastName(request.getLastName().trim())
                 .role(request.getRole() != null ? request.getRole().trim() : "Staff Specialist")
-                .branch(request.getBranch() != null ? request.getBranch().trim() : "Colombo")
+                .department(request.getDepartment() != null ? request.getDepartment().trim() : "General Medical")
                 .email(request.getEmail() != null ? request.getEmail().trim() : null)
                 .phone(request.getPhone() != null ? request.getPhone().trim() : null)
                 .extension(request.getExtension() != null ? request.getExtension().trim() : null)
@@ -128,7 +128,7 @@ public class StaffServiceImpl implements StaffService {
                 .emergencyContactRelation(request.getEmergencyContactRelation() != null ? request.getEmergencyContactRelation().trim() : null)
                 .emergencyContactPhone(request.getEmergencyContactPhone() != null ? request.getEmergencyContactPhone().trim() : null)
                 .locationFloor(request.getLocationFloor() != null ? request.getLocationFloor().trim() : null)
-                .accountStatus(request.getAccountStatus() != null ? request.getAccountStatus().trim() : "Active")
+                .accountStatus(request.getAccountStatus() != null ? request.getAccountStatus().trim() : "PENDING_APPROVAL")
                 .branchId(request.getBranchId() != null ? request.getBranchId() : "BR-COL-01")
                 .branchCode(request.getBranchCode() != null ? request.getBranchCode() : "BR-COL-01")
                 .createdAt(LocalDateTime.now())
@@ -153,8 +153,8 @@ public class StaffServiceImpl implements StaffService {
         if (request.getRole() != null) {
             staff.setRole(request.getRole().trim());
         }
-        if (request.getBranch() != null) {
-            staff.setBranch(request.getBranch().trim());
+        if (request.getDepartment() != null) {
+            staff.setDepartment(request.getDepartment().trim());
         }
         if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
             String newEmail = request.getEmail().trim();
@@ -315,7 +315,7 @@ public class StaffServiceImpl implements StaffService {
                 .firstName(staff.getFirstName())
                 .lastName(staff.getLastName())
                 .role(staff.getRole())
-                .branch(staff.getBranch())
+                .department(staff.getDepartment())
                 .email(staff.getEmail())
                 .phone(staff.getPhone())
                 .extension(staff.getExtension())
