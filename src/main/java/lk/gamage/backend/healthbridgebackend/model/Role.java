@@ -42,8 +42,7 @@ public class Role {
             DOCTOR,
             PHARMACIST,
             INSURANCE_OFFICER,
-            LAB_OFFICER
-    );
+            LAB_OFFICER);
 
     public static boolean isValidRole(String role) {
         if (role == null || role.trim().isEmpty()) {
