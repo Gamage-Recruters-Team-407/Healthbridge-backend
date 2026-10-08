@@ -12,6 +12,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.QueryTimeoutException;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -56,6 +58,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     }
                 }
             }
+        } catch (DataAccessResourceFailureException | QueryTimeoutException e) {
+            SecurityContextHolder.clearContext();
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"status\":503,\"error\":\"Service Unavailable\","
+                    + "\"message\":\"Database temporarily unavailable. Please try again shortly.\"}");
+            return;
         } catch (Exception e) {
             // Invalid JWT token - clear context and proceed
             SecurityContextHolder.clearContext();
