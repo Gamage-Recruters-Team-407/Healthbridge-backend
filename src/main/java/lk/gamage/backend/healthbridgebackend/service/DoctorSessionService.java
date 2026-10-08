@@ -109,8 +109,10 @@ public class DoctorSessionService {
 
     public DoctorSessionResponse get(String id) { return toResponse(require(id)); }
     public List<DoctorSessionResponse> mine(String doctorId) {
-        assertDoctor(doctorId);
-        return repository.findByDoctorIdOrderBySessionDateAscStartTimeAsc(doctorId).stream().map(this::toResponse).toList();
+        User doctor = assertDoctor(doctorId);
+        String doctorName = doctor.getFullName() == null ? "Doctor" : doctor.getFullName();
+        return repository.findByDoctorIdOrderBySessionDateAscStartTimeAsc(doctorId).stream()
+                .map(session -> toResponse(session, doctorName)).toList();
     }
 
     public List<DoctorSessionResponse> search(String doctorId, String hospitalId, String specialization, LocalDate date) {
@@ -181,6 +183,10 @@ public class DoctorSessionService {
 
     public DoctorSessionResponse toResponse(DoctorSession s) {
         String doctorName = userRepository.findById(s.getDoctorId()).map(User::getFullName).orElse("Doctor");
+        return toResponse(s, doctorName);
+    }
+
+    private DoctorSessionResponse toResponse(DoctorSession s, String doctorName) {
         SessionStatus effective = s.getSessionDate().isBefore(LocalDate.now()) ? SessionStatus.COMPLETED : s.getStatus();
         // Branch information is supplied by Hospital Management and stored on the session.
         // Do not invent a default hospital for legacy records that have no branch assigned.
@@ -221,9 +227,10 @@ public class DoctorSessionService {
                 .anyMatch(s -> { LocalTime existingEnd = s.getEndTime() == null ? s.getStartTime().plusMinutes(1) : s.getEndTime(); return start.isBefore(existingEnd) && s.getStartTime().isBefore(requestedEnd); });
         if (overlaps) throw new ConflictException("This session overlaps another session for the doctor.");
     }
-    private void assertDoctor(String id) {
+    private User assertDoctor(String id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Doctor not found: " + id));
         if (!"DOCTOR".equalsIgnoreCase(user.getRole())) throw new AccessDeniedException("Only doctors can manage sessions.");
+        return user;
     }
     private String trimToNull(String value) { return value == null || value.isBlank() ? null : value.trim(); }
     /** Normalizes to "VIDEO" or "IN_PERSON", defaulting older/blank values to IN_PERSON. */

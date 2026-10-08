@@ -122,7 +122,7 @@ public class StaffServiceImpl implements StaffService {
                 .emergencyContactRelation(request.getEmergencyContactRelation() != null ? request.getEmergencyContactRelation().trim() : null)
                 .emergencyContactPhone(request.getEmergencyContactPhone() != null ? request.getEmergencyContactPhone().trim() : null)
                 .locationFloor(request.getLocationFloor() != null ? request.getLocationFloor().trim() : null)
-                .accountStatus(request.getAccountStatus() != null ? request.getAccountStatus().trim() : "PENDING_APPROVAL")
+                .accountStatus(request.getAccountStatus() != null ? request.getAccountStatus().trim() : "Active")
                 .branchId(request.getBranchId() != null ? request.getBranchId() : "BR-COL-01")
                 .branchCode(request.getBranchCode() != null ? request.getBranchCode() : "BR-COL-01")
                 .createdAt(LocalDateTime.now())
