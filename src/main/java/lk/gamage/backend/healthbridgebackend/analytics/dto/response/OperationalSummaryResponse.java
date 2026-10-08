@@ -4,8 +4,8 @@ public record OperationalSummaryResponse(
         String department,
         long patients,
         long appointments,
-        int utilization,
-        long revenue,
+        Integer utilization,
+        Long revenue,
         String status
 ) {
 }

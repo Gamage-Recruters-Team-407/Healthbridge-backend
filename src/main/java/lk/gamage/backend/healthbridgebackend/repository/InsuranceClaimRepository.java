@@ -46,6 +46,10 @@ public interface InsuranceClaimRepository extends MongoRepository<InsuranceClaim
     List<InsuranceClaim> findByPatientIdAndSubmittedAtBetween(
             String patientId, LocalDateTime startDate, LocalDateTime endDate);
 
+    @Query(value = "{ '$and': [ { 'submittedAt': { '$gte': ?0 } }, { 'submittedAt': { '$lt': ?1 } } ] }", count = true)
+    long countBySubmittedAtGreaterThanEqualAndSubmittedAtLessThan(
+            LocalDateTime start, LocalDateTime end);
+
     // Check if similar claim exists
     Boolean existsByPatientIdAndTreatmentDescriptionAndSubmittedAtAfter(
             String patientId, String treatmentDescription, LocalDateTime submittedAfter);
