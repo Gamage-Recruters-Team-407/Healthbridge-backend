@@ -1,6 +1,5 @@
 package lk.gamage.backend.healthbridgebackend.service.impl;
 
-import jakarta.annotation.PostConstruct;
 import lk.gamage.backend.healthbridgebackend.dto.DepartmentRequestDto;
 import lk.gamage.backend.healthbridgebackend.dto.DepartmentResponseDto;
 import lk.gamage.backend.healthbridgebackend.dto.DepartmentStatsDto;
@@ -27,14 +26,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
 
-    @PostConstruct
-    public void seedInitialData() {
-        try {
-            departmentRepository.deleteAll();
-        } catch (Exception e) {
-            System.err.println("⚠️ Could not clear initial departments database: " + e.getMessage());
-        }
-    }
+
 
     @Override
     public DepartmentResponseDto createDepartment(DepartmentRequestDto request) {

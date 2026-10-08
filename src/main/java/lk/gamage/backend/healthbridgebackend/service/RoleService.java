@@ -28,7 +28,7 @@ public class RoleService {
         role.setPermissionIds(dto.getPermissionIds());
         role.setRiskLevel(dto.getRiskLevel());
         role.setRiskRecommendations(dto.getRiskRecommendations());
-        
+
         role.setUserCount(0);
         role.setUpdatedAt(LocalDateTime.now());
 
@@ -54,7 +54,7 @@ public class RoleService {
         role.setPermissionIds(dto.getPermissionIds());
         role.setRiskLevel(dto.getRiskLevel());
         role.setRiskRecommendations(dto.getRiskRecommendations());
-        
+
         role.setUpdatedAt(LocalDateTime.now());
 
         return roleRepository.save(role);
@@ -64,11 +64,10 @@ public class RoleService {
         long totalRoles = roleRepository.count();
         long customRoles = roleRepository.findByType("CUSTOM").size();
         return java.util.Map.of(
-            "totalRoles", totalRoles,
-            "activeUsers", 0L,
-            "customRoles", (long) customRoles,
-            "highRiskPermissions", 0L,
-            "recentChanges", 0L
-        );
+                "totalRoles", totalRoles,
+                "activeUsers", 0L,
+                "customRoles", (long) customRoles,
+                "highRiskPermissions", 0L,
+                "recentChanges", 0L);
     }
 }

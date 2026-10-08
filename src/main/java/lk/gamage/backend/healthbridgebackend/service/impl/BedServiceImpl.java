@@ -1,6 +1,5 @@
 package lk.gamage.backend.healthbridgebackend.service.impl;
 
-import jakarta.annotation.PostConstruct;
 import lk.gamage.backend.healthbridgebackend.dto.*;
 import lk.gamage.backend.healthbridgebackend.exception.AlreadyExistsException;
 import lk.gamage.backend.healthbridgebackend.exception.BadRequestException;
@@ -22,14 +21,7 @@ public class BedServiceImpl implements BedService {
 
     private final BedRepository bedRepository;
 
-    @PostConstruct
-    public void seedInitialData() {
-        try {
-            bedRepository.deleteAll();
-        } catch (Exception e) {
-            System.err.println("⚠️ Could not clear initial beds database: " + e.getMessage());
-        }
-    }
+
 
     @Override
     public BedResponseDto createBed(BedRequestDto request) {
@@ -243,12 +235,21 @@ public class BedServiceImpl implements BedService {
     @Override
     public List<DepartmentOccupancyDto> getDepartmentOccupancy() {
         List<Bed> beds = bedRepository.findAll();
-        List<String> departments = Arrays.asList("ICU", "General Ward", "Pediatrics", "Emergency Ward", "Cardiology", "Maternity");
+        List<String> departments = beds.stream()
+                .map(Bed::getWard)
+                .filter(w -> w != null && !w.trim().isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (departments.isEmpty()) {
+            departments = Arrays.asList("Cardiology", "Emergency Medicine", "Neurology", "Pediatrics", "Intensive Care Unit (ICU)", "Radiology & Imaging", "General Surgery", "Oncology");
+        }
 
         Map<String, Long> totalPerDept = beds.stream()
+                .filter(b -> b.getWard() != null)
                 .collect(Collectors.groupingBy(Bed::getWard, Collectors.counting()));
         Map<String, Long> occupiedPerDept = beds.stream()
-                .filter(b -> "Occupied".equalsIgnoreCase(b.getStatus()))
+                .filter(b -> b.getWard() != null && "Occupied".equalsIgnoreCase(b.getStatus()))
                 .collect(Collectors.groupingBy(Bed::getWard, Collectors.counting()));
 
         List<DepartmentOccupancyDto> result = new ArrayList<>();

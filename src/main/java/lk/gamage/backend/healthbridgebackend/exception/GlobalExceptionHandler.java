@@ -16,6 +16,13 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler({org.springframework.dao.DataAccessResourceFailureException.class,
+            org.springframework.dao.QueryTimeoutException.class})
+    public ResponseEntity<ErrorResponseDto> handleDatabaseUnavailable(Exception ex, HttpServletRequest request) {
+        return buildError(HttpStatus.SERVICE_UNAVAILABLE,
+                "Database temporarily unavailable. Please try again shortly.", request);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponseDto> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
         ErrorResponseDto error = ErrorResponseDto.builder()

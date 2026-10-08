@@ -1,6 +1,5 @@
 package lk.gamage.backend.healthbridgebackend.service.impl;
 
-import jakarta.annotation.PostConstruct;
 import lk.gamage.backend.healthbridgebackend.dto.StaffRequestDto;
 import lk.gamage.backend.healthbridgebackend.dto.StaffResponseDto;
 import lk.gamage.backend.healthbridgebackend.dto.StaffStatsDto;
@@ -27,11 +26,6 @@ public class StaffServiceImpl implements StaffService {
     private final StaffRepository staffRepository;
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
-
-    @PostConstruct
-    public void seedInitialData() {
-        // Demo data removed. Database starts clean or retains user-created data.
-    }
 
     @Override
     public List<StaffResponseDto> getAllStaff(String department, String dutyStatus, String accountStatus, String search) {

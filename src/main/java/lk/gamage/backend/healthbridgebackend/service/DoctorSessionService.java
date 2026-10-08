@@ -389,7 +389,6 @@ public class DoctorSessionService {
         }
     }
 
-
     // =========================================================
     // GET SINGLE SESSION
     // =========================================================
@@ -860,7 +859,6 @@ public class DoctorSessionService {
         return session;
     }
 
-
     // =========================================================
     // RESPONSE MAPPING
     // =========================================================
@@ -886,7 +884,6 @@ public class DoctorSessionService {
                         )
                         ? SessionStatus.COMPLETED
                         : s.getStatus();
-
         // Branch information is supplied by Hospital Management and stored on the session.
         // Do not invent a default hospital for legacy records that have no branch assigned.
 
@@ -1120,8 +1117,6 @@ public class DoctorSessionService {
             );
         }
     }
-
-
     // =========================================================
     // DOCTOR VALIDATION
     // =========================================================
