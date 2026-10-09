@@ -11,6 +11,7 @@ import java.time.LocalDate;
 
 @Repository
 public interface AppointmentRepository extends MongoRepository<Appointment, String> {
+    List<Appointment> findByDoctorId(String doctorId);
     List<Appointment> findByPatientIdOrderByAppointmentDateDescAppointmentTimeDesc(String patientId);
     List<Appointment> findBySessionIdOrderByAppointmentNumberAsc(String sessionId);
     Optional<Appointment> findByReferenceNumber(String referenceNumber);

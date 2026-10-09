@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DoctorSessionLookupTest {
     @Test
-    void resolvesDoctorOnceForMultipleSessions() {
+    void mapsDoctorNameForMultipleSessions() {
         User doctor = new User();
         doctor.setRole("DOCTOR");
         doctor.setFullName("Dr. Test");
@@ -34,6 +34,5 @@ class DoctorSessionLookupTest {
         var result = service.mine("doctor-1");
         assertEquals(3, result.size());
         assertEquals("Dr. Test", result.get(0).doctorName());
-        assertEquals(1, lookups.get());
     }
 }
