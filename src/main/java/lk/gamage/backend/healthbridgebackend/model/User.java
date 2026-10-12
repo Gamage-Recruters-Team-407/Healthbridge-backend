@@ -51,6 +51,12 @@ public class User {
 
     private String address;
 
+    private String specialization;
+    private List<String> qualifications;
+    private Integer experience;
+    private Double consultationFee;
+    private String bio;
+
     private String branch;
 
     private String emergencyContact;
