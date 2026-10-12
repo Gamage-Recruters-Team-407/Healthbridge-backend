@@ -53,7 +53,7 @@ public class SecurityConfig {
                                 "/api/tickets/feedback/public",
                                 "/ws/**"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/branches", "/api/branches/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/branches", "/api/branches/**", "/api/doctors").permitAll()
                         .requestMatchers("/api/appointments/**", "/api/doctor-sessions/**").authenticated()
                         .requestMatchers("/api/lab/results/patient/**").authenticated()
                         .requestMatchers("/api/lab/**").hasAnyRole("LAB_OFFICER", "ADMIN", "SUPER_ADMIN")

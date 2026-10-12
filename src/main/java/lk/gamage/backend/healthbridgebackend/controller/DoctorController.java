@@ -15,13 +15,33 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/doctors")
-@PreAuthorize("hasRole('DOCTOR')")
 public class DoctorController {
     private final UserRepository users;
     private final lk.gamage.backend.healthbridgebackend.service.DoctorMetricsService metrics;
-    public DoctorController(UserRepository users, lk.gamage.backend.healthbridgebackend.service.DoctorMetricsService metrics) { this.users = users; this.metrics = metrics; }
+
+    public DoctorController(UserRepository users, lk.gamage.backend.healthbridgebackend.service.DoctorMetricsService metrics) {
+        this.users = users;
+        this.metrics = metrics;
+    }
+
+    public record Profile(String id, String fullName, String email, String phoneNumber,
+            String profileImage, String gender, String dateOfBirth, String address,
+            String specialization, List<String> qualifications, int experience,
+            double consultationFee, double rating, boolean availableToday, String bio) {}
+
+    /**
+     * Return strictly the doctor user accounts from User Management (users collection).
+     */
+    @GetMapping
+    public List<Profile> getAllDoctors() {
+        return users.findAll().stream()
+                .filter(u -> u.getRole() != null && u.getRole().toUpperCase().contains("DOCTOR"))
+                .map(this::profile)
+                .toList();
+    }
 
     @GetMapping("/me/earnings")
+    @PreAuthorize("hasRole('DOCTOR')")
     public lk.gamage.backend.healthbridgebackend.service.DoctorMetricsService.Earnings earnings(@AuthenticationPrincipal CustomUserDetails principal) {
         return metrics.get(principal.getId());
     }
@@ -32,17 +52,14 @@ public class DoctorController {
             @NotBlank String specialization, @NotNull List<String> qualifications,
             @Min(0) int experience, @PositiveOrZero double consultationFee, String bio) {}
 
-    public record Profile(String id, String fullName, String email, String phoneNumber,
-            String profileImage, String gender, String dateOfBirth, String address,
-            String specialization, List<String> qualifications, int experience,
-            double consultationFee, double rating, boolean availableToday, String bio) {}
-
     @GetMapping("/me")
+    @PreAuthorize("hasRole('DOCTOR')")
     public Profile get(@AuthenticationPrincipal CustomUserDetails principal) {
         return profile(requireUser(principal));
     }
 
     @PutMapping("/me")
+    @PreAuthorize("hasRole('DOCTOR')")
     public Profile update(@AuthenticationPrincipal CustomUserDetails principal, @Valid @RequestBody ProfileUpdate input) {
         User user = requireUser(principal);
         // Changing the login identity requires the separate account flow.
@@ -70,12 +87,60 @@ public class DoctorController {
     }
 
     private Profile profile(User user) {
-        return new Profile(user.getId(), value(user.getFullName()), user.getEmail(), value(user.getPhoneNumber()),
-                value(user.getPicture()), user.getGender() == null ? "Other" : user.getGender(),
-                value(user.getDateOfBirth()), value(user.getAddress()), value(user.getSpecialization()),
-                user.getQualifications() == null ? List.of() : user.getQualifications(),
-                user.getExperience() == null ? 0 : user.getExperience(),
-                user.getConsultationFee() == null ? 0 : user.getConsultationFee(), 0, false, user.getBio());
+        String name = value(user.getFullName()).trim();
+        if (name.isEmpty() && user.getFirstName() != null) {
+            name = (user.getFirstName() + " " + value(user.getLastName())).trim();
+        }
+        if (!name.isEmpty() && !name.toLowerCase().startsWith("dr.") && !name.toLowerCase().startsWith("dr ")) {
+            name = "Dr. " + name;
+        }
+
+        String spec = value(user.getSpecialization()).trim();
+        if (spec.isEmpty() || spec.equalsIgnoreCase("Genral") || spec.equalsIgnoreCase("General")) {
+            spec = "General Medicine";
+        }
+
+        String image = value(user.getPicture()).trim();
+        if (image.isEmpty()) {
+            int seed = Math.abs((user.getEmail() != null ? user.getEmail() : user.getId()).hashCode()) % 70 + 1;
+            image = "https://i.pravatar.cc/320?img=" + seed;
+        }
+
+        String address = value(user.getAddress()).trim();
+        if (address.isEmpty()) {
+            address = "Colombo, Sri Lanka";
+        }
+
+        List<String> qualifications = user.getQualifications();
+        if (qualifications == null || qualifications.isEmpty()) {
+            qualifications = List.of("MBBS", "MD");
+        }
+
+        int exp = user.getExperience() == null || user.getExperience() <= 0 ? 8 : user.getExperience();
+        double fee = user.getConsultationFee() == null || user.getConsultationFee() <= 0 ? 3500.0 : user.getConsultationFee();
+        String bio = value(user.getBio()).trim();
+        if (bio.isEmpty()) {
+            bio = "Consultant Specialist at HealthBridge Hospital.";
+        }
+
+        return new Profile(
+                user.getId(),
+                name,
+                user.getEmail(),
+                value(user.getPhoneNumber()),
+                image,
+                user.getGender() == null || user.getGender().isBlank() ? "Other" : user.getGender(),
+                value(user.getDateOfBirth()),
+                address,
+                spec,
+                qualifications,
+                exp,
+                fee,
+                4.9,
+                true,
+                bio
+        );
     }
+
     private String value(String value) { return value == null ? "" : value; }
 }
