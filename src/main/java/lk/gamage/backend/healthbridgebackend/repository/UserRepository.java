@@ -1,7 +1,6 @@
 package lk.gamage.backend.healthbridgebackend.repository;
 
 import lk.gamage.backend.healthbridgebackend.model.User;
-import lk.gamage.backend.healthbridgebackend.model.Role;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

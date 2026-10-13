@@ -4,7 +4,6 @@ import lk.gamage.backend.healthbridgebackend.model.AuthProvider;
 import lk.gamage.backend.healthbridgebackend.model.LocalizationPrefs;
 import lk.gamage.backend.healthbridgebackend.model.NotificationPrefs;
 import lk.gamage.backend.healthbridgebackend.model.PrivacyPrefs;
-import lk.gamage.backend.healthbridgebackend.model.Role;
 import lk.gamage.backend.healthbridgebackend.model.User;
 
 import java.time.LocalDateTime;

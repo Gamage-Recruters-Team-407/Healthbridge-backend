@@ -26,7 +26,7 @@ public class SuperAdminDTOs {
     @AllArgsConstructor
     public static class Stats {
         private long totalUsers;
-        private long totalHospitals;
+        private long totalBranches;
         private long activeDoctors;
         private long activeSessions;
         private double systemHealthPercentage;
