@@ -15,10 +15,6 @@ public class PermissionService {
     private final PermissionRepository repository;
 
     public Permission createPermission(PermissionDto dto) {
-        if (repository.findByModuleName(dto.getModuleName()).isPresent()) {
-            throw new RuntimeException("Permission for this module already exists.");
-        }
-
         Permission permission = new Permission();
         permission.setModuleName(dto.getModuleName());
         permission.setCanView(dto.isCanView());
@@ -34,6 +30,11 @@ public class PermissionService {
 
     public List<Permission> getAllPermissions() {
         return repository.findAll();
+    }
+
+    public Permission getPermissionById(String id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Permission not found with ID: " + id));
     }
 
     public Permission updatePermission(String id, PermissionDto dto) {

@@ -39,10 +39,39 @@ public class RoleController {
         return ResponseEntity.ok(roleService.getRolesByType(type));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Role> getRoleById(@PathVariable String id) {
+        try {
+            return ResponseEntity.ok(roleService.getRoleById(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Role> updateRole(@PathVariable String id, @Valid @RequestBody RoleDto roleDto) {
         try {
             Role updatedRole = roleService.updateRole(id, roleDto);
+            return ResponseEntity.ok(updatedRole);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteRole(@PathVariable String id) {
+        try {
+            roleService.deleteRole(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Role> updateRoleStatus(@PathVariable String id, @RequestParam String status) {
+        try {
+            Role updatedRole = roleService.updateRoleStatus(id, status);
             return ResponseEntity.ok(updatedRole);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();

@@ -23,4 +23,8 @@ public class Laboratory {
     private String requestDate;
     private String approvedDate;
     private String status; // Pending, Approved, Rejected
+    private String email;
+    private String phone;
+    private String category;
+    private String yearsInOperation;
 }

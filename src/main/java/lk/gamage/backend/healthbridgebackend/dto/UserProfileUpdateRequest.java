@@ -10,6 +10,10 @@ public class UserProfileUpdateRequest {
     private String address;
     private String emergencyContact;
     private String medicalHistory;
+    private String role;
+    private String branch;
+    private String firstName;
+    private String lastName;
 
     public UserProfileUpdateRequest() {
     }
@@ -76,5 +80,37 @@ public class UserProfileUpdateRequest {
 
     public void setMedicalHistory(String medicalHistory) {
         this.medicalHistory = medicalHistory;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 }

@@ -17,6 +17,7 @@ public class RoleDto {
 
     private String status;
     private List<String> permissionIds;
+    private List<PermissionDto> permissions;
     private String riskLevel;
     private String riskRecommendations;
 }

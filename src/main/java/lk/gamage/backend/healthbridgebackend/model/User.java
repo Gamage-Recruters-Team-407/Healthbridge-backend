@@ -36,6 +36,7 @@ public class User {
     @Builder.Default
     private String role = Role.PATIENT;
 
+    @Builder.Default
     private AuthProvider provider = AuthProvider.LOCAL;
 
     private String googleId;
@@ -65,6 +66,7 @@ public class User {
     private List<String> allergies;
     private List<String> conditions;
 
+    @Builder.Default
     private String accountStatus = "Active";
 
     @Builder.Default
@@ -79,8 +81,10 @@ public class User {
     @Builder.Default
     private LocalizationPrefs localizationPrefs = new LocalizationPrefs();
 
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
 }

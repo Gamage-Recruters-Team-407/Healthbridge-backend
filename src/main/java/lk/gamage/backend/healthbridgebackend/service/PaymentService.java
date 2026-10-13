@@ -24,6 +24,7 @@ public class PaymentService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final BillingIntegrationService billingIntegrationService;
+    private final lk.gamage.backend.healthbridgebackend.repository.AppointmentRepository appointmentRepository;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -51,10 +52,28 @@ public class PaymentService {
         int code = 100000 + secureRandom.nextInt(900000);
         String confirmationCode = String.valueOf(code);
 
+        String doctorId = request.getDoctorId();
+        String doctorName = request.getDoctorName();
+        if ((doctorId == null || doctorId.isBlank()) && "CONSULTATION".equalsIgnoreCase(request.getCategory())) {
+            try {
+                var appointments = appointmentRepository.findByPatientIdOrderByAppointmentDateDescAppointmentTimeDesc(patient.getId());
+                if (appointments != null && !appointments.isEmpty()) {
+                    var recent = appointments.get(0);
+                    doctorId = recent.getDoctorId();
+                    doctorName = recent.getDoctorName();
+                }
+            } catch (Exception ignored) {}
+        }
+        if (doctorId != null && (doctorName == null || doctorName.isBlank())) {
+            doctorName = userRepository.findById(doctorId).map(User::getFullName).orElse(null);
+        }
+
         Payment payment = Payment.builder()
                 .patientId(patient.getId())
                 .patientEmail(patient.getEmail())
                 .patientName(patient.getFullName())
+                .doctorId(doctorId)
+                .doctorName(doctorName)
                 .description(request.getDescription())
                 .category(request.getCategory() != null ? request.getCategory() : "OTHER")
                 .amount(request.getAmount())
@@ -188,6 +207,8 @@ public class PaymentService {
                 .patientId(payment.getPatientId())
                 .patientName(payment.getPatientName())
                 .patientEmail(payment.getPatientEmail())
+                .doctorId(payment.getDoctorId())
+                .doctorName(payment.getDoctorName())
                 .description(payment.getDescription())
                 .category(payment.getCategory())
                 .amount(payment.getAmount())

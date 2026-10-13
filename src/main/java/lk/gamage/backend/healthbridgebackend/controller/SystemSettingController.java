@@ -48,7 +48,11 @@ public class SystemSettingController {
         try {
             return ResponseEntity.ok(systemSettingService.updateSystemSetting(settingKey, dto));
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            try {
+                return new ResponseEntity<>(systemSettingService.createSystemSetting(dto), HttpStatus.CREATED);
+            } catch (Exception ex) {
+                return ResponseEntity.badRequest().build();
+            }
         }
     }
 

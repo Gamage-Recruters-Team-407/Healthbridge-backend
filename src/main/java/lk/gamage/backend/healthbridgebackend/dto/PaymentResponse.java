@@ -20,6 +20,9 @@ public class PaymentResponse {
     private String patientName;
     private String patientEmail;
 
+    private String doctorId;
+    private String doctorName;
+
     private String description;
     private String category;
 
