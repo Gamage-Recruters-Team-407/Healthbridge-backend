@@ -42,9 +42,15 @@ public class SystemSettingService {
     }
 
     public SystemSetting updateSystemSetting(String settingKey, SystemSettingDto dto) {
-        SystemSetting systemSetting = getSystemSetting(settingKey);
+        SystemSetting systemSetting = repository.findBySettingKey(settingKey).orElseGet(() -> {
+            SystemSetting s = new SystemSetting();
+            s.setCategory(dto.getCategory() != null ? dto.getCategory() : "General");
+            s.setSettingKey(settingKey);
+            s.setCreatedAt(LocalDateTime.now());
+            return s;
+        });
         systemSetting.setSettingValue(dto.getSettingValue());
-        systemSetting.setDescription(dto.getDescription());
+        if (dto.getDescription() != null) systemSetting.setDescription(dto.getDescription());
         systemSetting.setUpdatedAt(LocalDateTime.now());
         systemSetting.setLastModifiedBy("SYSTEM_ADMIN");
 
@@ -57,13 +63,10 @@ public class SystemSettingService {
         repository.deleteAll();
         
         // Basic defaults
-        createSystemSetting(new SystemSettingDto("General", "system_name", "Health Bridge AI Healthcare System", "System Name"));
+        createSystemSetting(new SystemSettingDto("General", "system_name", "Health Bridge System", "System Name"));
         createSystemSetting(new SystemSettingDto("General", "system_email", "admin@healthbridge.com", "System Email"));
-        createSystemSetting(new SystemSettingDto("Regional", "time_zone", "(UTC+5:30) Asia/Colombo", "Time Zone"));
-        createSystemSetting(new SystemSettingDto("Regional", "date_format", "DD/MM/YYYY", "Date Format"));
-        createSystemSetting(new SystemSettingDto("Regional", "time_format", "24-Hour", "Time Format"));
-        createSystemSetting(new SystemSettingDto("Regional", "language", "English", "Language"));
-        createSystemSetting(new SystemSettingDto("Regional", "currency", "USD", "Currency"));
+        createSystemSetting(new SystemSettingDto("Maintenance", "maintenance_mode", "false", "Maintenance Mode"));
+        createSystemSetting(new SystemSettingDto("Maintenance", "system_announcement", "Scheduled system maintenance tonight at 11:00 PM EST", "System Announcement Banner"));
         createSystemSetting(new SystemSettingDto("Security", "tfa", "false", "Require 2FA"));
         createSystemSetting(new SystemSettingDto("Security", "session_timeout", "30", "Session Timeout"));
         createSystemSetting(new SystemSettingDto("Security", "password_expiry", "90", "Password Expiry"));

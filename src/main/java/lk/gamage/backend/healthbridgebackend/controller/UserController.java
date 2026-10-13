@@ -232,14 +232,20 @@ public class UserController {
 
     // --- SUPER ADMIN ENDPOINTS ---
 
-    @PutMapping("/{id}/status")
-    public ResponseEntity<?> updateUserStatus(@PathVariable String id, @RequestBody Map<String, String> body) {
+    @RequestMapping(value = "/{id}/status", method = {RequestMethod.PUT, RequestMethod.PATCH})
+    public ResponseEntity<?> updateUserStatus(
+            @PathVariable String id,
+            @RequestBody(required = false) Map<String, String> body,
+            @RequestParam(required = false) String status) {
         try {
-            String status = body.get("status");
-            if (status == null) {
+            String resolvedStatus = (status != null && !status.trim().isEmpty())
+                    ? status.trim()
+                    : (body != null ? body.get("status") : null);
+
+            if (resolvedStatus == null || resolvedStatus.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Status is required"));
             }
-            UserProfileResponse updated = userService.updateUserStatus(id, status);
+            UserProfileResponse updated = userService.updateUserStatus(id, resolvedStatus.trim());
             return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
