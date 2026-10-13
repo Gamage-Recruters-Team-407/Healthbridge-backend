@@ -140,6 +140,16 @@ class AppointmentChannelingServiceTest {
         );
     }
 
+        @Test
+        void completesElapsedActiveAppointments() {
+                when(appointments.completeElapsedActiveAppointments(any(), anyString(), any()))
+                                .thenReturn(2L);
+
+                assertEquals(2L, service.completeElapsedActiveAppointments());
+
+                verify(appointments).completeElapsedActiveAppointments(any(), anyString(), any());
+        }
+
 
     @Test
     void firstAppointmentGetsNumberOne() {
