@@ -26,6 +26,10 @@ public class Payment {
 
     private String patientName;
 
+    private String doctorId;
+
+    private String doctorName;
+
     private String description;
 
     private String category; // CONSULTATION, LAB_TEST, PRESCRIPTION, INSURANCE, OTHER, X_RAY
