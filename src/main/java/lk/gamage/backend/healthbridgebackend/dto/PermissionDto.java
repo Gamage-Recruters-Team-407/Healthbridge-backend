@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 public class PermissionDto {
+    private String id;
 
     @NotBlank(message = "Module name is required")
     private String moduleName;

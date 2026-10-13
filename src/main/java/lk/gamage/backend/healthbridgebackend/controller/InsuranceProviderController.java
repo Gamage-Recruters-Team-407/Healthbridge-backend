@@ -74,11 +74,70 @@ public class InsuranceProviderController {
         return ResponseEntity.ok("Already seeded");
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<InsuranceProvider> getProviderById(@PathVariable String id) {
+        return repository.findByProviderId(id)
+                .or(() -> repository.findById(id))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<InsuranceProvider> createProvider(@RequestBody InsuranceProvider provider) {
+        if (provider.getProviderId() == null || provider.getProviderId().isBlank()) {
+            provider.setProviderId("PRV-" + (int)(10000 + Math.random() * 90000));
+        }
+        if (provider.getLogoText() == null || provider.getLogoText().isBlank()) {
+            String name = provider.getName() != null ? provider.getName().trim() : "IN";
+            String[] parts = name.split("\\s+");
+            if (parts.length >= 2) {
+                provider.setLogoText(("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase());
+            } else if (!name.isEmpty()) {
+                provider.setLogoText(name.substring(0, Math.min(2, name.length())).toUpperCase());
+            } else {
+                provider.setLogoText("IN");
+            }
+        }
+        if (provider.getLogoColor() == null || provider.getLogoColor().isBlank()) {
+            provider.setLogoColor("bg-indigo-100 text-indigo-700");
+        }
+        if (provider.getStatus() == null || provider.getStatus().isBlank()) {
+            provider.setStatus("Approved");
+        }
+        return ResponseEntity.ok(repository.save(provider));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<InsuranceProvider> updateProvider(@PathVariable String id, @RequestBody InsuranceProvider updated) {
+        return repository.findByProviderId(id)
+                .or(() -> repository.findById(id))
+                .map(provider -> {
+                    if (updated.getName() != null) provider.setName(updated.getName());
+                    if (updated.getLicenseNo() != null) provider.setLicenseNo(updated.getLicenseNo());
+                    if (updated.getContactName() != null) provider.setContactName(updated.getContactName());
+                    if (updated.getContactRole() != null) provider.setContactRole(updated.getContactRole());
+                    if (updated.getCoverageRegions() != null) provider.setCoverageRegions(updated.getCoverageRegions());
+                    if (updated.getStatus() != null) provider.setStatus(updated.getStatus());
+                    return ResponseEntity.ok(repository.save(provider));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProvider(@PathVariable String id) {
+        repository.findByProviderId(id)
+                .or(() -> repository.findById(id))
+                .ifPresent(repository::delete);
+        return ResponseEntity.noContent().build();
+    }
+
     @PutMapping("/{id}/status")
     public ResponseEntity<InsuranceProvider> updateStatus(@PathVariable String id, @RequestBody java.util.Map<String, String> body) {
-        return repository.findByProviderId(id).map(provider -> {
-            provider.setStatus(body.get("status"));
-            return ResponseEntity.ok(repository.save(provider));
-        }).orElse(ResponseEntity.notFound().build());
+        return repository.findByProviderId(id)
+                .or(() -> repository.findById(id))
+                .map(provider -> {
+                    provider.setStatus(body.get("status"));
+                    return ResponseEntity.ok(repository.save(provider));
+                }).orElse(ResponseEntity.notFound().build());
     }
 }

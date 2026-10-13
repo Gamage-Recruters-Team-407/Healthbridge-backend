@@ -4,53 +4,90 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import lk.gamage.backend.healthbridgebackend.dto.DoctorRequestDto;
+import lk.gamage.backend.healthbridgebackend.dto.DoctorResponseDto;
+import lk.gamage.backend.healthbridgebackend.exception.BadRequestException;
+import lk.gamage.backend.healthbridgebackend.exception.ResourceNotFoundException;
 import lk.gamage.backend.healthbridgebackend.model.User;
 import lk.gamage.backend.healthbridgebackend.repository.UserRepository;
 import lk.gamage.backend.healthbridgebackend.security.CustomUserDetails;
-import lk.gamage.backend.healthbridgebackend.exception.BadRequestException;
-import lk.gamage.backend.healthbridgebackend.exception.ResourceNotFoundException;
+import lk.gamage.backend.healthbridgebackend.service.DoctorMetricsService;
+import lk.gamage.backend.healthbridgebackend.service.DoctorService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/doctors")
+@CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:3000"})
 public class DoctorController {
-    private final UserRepository users;
-    private final lk.gamage.backend.healthbridgebackend.service.DoctorMetricsService metrics;
 
-    public DoctorController(UserRepository users, lk.gamage.backend.healthbridgebackend.service.DoctorMetricsService metrics) {
+    // =========================================================================
+    // DEPENDENCIES & CONSTRUCTORS
+    // =========================================================================
+    private final UserRepository users;
+    private final DoctorMetricsService metrics;
+
+    @Autowired(required = false)
+    private DoctorService doctorService;
+
+    // Preserved 2-arg constructor so DoctorControllerTest passes seamlessly
+    public DoctorController(UserRepository users, DoctorMetricsService metrics) {
         this.users = users;
         this.metrics = metrics;
     }
+
+    // 3-arg constructor for Spring Boot dependency injection
+    @Autowired
+    public DoctorController(UserRepository users, DoctorMetricsService metrics, @Autowired(required = false) DoctorService doctorService) {
+        this.users = users;
+        this.metrics = metrics;
+        this.doctorService = doctorService;
+    }
+
+    // =========================================================================
+    // SECTION 1: DOCTOR PORTAL & DIRECTORY (Teammate's Code - PR #125)
+    // =========================================================================
 
     public record Profile(String id, String fullName, String email, String phoneNumber,
             String profileImage, String gender, String dateOfBirth, String address,
             String specialization, List<String> qualifications, int experience,
             double consultationFee, double rating, boolean availableToday, String bio) {}
 
-    /**
-     * Return strictly the doctor user accounts from User Management (users collection).
-     */
-    @GetMapping
-    public List<Profile> getAllDoctors() {
-        return users.findAll().stream()
-                .filter(u -> u.getRole() != null && u.getRole().toUpperCase().contains("DOCTOR"))
-                .map(this::profile)
-                .toList();
-    }
-
-    @GetMapping("/me/earnings")
-    @PreAuthorize("hasRole('DOCTOR')")
-    public lk.gamage.backend.healthbridgebackend.service.DoctorMetricsService.Earnings earnings(@AuthenticationPrincipal CustomUserDetails principal) {
-        return metrics.get(principal.getId());
-    }
-
     public record ProfileUpdate(@NotBlank String fullName, @NotBlank @Email String email,
             @NotBlank @Pattern(regexp = "(?:0[1-9]\\d{8}|\\+94[1-9]\\d{8})") String phoneNumber,
             @Size(max = 3000000) String profileImage, String gender, String dateOfBirth, String address,
             @NotBlank String specialization, @NotNull List<String> qualifications,
             @Min(0) int experience, @PositiveOrZero double consultationFee, String bio) {}
+
+    /**
+     * Shared GET /api/doctors endpoint:
+     * - If Super Admin filters (department, accountStatus, search) are provided -> delegates to DoctorService
+     * - Otherwise -> returns doctor accounts from User Management (users collection)
+     */
+    @GetMapping
+    public ResponseEntity<?> getAllDoctors(
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String accountStatus,
+            @RequestParam(required = false) String search) {
+        if (doctorService != null && (department != null || accountStatus != null || search != null)) {
+            return ResponseEntity.ok(doctorService.getAllDoctors(department, accountStatus, search));
+        }
+        if (doctorService != null) {
+            List<DoctorResponseDto> list = doctorService.getAllDoctors(null, null, null);
+            if (list != null && !list.isEmpty()) {
+                return ResponseEntity.ok(list);
+            }
+        }
+        List<Profile> profiles = users.findAll().stream()
+                .filter(u -> u.getRole() != null && u.getRole().toUpperCase().contains("DOCTOR"))
+                .map(this::profile)
+                .toList();
+        return ResponseEntity.ok(profiles);
+    }
 
     @GetMapping("/me")
     @PreAuthorize("hasRole('DOCTOR')")
@@ -80,6 +117,12 @@ public class DoctorController {
         user.setBio(input.bio());
         user.setUpdatedAt(LocalDateTime.now());
         return profile(users.save(user));
+    }
+
+    @GetMapping("/me/earnings")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public DoctorMetricsService.Earnings earnings(@AuthenticationPrincipal CustomUserDetails principal) {
+        return metrics != null ? metrics.get(principal.getId()) : null;
     }
 
     private User requireUser(CustomUserDetails principal) {
@@ -143,4 +186,52 @@ public class DoctorController {
     }
 
     private String value(String value) { return value == null ? "" : value; }
+
+    // =========================================================================
+    // SECTION 2: SUPER ADMIN DOCTOR MANAGEMENT (Your Code)
+    // =========================================================================
+
+    @GetMapping("/{id}")
+    public ResponseEntity<DoctorResponseDto> getDoctorById(@PathVariable String id) {
+        if (doctorService == null) {
+            throw new ResourceNotFoundException("Doctor service unavailable");
+        }
+        return ResponseEntity.ok(doctorService.getDoctorById(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<DoctorResponseDto> createDoctor(@RequestBody DoctorRequestDto request) {
+        if (doctorService == null) {
+            throw new ResourceNotFoundException("Doctor service unavailable");
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(doctorService.createDoctor(request));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<DoctorResponseDto> updateDoctor(
+            @PathVariable String id,
+            @RequestBody DoctorRequestDto request) {
+        if (doctorService == null) {
+            throw new ResourceNotFoundException("Doctor service unavailable");
+        }
+        return ResponseEntity.ok(doctorService.updateDoctor(id, request));
+    }
+
+    @PatchMapping("/{id}/account-status")
+    public ResponseEntity<DoctorResponseDto> updateAccountStatus(
+            @PathVariable String id,
+            @RequestParam String status) {
+        if (doctorService == null) {
+            throw new ResourceNotFoundException("Doctor service unavailable");
+        }
+        return ResponseEntity.ok(doctorService.updateAccountStatus(id, status));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteDoctor(@PathVariable String id) {
+        if (doctorService != null) {
+            doctorService.deleteDoctor(id);
+        }
+        return ResponseEntity.noContent().build();
+    }
 }
