@@ -41,7 +41,8 @@ public class DoctorController {
     }
 
     // 3-arg constructor for Spring Boot dependency injection
-    public DoctorController(UserRepository users, DoctorMetricsService metrics, DoctorService doctorService) {
+    @Autowired
+    public DoctorController(UserRepository users, DoctorMetricsService metrics, @Autowired(required = false) DoctorService doctorService) {
         this.users = users;
         this.metrics = metrics;
         this.doctorService = doctorService;
