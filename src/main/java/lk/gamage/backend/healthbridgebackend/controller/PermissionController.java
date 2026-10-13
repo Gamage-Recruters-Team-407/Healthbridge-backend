@@ -33,6 +33,15 @@ public class PermissionController {
         return ResponseEntity.ok(permissionService.getAllPermissions());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Permission> getPermissionById(@PathVariable String id) {
+        try {
+            return ResponseEntity.ok(permissionService.getPermissionById(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Permission> updatePermission(@PathVariable String id,
             @Valid @RequestBody PermissionDto permissionDto) {

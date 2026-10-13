@@ -224,6 +224,10 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
 
         if (request.getFullName() != null) user.setFullName(request.getFullName());
+        if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
+        if (request.getLastName() != null) user.setLastName(request.getLastName());
+        if (request.getRole() != null && !request.getRole().trim().isEmpty()) user.setRole(request.getRole().trim());
+        if (request.getBranch() != null) user.setBranch(request.getBranch());
         if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
         if (request.getDateOfBirth() != null) user.setDateOfBirth(request.getDateOfBirth());
         if (request.getGender() != null) user.setGender(request.getGender());
