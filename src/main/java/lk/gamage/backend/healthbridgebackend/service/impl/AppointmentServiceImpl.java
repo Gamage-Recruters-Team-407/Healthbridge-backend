@@ -68,7 +68,13 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override public List<AppointmentBookingResponse> findMine(String patientId) {
         requirePatient(patientId);
+        completeElapsedActiveAppointments();
         return repository.findByPatientIdOrderByAppointmentDateDescAppointmentTimeDesc(patientId).stream().map(this::toResponse).toList();
+    }
+
+    @Override public long completeElapsedActiveAppointments() {
+        LocalDateTime now = LocalDateTime.now();
+        return repository.completeElapsedActiveAppointments(now.toLocalDate(), now.toLocalTime().toString(), now);
     }
 
     @Override public AppointmentBookingResponse findOwned(String id, String userId, String role) {

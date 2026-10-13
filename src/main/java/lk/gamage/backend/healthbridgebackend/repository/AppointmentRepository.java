@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.mongodb.repository.Aggregation;
+import org.springframework.data.mongodb.repository.Update;
 import java.util.List;
 import java.util.Optional;
 import java.time.LocalDate;
@@ -15,6 +16,10 @@ public interface AppointmentRepository extends MongoRepository<Appointment, Stri
     List<Appointment> findByPatientIdOrderByAppointmentDateDescAppointmentTimeDesc(String patientId);
     List<Appointment> findBySessionIdOrderByAppointmentNumberAsc(String sessionId);
     Optional<Appointment> findByReferenceNumber(String referenceNumber);
+    @Query("{ '$and': [ { 'status': { '$in': ['BOOKED', 'UPCOMING'] } }, { '$or': [ { 'appointmentDate': { '$lt': ?0 } }, { '$and': [ { 'appointmentDate': ?0 }, { 'appointmentTime': { '$lte': ?1 } } ] } ] } ] }")
+        @Update("{ '$set': { 'status': 'COMPLETED', 'updatedAt': ?2 }, '$unset': { 'activeBookingKey': '' } }")
+    long completeElapsedActiveAppointments(LocalDate currentDate, String currentTime,
+            java.time.LocalDateTime updatedAt);
     boolean existsBySessionIdAndPatientIdAndStatusIn(String sessionId, String patientId,
             List<lk.gamage.backend.healthbridgebackend.enums.AppointmentStatus> statuses);
     List<Appointment> findByDoctorIdAndAppointmentDateAndAppointmentTimeAndStatus(
