@@ -61,9 +61,8 @@ public class DoctorMetricsService {
             return payment.getDoctorId().equals(doctorId);
         }
 
-        // If doctorId is unassigned:
-        // Match if patient has an appointment with this doctor, or if it's an unassigned consultation payment
-        return true;
+        // Legacy payments without a doctorId can only be attributed when this patient has an appointment with the doctor.
+        return payment.getPatientId() != null && patientIds.contains(payment.getPatientId());
     }
 
     // Overload for backwards compatibility with existing unit tests
@@ -81,13 +80,18 @@ public class DoctorMetricsService {
         // 1. Process payments from Payment repository (payments collection)
         for (Payment payment : payments) {
             if (payment == null) continue;
+            boolean isConsultation = "CONSULTATION".equalsIgnoreCase(payment.getCategory())
+                    || (payment.getDescription() != null
+                    && payment.getDescription().toLowerCase(Locale.ROOT).contains("consultation"));
+            if (!isConsultation) continue;
             boolean isConfirmed = "CONFIRMED".equalsIgnoreCase(payment.getStatus());
             boolean isPending = "PENDING_CONFIRMATION".equalsIgnoreCase(payment.getStatus())
                     || "PENDING".equalsIgnoreCase(payment.getStatus());
             if (!isConfirmed && !isPending) continue;
 
             BigDecimal amount = payment.getAmount() == null ? BigDecimal.ZERO : payment.getAmount().max(BigDecimal.ZERO);
-            LocalDateTime date = payment.getConfirmedAt() != null ? payment.getConfirmedAt() : payment.getCreatedAt();
+            LocalDateTime date = isConfirmed && payment.getConfirmedAt() != null
+                    ? payment.getConfirmedAt() : payment.getCreatedAt();
             String dateStr = date != null ? date.toLocalDate().toString() : "";
             String serviceName = payment.getDescription() != null && !payment.getDescription().isBlank()
                     ? payment.getDescription() : "Doctor Consultation";
