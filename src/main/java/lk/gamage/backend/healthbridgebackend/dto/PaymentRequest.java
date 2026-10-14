@@ -17,6 +17,10 @@ public class PaymentRequest {
     @NotBlank(message = "Patient ID is required")
     private String patientId;
 
+    private String patientEmail;
+
+    private String email;
+
     private String doctorId;
 
     private String doctorName;

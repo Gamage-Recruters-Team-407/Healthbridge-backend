@@ -32,8 +32,36 @@ public class PaymentService {
     // INITIATE PAYMENT
     // ============================================================
     public Payment initiatePayment(PaymentRequest request) {
-        User patient = userRepository.findById(request.getPatientId())
-                .orElseThrow(() -> new IllegalArgumentException("Patient not found"));
+        User patient = null;
+        if (request.getPatientId() != null && !request.getPatientId().isBlank()) {
+            patient = userRepository.findById(request.getPatientId().trim()).orElse(null);
+            if (patient == null) {
+                patient = userRepository.findByEmail(request.getPatientId().trim().toLowerCase()).orElse(null);
+            }
+        }
+
+        String targetEmail = null;
+        if (request.getPatientEmail() != null && !request.getPatientEmail().isBlank()) {
+            targetEmail = request.getPatientEmail().trim().toLowerCase();
+        } else if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            targetEmail = request.getEmail().trim().toLowerCase();
+        }
+
+        if (patient == null && targetEmail != null && !targetEmail.isBlank()) {
+            patient = userRepository.findByEmail(targetEmail).orElse(null);
+        }
+
+        if (patient != null && (targetEmail == null || targetEmail.isBlank())) {
+            targetEmail = patient.getEmail();
+        }
+
+        if (targetEmail != null) {
+            targetEmail = targetEmail.trim().toLowerCase();
+        }
+
+        if (patient == null && (targetEmail == null || targetEmail.isBlank())) {
+            throw new IllegalArgumentException("Patient not found");
+        }
 
         String cleanCardNumber = request.getCardNumber().replaceAll("[\\s-]", "");
         if (!cleanCardNumber.matches("\\d{13,19}")) {
@@ -54,7 +82,7 @@ public class PaymentService {
 
         String doctorId = request.getDoctorId();
         String doctorName = request.getDoctorName();
-        if ((doctorId == null || doctorId.isBlank()) && "CONSULTATION".equalsIgnoreCase(request.getCategory())) {
+        if ((doctorId == null || doctorId.isBlank()) && "CONSULTATION".equalsIgnoreCase(request.getCategory()) && patient != null) {
             try {
                 var appointments = appointmentRepository.findByPatientIdOrderByAppointmentDateDescAppointmentTimeDesc(patient.getId());
                 if (appointments != null && !appointments.isEmpty()) {
@@ -68,10 +96,13 @@ public class PaymentService {
             doctorName = userRepository.findById(doctorId).map(User::getFullName).orElse(null);
         }
 
+        String patientId = patient != null ? patient.getId() : request.getPatientId();
+        String patientName = patient != null ? patient.getFullName() : request.getCardHolderName();
+
         Payment payment = Payment.builder()
-                .patientId(patient.getId())
-                .patientEmail(patient.getEmail())
-                .patientName(patient.getFullName())
+                .patientId(patientId)
+                .patientEmail(targetEmail)
+                .patientName(patientName)
                 .doctorId(doctorId)
                 .doctorName(doctorName)
                 .description(request.getDescription())
@@ -87,15 +118,23 @@ public class PaymentService {
 
         Payment savedPayment = paymentRepository.save(payment);
         log.info("[Payment] Initiated {} for {} ({}), amount: {}",
-                savedPayment.getId(), patient.getFullName(),
-                patient.getEmail(), request.getAmount());
+                savedPayment.getId(), patientName,
+                targetEmail, request.getAmount());
 
-        boolean emailSent = emailService.sendPaymentConfirmationEmail(
-                patient.getEmail(),
-                confirmationCode,
-                request.getAmount().toPlainString(),
-                request.getDescription()
-        );
+        boolean emailSent = false;
+        if (targetEmail != null && !targetEmail.isBlank()) {
+            // Use the same technique that is used in forgot-password
+            emailSent = emailService.sendOtpEmail(targetEmail, confirmationCode);
+            if (!emailSent) {
+                // Fallback to payment confirmation email
+                emailSent = emailService.sendPaymentConfirmationEmail(
+                        targetEmail,
+                        confirmationCode,
+                        request.getAmount().toPlainString(),
+                        request.getDescription()
+                );
+            }
+        }
         savedPayment.setEmailSent(emailSent);
         return paymentRepository.save(savedPayment);
     }
