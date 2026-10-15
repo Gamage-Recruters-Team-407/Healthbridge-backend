@@ -9,6 +9,7 @@ import lk.gamage.backend.healthbridgebackend.model.Branch;
 import lk.gamage.backend.healthbridgebackend.repository.BranchRepository;
 import lk.gamage.backend.healthbridgebackend.service.BranchService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,7 +24,7 @@ public class BranchServiceImpl implements BranchService {
 
     @Override
     public List<BranchResponseDto> getAllBranches() {
-        return branchRepository.findAll().stream()
+        return branchRepository.findAll(Sort.by(Sort.Direction.ASC, "branchName")).stream()
                 .map(BranchResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }

@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.domain.Sort;
 
 @Service
 @RequiredArgsConstructor
@@ -39,41 +40,29 @@ public class SuperAdminDashboardService {
     public SuperAdminDTOs.Stats getDashboardStats() {
         long totalUsers = userRepository.count();
         
-        // Count doctors directly from the UserRepository since DoctorRepository is not fully implemented
-        long activeDoctors = userRepository.findByRole("DOCTOR").size();
+        // Count doctors directly from the UserRepository
+        long activeDoctors = userRepository.countByRole("DOCTOR");
         
         // Count active sessions (for now just all sessions)
         long activeSessions = telemedicineSessionRepository.count();
         
-        // Security alerts collected exclusively from audit logs
-        long securityAlerts = auditLogRepository != null
-                ? auditLogRepository.findAll().stream()
-                        .filter(log -> "High".equalsIgnoreCase(log.getSeverity())
-                                || "Critical".equalsIgnoreCase(log.getSeverity())
-                                || (log.getModule() != null && log.getModule().equalsIgnoreCase("Security")))
-                        .count()
-                : 0;
+        // Security alerts collected directly via MongoDB count on audit_logs
+        Query secQuery = new Query();
+        secQuery.addCriteria(new Criteria().orOperator(
+            Criteria.where("severity").regex("^(High|Critical)$", "i"),
+            Criteria.where("module").regex("^Security$", "i")
+        ));
+        long securityAlerts = mongoTemplate.count(secQuery, "audit_logs");
 
-        List<User> allUsers = userRepository.findAll();
-        List<User> pendingUsers = allUsers.stream()
-                .filter(u -> u.getAccountStatus() != null && (
-                        u.getAccountStatus().equalsIgnoreCase("PENDING") ||
-                        u.getAccountStatus().equalsIgnoreCase("PENDING_APPROVAL") ||
-                        u.getAccountStatus().equalsIgnoreCase("Pending approval") ||
-                        u.getAccountStatus().equalsIgnoreCase("Pending")
-                ))
-                .collect(Collectors.toList());
-        
-        long pendingVerifications = pendingUsers.size();
+        Query pendingQuery = new Query(Criteria.where("accountStatus").regex("^(PENDING|PENDING_APPROVAL|Pending approval|Pending)$", "i"));
+        long pendingVerifications = mongoTemplate.count(pendingQuery, "users");
 
-        List<SuperAdminDTOs.PendingUserDto> topPendingApprovals = pendingUsers.stream()
-                .sorted((a, b) -> {
-                    if (a.getCreatedAt() == null && b.getCreatedAt() == null) return 0;
-                    if (a.getCreatedAt() == null) return 1;
-                    if (b.getCreatedAt() == null) return -1;
-                    return b.getCreatedAt().compareTo(a.getCreatedAt());
-                })
-                .limit(5)
+        Query topPendingQuery = new Query(Criteria.where("accountStatus").regex("^(PENDING|PENDING_APPROVAL|Pending approval|Pending)$", "i"))
+                .with(Sort.by(Sort.Direction.DESC, "createdAt"))
+                .limit(5);
+        List<User> topPendingList = mongoTemplate.find(topPendingQuery, User.class);
+
+        List<SuperAdminDTOs.PendingUserDto> topPendingApprovals = topPendingList.stream()
                 .map(u -> SuperAdminDTOs.PendingUserDto.builder()
                         .id(u.getId())
                         .name(u.getFullName() != null ? u.getFullName() : (u.getFirstName() != null ? u.getFirstName() + " " + (u.getLastName() != null ? u.getLastName() : "") : "New User"))
@@ -84,14 +73,15 @@ public class SuperAdminDashboardService {
 
         long totalBranches = branchRepository != null ? branchRepository.count() : 0;
         
-        // Calculate Revenue from Payments
-        List<lk.gamage.backend.healthbridgebackend.model.Payment> allPayments = paymentRepository.findAll();
+        // Calculate Revenue only from CONFIRMED Payments
+        Query confirmedQuery = new Query(Criteria.where("status").is("CONFIRMED"));
+        List<lk.gamage.backend.healthbridgebackend.model.Payment> confirmedPayments = mongoTemplate.find(confirmedQuery, lk.gamage.backend.healthbridgebackend.model.Payment.class);
         double totalRevenue = 0.0;
         double monthlyRecurringRevenue = 0.0;
         java.time.LocalDateTime thirtyDaysAgo = java.time.LocalDateTime.now().minusDays(30);
         
-        for (lk.gamage.backend.healthbridgebackend.model.Payment p : allPayments) {
-            if ("CONFIRMED".equals(p.getStatus()) && p.getAmount() != null) {
+        for (lk.gamage.backend.healthbridgebackend.model.Payment p : confirmedPayments) {
+            if (p.getAmount() != null) {
                 totalRevenue += p.getAmount().doubleValue();
                 if (p.getCreatedAt() != null && p.getCreatedAt().isAfter(thirtyDaysAgo)) {
                     monthlyRecurringRevenue += p.getAmount().doubleValue();
@@ -138,32 +128,32 @@ public class SuperAdminDashboardService {
     }
 
     public List<SuperAdminDTOs.Growth> getGrowthData() {
-        List<User> allUsers = userRepository.findAll();
-        List<lk.gamage.backend.healthbridgebackend.model.Payment> allPayments = paymentRepository.findAll();
+        Query confirmedPaymentsQuery = new Query(Criteria.where("status").is("CONFIRMED"));
+        List<lk.gamage.backend.healthbridgebackend.model.Payment> allPayments = mongoTemplate.find(confirmedPaymentsQuery, lk.gamage.backend.healthbridgebackend.model.Payment.class);
         List<SuperAdminDTOs.Growth> growth = new ArrayList<>();
         java.time.YearMonth currentMonth = java.time.YearMonth.now();
+        long totalUsers = userRepository.count();
         
         // Generate data for the last 6 months
         for (int i = 5; i >= 0; i--) {
             java.time.YearMonth targetMonth = currentMonth.minusMonths(i);
+            LocalDateTime endOfMonth = targetMonth.atEndOfMonth().atTime(23, 59, 59);
             
-            long cumulativeUsers = allUsers.stream()
-                .filter(u -> u.getCreatedAt() != null && !java.time.YearMonth.from(u.getCreatedAt()).isAfter(targetMonth))
-                .count();
+            Query userGrowthQuery = new Query(Criteria.where("createdAt").lte(endOfMonth));
+            long cumulativeUsers = mongoTemplate.count(userGrowthQuery, "users");
                 
             // If historical timestamps are not spread across past months, provide a realistic cumulative ramp leading up to totalUsers
-            if (cumulativeUsers == 0 && !allUsers.isEmpty()) {
+            if (cumulativeUsers == 0 && totalUsers > 0) {
                 int factor = 6 - i;
-                cumulativeUsers = Math.max(1, (allUsers.size() * factor) / 6);
+                cumulativeUsers = Math.max(1, (totalUsers * factor) / 6);
             }
                 
-            LocalDateTime endOfMonth = targetMonth.atEndOfMonth().atTime(23, 59, 59);
             Query appointmentQuery = new Query();
             appointmentQuery.addCriteria(Criteria.where("createdAt").lte(endOfMonth));
             long cumulativeAppointments = mongoTemplate.count(appointmentQuery, "appointments");
                 
             double cumulativeRevenue = allPayments.stream()
-                .filter(p -> p.getCreatedAt() != null && "CONFIRMED".equals(p.getStatus()) && !java.time.YearMonth.from(p.getCreatedAt()).isAfter(targetMonth))
+                .filter(p -> p.getCreatedAt() != null && !java.time.YearMonth.from(p.getCreatedAt()).isAfter(targetMonth))
                 .map(p -> p.getAmount() != null ? p.getAmount().doubleValue() : 0.0)
                 .reduce(0.0, Double::sum);
                 
@@ -183,7 +173,9 @@ public class SuperAdminDashboardService {
         LocalDateTime thirtyDaysAgo = now.minusDays(30);
         LocalDateTime sixtyDaysAgo = now.minusDays(60);
 
-        List<lk.gamage.backend.healthbridgebackend.model.AuditLog> logs = auditLogRepository.findAll();
+        // Query only the last 60 days of audit logs instead of entire history
+        Query recentLogsQuery = new Query(Criteria.where("timestamp").gte(sixtyDaysAgo));
+        List<lk.gamage.backend.healthbridgebackend.model.AuditLog> logs = mongoTemplate.find(recentLogsQuery, lk.gamage.backend.healthbridgebackend.model.AuditLog.class);
         
         long dau = logs.stream()
                 .filter(log -> log.getTimestamp() != null && log.getTimestamp().isAfter(oneDayAgo))
@@ -230,22 +222,21 @@ public class SuperAdminDashboardService {
         features.add(new SuperAdminDTOs.FeatureAdoption("Lab Tests", Math.round((labs * 100.0) / maxFeature), "Stable"));
         features.add(new SuperAdminDTOs.FeatureAdoption("Insurance", Math.round((insurance * 100.0) / maxFeature), "Needs Boost"));
 
-        List<User> allUsers = userRepository.findAll();
         long numBranches = branchRepository != null ? branchRepository.count() : 0;
-        long numDoctors = allUsers.stream().filter(u -> "DOCTOR".equals(u.getRole())).count();
-        long numPatients = allUsers.stream().filter(u -> "PATIENT".equals(u.getRole())).count();
-        long numPharmacies = allUsers.stream().filter(u -> "PHARMACIST".equals(u.getRole())).count();
-        long numLabs = allUsers.stream().filter(u -> "LAB_OFFICER".equals(u.getRole())).count();
-        long numInsurance = allUsers.stream().filter(u -> "INSURANCE_OFFICER".equals(u.getRole())).count();
+        long numDoctors = userRepository.countByRole("DOCTOR");
+        long numPatients = userRepository.countByRole("PATIENT");
+        long numPharmacies = userRepository.countByRole("PHARMACIST");
+        long numLabs = userRepository.countByRole("LAB_OFFICER");
+        long numInsurance = userRepository.countByRole("INSURANCE_OFFICER");
 
         LocalDateTime thirtyDaysAgoDate = LocalDateTime.now().minusDays(30);
         LocalDateTime sixtyDaysAgoDate = LocalDateTime.now().minusDays(60);
 
-        String docGrowth = calculateRoleGrowth(allUsers, "DOCTOR", thirtyDaysAgoDate, sixtyDaysAgoDate);
-        String patGrowth = calculateRoleGrowth(allUsers, "PATIENT", thirtyDaysAgoDate, sixtyDaysAgoDate);
-        String pharmGrowth = calculateRoleGrowth(allUsers, "PHARMACIST", thirtyDaysAgoDate, sixtyDaysAgoDate);
-        String labGrowth = calculateRoleGrowth(allUsers, "LAB_OFFICER", thirtyDaysAgoDate, sixtyDaysAgoDate);
-        String insGrowth = calculateRoleGrowth(allUsers, "INSURANCE_OFFICER", thirtyDaysAgoDate, sixtyDaysAgoDate);
+        String docGrowth = calculateRoleGrowth("DOCTOR", thirtyDaysAgoDate, sixtyDaysAgoDate);
+        String patGrowth = calculateRoleGrowth("PATIENT", thirtyDaysAgoDate, sixtyDaysAgoDate);
+        String pharmGrowth = calculateRoleGrowth("PHARMACIST", thirtyDaysAgoDate, sixtyDaysAgoDate);
+        String labGrowth = calculateRoleGrowth("LAB_OFFICER", thirtyDaysAgoDate, sixtyDaysAgoDate);
+        String insGrowth = calculateRoleGrowth("INSURANCE_OFFICER", thirtyDaysAgoDate, sixtyDaysAgoDate);
 
         List<SuperAdminDTOs.ModulePerformance> modules = new ArrayList<>();
         modules.add(new SuperAdminDTOs.ModulePerformance("Branches", numBranches + " active", numBranches > 0 ? 92.0 : 0.0, "+ 15.0%", numBranches > 0 ? "Good" : "Critical"));
@@ -255,7 +246,8 @@ public class SuperAdminDashboardService {
         modules.add(new SuperAdminDTOs.ModulePerformance("Labs", numLabs + " active", numLabs > 0 ? 45.0 : 0.0, labGrowth, numLabs > 0 ? "Critical" : "Critical"));
         modules.add(new SuperAdminDTOs.ModulePerformance("Insurance", numInsurance + " active", numInsurance > 0 ? 35.0 : 0.0, insGrowth, numInsurance > 0 ? "Critical" : "Critical"));
 
-        List<lk.gamage.backend.healthbridgebackend.model.Payment> allPayments = paymentRepository.findAll();
+        Query confirmedRevQuery = new Query(Criteria.where("status").is("CONFIRMED"));
+        List<lk.gamage.backend.healthbridgebackend.model.Payment> allPayments = mongoTemplate.find(confirmedRevQuery, lk.gamage.backend.healthbridgebackend.model.Payment.class);
         double totalRev = 0;
         double hospitalRev = 0;
         double pharmacyRev = 0;
@@ -263,7 +255,7 @@ public class SuperAdminDashboardService {
         double insuranceRev = 0;
 
         for (lk.gamage.backend.healthbridgebackend.model.Payment p : allPayments) {
-            if ("CONFIRMED".equals(p.getStatus()) && p.getAmount() != null) {
+            if (p.getAmount() != null) {
                 double amt = p.getAmount().doubleValue();
                 totalRev += amt;
                 if ("CONSULTATION".equals(p.getCategory())) hospitalRev += amt;
@@ -293,9 +285,12 @@ public class SuperAdminDashboardService {
                 .build();
     }
     
-    private String calculateRoleGrowth(List<User> users, String role, LocalDateTime thirtyDaysAgo, LocalDateTime sixtyDaysAgo) {
-        long currentPeriod = users.stream().filter(u -> role.equals(u.getRole()) && u.getCreatedAt() != null && u.getCreatedAt().isAfter(thirtyDaysAgo)).count();
-        long previousPeriod = users.stream().filter(u -> role.equals(u.getRole()) && u.getCreatedAt() != null && u.getCreatedAt().isAfter(sixtyDaysAgo) && u.getCreatedAt().isBefore(thirtyDaysAgo)).count();
+    private String calculateRoleGrowth(String role, LocalDateTime thirtyDaysAgo, LocalDateTime sixtyDaysAgo) {
+        Query currentQuery = new Query(Criteria.where("role").is(role).and("createdAt").gt(thirtyDaysAgo));
+        long currentPeriod = mongoTemplate.count(currentQuery, "users");
+        
+        Query prevQuery = new Query(Criteria.where("role").is(role).and("createdAt").gt(sixtyDaysAgo).lte(thirtyDaysAgo));
+        long previousPeriod = mongoTemplate.count(prevQuery, "users");
         
         if (previousPeriod == 0) {
             return currentPeriod > 0 ? "+ 100.0%" : "0.0%";

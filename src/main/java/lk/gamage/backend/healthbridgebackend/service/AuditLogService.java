@@ -5,6 +5,10 @@ import lk.gamage.backend.healthbridgebackend.dto.AuditLogDto;
 import lk.gamage.backend.healthbridgebackend.model.AuditLog;
 import lk.gamage.backend.healthbridgebackend.repository.AuditLogRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -19,6 +23,7 @@ import com.itextpdf.text.pdf.PdfWriter;
 public class AuditLogService {
 
     private final AuditLogRepository repository;
+    private final MongoTemplate mongoTemplate;
 
     @PostConstruct
     public void seedInitialLogs() {
@@ -70,67 +75,63 @@ public class AuditLogService {
     }
 
     public List<AuditLog> getAllLogs() {
-        return repository.findAll().stream()
-                .sorted((a, b) -> {
-                    if (a.getTimestamp() == null && b.getTimestamp() == null) return 0;
-                    if (a.getTimestamp() == null) return 1;
-                    if (b.getTimestamp() == null) return -1;
-                    return b.getTimestamp().compareTo(a.getTimestamp());
-                })
-                .toList();
+        return repository.findAll(Sort.by(Sort.Direction.DESC, "timestamp"));
     }
 
     public List<AuditLog> getLogsByRole(String role) {
-        return repository.findByRole(role).stream()
-                .sorted((a, b) -> {
-                    if (a.getTimestamp() == null && b.getTimestamp() == null) return 0;
-                    if (a.getTimestamp() == null) return 1;
-                    if (b.getTimestamp() == null) return -1;
-                    return b.getTimestamp().compareTo(a.getTimestamp());
-                })
-                .toList();
+        Query q = new Query(Criteria.where("role").is(role)).with(Sort.by(Sort.Direction.DESC, "timestamp"));
+        return mongoTemplate.find(q, AuditLog.class);
     }
 
     public List<AuditLog> getLogsByEvent(String event) {
-        return repository.findByEvent(event).stream()
-                .sorted((a, b) -> {
-                    if (a.getTimestamp() == null && b.getTimestamp() == null) return 0;
-                    if (a.getTimestamp() == null) return 1;
-                    if (b.getTimestamp() == null) return -1;
-                    return b.getTimestamp().compareTo(a.getTimestamp());
-                })
-                .toList();
+        Query q = new Query(Criteria.where("event").is(event)).with(Sort.by(Sort.Direction.DESC, "timestamp"));
+        return mongoTemplate.find(q, AuditLog.class);
     }
 
     public List<AuditLog> getLogsBySeverity(String severity) {
-        return repository.findBySeverity(severity).stream()
-                .sorted((a, b) -> {
-                    if (a.getTimestamp() == null && b.getTimestamp() == null) return 0;
-                    if (a.getTimestamp() == null) return 1;
-                    if (b.getTimestamp() == null) return -1;
-                    return b.getTimestamp().compareTo(a.getTimestamp());
-                })
-                .toList();
+        Query q = new Query(Criteria.where("severity").is(severity)).with(Sort.by(Sort.Direction.DESC, "timestamp"));
+        return mongoTemplate.find(q, AuditLog.class);
     }
 
     public java.util.Map<String, Long> getTodaySummary() {
         LocalDateTime startOfDay = LocalDateTime.now().with(java.time.LocalTime.MIN);
-        List<AuditLog> allLogs = repository.findAll();
-        List<AuditLog> todayLogs = allLogs.stream()
-                .filter(log -> log.getTimestamp() != null && log.getTimestamp().isAfter(startOfDay))
-                .toList();
+        Query todayQuery = new Query(Criteria.where("timestamp").gt(startOfDay));
+        long totalToday = mongoTemplate.count(todayQuery, AuditLog.class);
 
-        List<AuditLog> effectiveLogs = todayLogs.isEmpty() ? allLogs : todayLogs;
+        Criteria baseCrit = totalToday > 0 ? Criteria.where("timestamp").gt(startOfDay) : new Criteria();
 
-        long totalToday = effectiveLogs.size();
-        long authEvents = effectiveLogs.stream().filter(log -> log.getModule() != null && (log.getModule().contains("Auth") || log.getModule().contains("Security"))).count();
-        long adminActions = effectiveLogs.stream().filter(log -> log.getRole() != null && (log.getRole().contains("ADMIN") || log.getRole().contains("Admin"))).count();
-        long recordAccess = effectiveLogs.stream().filter(log -> log.getEvent() != null && log.getEvent().contains("Access")).count();
-        long securityEvents = effectiveLogs.stream().filter(log -> "High".equalsIgnoreCase(log.getSeverity())).count();
-        long failedActions = effectiveLogs.stream().filter(log -> "Failed".equalsIgnoreCase(log.getStatus())).count();
+        long authEvents = mongoTemplate.count(new Query(new Criteria().andOperator(
+                baseCrit,
+                new Criteria().orOperator(
+                        Criteria.where("module").regex("Auth", "i"),
+                        Criteria.where("module").regex("Security", "i")
+                )
+        )), AuditLog.class);
+
+        long adminActions = mongoTemplate.count(new Query(new Criteria().andOperator(
+                baseCrit,
+                Criteria.where("role").regex("Admin", "i")
+        )), AuditLog.class);
+
+        long recordAccess = mongoTemplate.count(new Query(new Criteria().andOperator(
+                baseCrit,
+                Criteria.where("event").regex("Access", "i")
+        )), AuditLog.class);
+
+        long securityEvents = mongoTemplate.count(new Query(new Criteria().andOperator(
+                baseCrit,
+                Criteria.where("severity").regex("^High$", "i")
+        )), AuditLog.class);
+
+        long failedActions = mongoTemplate.count(new Query(new Criteria().andOperator(
+                baseCrit,
+                Criteria.where("status").regex("^Failed$", "i")
+        )), AuditLog.class);
+
+        long effectiveTotal = totalToday > 0 ? totalToday : mongoTemplate.count(new Query(), AuditLog.class);
 
         return java.util.Map.of(
-            "totalToday", totalToday,
+            "totalToday", effectiveTotal,
             "authEvents", authEvents,
             "adminActions", adminActions,
             "recordAccess", recordAccess,
@@ -141,7 +142,7 @@ public class AuditLogService {
 
     public byte[] generateAuditReport() {
         try {
-            List<AuditLog> logs = repository.findAll();
+            List<AuditLog> logs = repository.findAll(Sort.by(Sort.Direction.DESC, "timestamp"));
             Document document = new Document();
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             PdfWriter.getInstance(document, out);

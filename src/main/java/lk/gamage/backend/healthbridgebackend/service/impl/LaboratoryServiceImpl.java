@@ -5,6 +5,7 @@ import lk.gamage.backend.healthbridgebackend.model.Laboratory;
 import lk.gamage.backend.healthbridgebackend.repository.LaboratoryRepository;
 import lk.gamage.backend.healthbridgebackend.service.LaboratoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -56,7 +57,7 @@ public class LaboratoryServiceImpl implements LaboratoryService {
 
     @Override
     public List<Laboratory> getAllLaboratories() {
-        return repository.findAll();
+        return repository.findAll(Sort.by(Sort.Direction.ASC, "name"));
     }
 
     @Override
