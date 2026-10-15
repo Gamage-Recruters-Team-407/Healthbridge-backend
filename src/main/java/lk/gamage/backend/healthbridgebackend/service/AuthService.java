@@ -67,15 +67,35 @@ public class AuthService {
             throw new IllegalArgumentException("Passwords do not match");
         }
 
-        if (userRepository.existsByEmail(request.getEmail().toLowerCase().trim())) {
+        String normalizedEmail = request.getEmail().toLowerCase().trim();
+        Optional<User> existingUserOpt = userRepository.findByEmail(normalizedEmail);
+        if (existingUserOpt.isPresent()) {
+            User existing = existingUserOpt.get();
+            if (existing.getProvider() == AuthProvider.GOOGLE && (existing.getPassword() == null || existing.getPassword().isEmpty())) {
+                existing.setPassword(passwordEncoder.encode(request.getPassword()));
+                existing.setFullName(request.getFullName().trim());
+                if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty()) {
+                    existing.setPhoneNumber(request.getPhoneNumber().trim());
+                    existing.setPhone(request.getPhoneNumber().trim());
+                }
+                if (request.getBranch() != null && !request.getBranch().trim().isEmpty()) {
+                    existing.setBranch(request.getBranch().trim());
+                }
+                existing.setUpdatedAt(LocalDateTime.now());
+                User saved = userRepository.save(existing);
+                CustomUserDetails userDetails = new CustomUserDetails(saved);
+                String token = jwtService.generateToken(userDetails, saved.getRole(), saved.getFullName(), saved.getId());
+                return new AuthResponse(token, saved.getId(), saved.getFullName(), saved.getEmail(), saved.getRole(), "Registration successful");
+            }
             throw new IllegalArgumentException("An account with this email already exists");
         }
 
         User user = new User();
         user.setFullName(request.getFullName().trim());
-        user.setEmail(request.getEmail().toLowerCase().trim());
+        user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhoneNumber(request.getPhoneNumber().trim());
+        user.setPhone(request.getPhoneNumber().trim());
         String assignedRole = Role.PATIENT;
         if (request.getRole() != null && !request.getRole().trim().isEmpty()) {
             String requestedRole = request.getRole().trim().toUpperCase();

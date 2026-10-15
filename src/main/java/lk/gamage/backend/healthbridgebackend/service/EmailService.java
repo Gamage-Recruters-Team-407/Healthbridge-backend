@@ -22,9 +22,16 @@ public class EmailService {
     private String fromEmail;
 
     public boolean sendOtpEmail(String toEmail, String otp) {
+        if (toEmail == null || toEmail.trim().isEmpty()) {
+            log.warn("Cannot send OTP email: recipient email is missing or empty");
+            return false;
+        }
+
+        String recipient = toEmail.trim().toLowerCase();
+
         log.info("==================================================");
         log.info("[Health Bridge OTP Verification]");
-        log.info("Sending OTP code: {} to {}", otp, toEmail);
+        log.info("Sending OTP code: {} to {}", otp, recipient);
         log.info("==================================================");
 
         if (mailSender == null) {
@@ -37,7 +44,7 @@ public class EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(fromEmail, "Health Bridge Security");
-            helper.setTo(toEmail);
+            helper.setTo(recipient);
             helper.setSubject("Your Health Bridge Verification Code");
 
             String htmlContent = "<div style=\"font-family: 'Segoe UI', Arial, sans-serif; max-width: 540px; margin: auto; padding: 32px; border: 1px solid #e5e7eb; border-radius: 16px; background: #ffffff;\">"
@@ -66,9 +73,16 @@ public class EmailService {
     }
 
     public boolean sendPaymentConfirmationEmail(String toEmail, String code, String amount, String description) {
+        if (toEmail == null || toEmail.trim().isEmpty()) {
+            log.warn("Cannot send payment confirmation email: recipient email is missing or empty");
+            return false;
+        }
+
+        String recipient = toEmail.trim().toLowerCase();
+
         log.info("==================================================");
         log.info("[Health Bridge Payment Confirmation]");
-        log.info("Sending payment OTP: {} to {} for amount: Rs. {}", code, toEmail, amount);
+        log.info("Sending payment OTP: {} to {} for amount: Rs. {}", code, recipient, amount);
         log.info("==================================================");
 
         if (mailSender == null) {
@@ -81,7 +95,7 @@ public class EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(fromEmail, "Health Bridge Billing");
-            helper.setTo(toEmail);
+            helper.setTo(recipient);
             helper.setSubject("Your Health Bridge Payment Confirmation Code: " + code);
 
             String htmlContent = "<div style=\"font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: auto; padding: 32px; border: 1px solid #e5e7eb; border-radius: 16px; background: #ffffff;\">"

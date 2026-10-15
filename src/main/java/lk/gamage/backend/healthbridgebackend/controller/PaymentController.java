@@ -44,6 +44,18 @@ public class PaymentController {
         }
 
         try {
+            org.springframework.security.core.Authentication auth =
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null && !auth.getName().isBlank() && !"anonymousUser".equals(auth.getName())) {
+                String authEmail = auth.getName().trim().toLowerCase();
+                if (request.getPatientEmail() == null || request.getPatientEmail().isBlank()) {
+                    request.setPatientEmail(authEmail);
+                }
+                if (request.getEmail() == null || request.getEmail().isBlank()) {
+                    request.setEmail(authEmail);
+                }
+            }
+
             Payment payment = paymentService.initiatePayment(request);
             Map<String, Object> resp = new HashMap<>();
             resp.put("message", "Payment initiated. A 6-digit confirmation code has been sent to your registered email.");

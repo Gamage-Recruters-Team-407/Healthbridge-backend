@@ -8,6 +8,7 @@ import java.util.List;
 public interface AppointmentService {
     AppointmentBookingResponse book(String patientId, AppointmentBookingRequest request);
     List<AppointmentBookingResponse> findMine(String patientId);
+    long completeElapsedActiveAppointments();
     AppointmentBookingResponse findOwned(String id, String userId, String role);
     AppointmentBookingResponse cancel(String id, String patientId, String reason);
     AppointmentBookingResponse reschedule(String id, String patientId, String targetSessionId);
