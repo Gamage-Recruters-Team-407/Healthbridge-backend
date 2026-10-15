@@ -220,9 +220,12 @@ public class UserController {
 
     //Get All Users
     @GetMapping
-    public ResponseEntity<?> getAllUsers() {
+    public ResponseEntity<?> getAllUsers(
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search) {
         try {
-            List<UserProfileResponse> users = userService.getAllUsers();
+            List<UserProfileResponse> users = userService.getAllUsers(role, status, search);
             return ResponseEntity.ok(users);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

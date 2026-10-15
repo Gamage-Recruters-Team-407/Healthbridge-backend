@@ -8,12 +8,17 @@ import lk.gamage.backend.healthbridgebackend.model.PrivacyPrefs;
 import lk.gamage.backend.healthbridgebackend.model.User;
 import lk.gamage.backend.healthbridgebackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,6 +26,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
     @Autowired
     private CloudinaryService cloudinaryService;
@@ -166,11 +174,42 @@ public class UserService {
     }
 
     // Get All Users
-    public List<UserProfileResponse> getAllUsers() {
-        List<User> users = userRepository.findAll();
+    public List<UserProfileResponse> getAllUsers(String role, String status, String search) {
+        Query query = new Query();
+        query.fields().exclude("password");
+
+        if (role != null && !role.trim().isEmpty() && !"All roles".equalsIgnoreCase(role.trim())) {
+            query.addCriteria(Criteria.where("role").is(role.trim()));
+        }
+
+        if (status != null && !status.trim().isEmpty() && !"All statuses".equalsIgnoreCase(status.trim())) {
+            String s = status.trim();
+            if ("Pending approval".equalsIgnoreCase(s)) {
+                query.addCriteria(Criteria.where("accountStatus").in("PENDING", "PENDING_APPROVAL", "Pending approval", "Pending"));
+            } else {
+                query.addCriteria(Criteria.where("accountStatus").regex("^" + Pattern.quote(s) + "$", "i"));
+            }
+        }
+
+        if (search != null && !search.trim().isEmpty()) {
+            String s = Pattern.quote(search.trim());
+            query.addCriteria(new Criteria().orOperator(
+                    Criteria.where("fullName").regex(s, "i"),
+                    Criteria.where("email").regex(s, "i"),
+                    Criteria.where("phoneNumber").regex(s, "i"),
+                    Criteria.where("branch").regex(s, "i")
+            ));
+        }
+
+        query.with(Sort.by(Sort.Direction.DESC, "createdAt"));
+        List<User> users = mongoTemplate.find(query, User.class);
         return users.stream()
                 .map(UserProfileResponse::new)
                 .collect(Collectors.toList());
+    }
+
+    public List<UserProfileResponse> getAllUsers() {
+        return getAllUsers(null, null, null);
     }
 
     // --- SUPER ADMIN ACTIONS ---

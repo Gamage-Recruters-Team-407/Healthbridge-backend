@@ -3,6 +3,7 @@ package lk.gamage.backend.healthbridgebackend.controller;
 import lk.gamage.backend.healthbridgebackend.model.InsuranceProvider;
 import lk.gamage.backend.healthbridgebackend.repository.InsuranceProviderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class InsuranceProviderController {
 
     @GetMapping
     public ResponseEntity<List<InsuranceProvider>> getAllProviders() {
-        return ResponseEntity.ok(repository.findAll());
+        return ResponseEntity.ok(repository.findAll(Sort.by(Sort.Direction.ASC, "name")));
     }
 
     @PostMapping("/seed")

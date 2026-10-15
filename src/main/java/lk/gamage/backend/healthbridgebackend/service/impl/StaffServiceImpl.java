@@ -10,6 +10,10 @@ import lk.gamage.backend.healthbridgebackend.model.Staff;
 import lk.gamage.backend.healthbridgebackend.repository.StaffRepository;
 import lk.gamage.backend.healthbridgebackend.service.StaffService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,42 +27,40 @@ import java.util.stream.Collectors;
 public class StaffServiceImpl implements StaffService {
 
     private final StaffRepository staffRepository;
+    private final MongoTemplate mongoTemplate;
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
 
     @Override
     public List<StaffResponseDto> getAllStaff(String department, String dutyStatus, String accountStatus, String search) {
-        List<Staff> staffList = staffRepository.findAll();
+        Query query = new Query();
 
-        if (department != null && !department.trim().isEmpty() && !"All".equalsIgnoreCase(department)) {
-            staffList = staffList.stream()
-                    .filter(s -> s.getDepartment() != null && s.getDepartment().equalsIgnoreCase(department.trim()))
-                    .collect(Collectors.toList());
+        if (department != null && !department.trim().isEmpty() && !"All".equalsIgnoreCase(department.trim())) {
+            query.addCriteria(Criteria.where("department").regex("^" + Pattern.quote(department.trim()) + "$", "i"));
         }
 
-        if (dutyStatus != null && !dutyStatus.trim().isEmpty() && !"All".equalsIgnoreCase(dutyStatus)) {
-            staffList = staffList.stream()
-                    .filter(s -> s.getDutyStatus() != null && s.getDutyStatus().equalsIgnoreCase(dutyStatus.trim()))
-                    .collect(Collectors.toList());
+        if (dutyStatus != null && !dutyStatus.trim().isEmpty() && !"All".equalsIgnoreCase(dutyStatus.trim())) {
+            query.addCriteria(Criteria.where("dutyStatus").regex("^" + Pattern.quote(dutyStatus.trim()) + "$", "i"));
         }
 
-        if (accountStatus != null && !accountStatus.trim().isEmpty() && !"All".equalsIgnoreCase(accountStatus)) {
-            staffList = staffList.stream()
-                    .filter(s -> s.getAccountStatus() != null && s.getAccountStatus().equalsIgnoreCase(accountStatus.trim()))
-                    .collect(Collectors.toList());
+        if (accountStatus != null && !accountStatus.trim().isEmpty() && !"All".equalsIgnoreCase(accountStatus.trim())) {
+            query.addCriteria(Criteria.where("accountStatus").regex("^" + Pattern.quote(accountStatus.trim()) + "$", "i"));
         }
 
         if (search != null && !search.trim().isEmpty()) {
-            String lowerSearch = search.trim().toLowerCase();
-            staffList = staffList.stream()
-                    .filter(s -> (s.getFirstName() != null && s.getFirstName().toLowerCase().contains(lowerSearch)) ||
-                            (s.getLastName() != null && s.getLastName().toLowerCase().contains(lowerSearch)) ||
-                            (s.getStaffId() != null && s.getStaffId().toLowerCase().contains(lowerSearch)) ||
-                            (s.getRole() != null && s.getRole().toLowerCase().contains(lowerSearch)) ||
-                            (s.getDepartment() != null && s.getDepartment().toLowerCase().contains(lowerSearch)) ||
-                            (s.getEmail() != null && s.getEmail().toLowerCase().contains(lowerSearch)))
-                    .collect(Collectors.toList());
+            String s = Pattern.quote(search.trim());
+            query.addCriteria(new Criteria().orOperator(
+                    Criteria.where("firstName").regex(s, "i"),
+                    Criteria.where("lastName").regex(s, "i"),
+                    Criteria.where("staffId").regex(s, "i"),
+                    Criteria.where("role").regex(s, "i"),
+                    Criteria.where("department").regex(s, "i"),
+                    Criteria.where("email").regex(s, "i")
+            ));
         }
+
+        query.with(Sort.by(Sort.Direction.DESC, "createdAt"));
+        List<Staff> staffList = mongoTemplate.find(query, Staff.class);
 
         return staffList.stream().map(this::mapToDto).collect(Collectors.toList());
     }
@@ -247,29 +249,24 @@ public class StaffServiceImpl implements StaffService {
 
     @Override
     public StaffStatsDto getStaffStats() {
-        List<Staff> allStaff = staffRepository.findAll();
-        long totalActive = allStaff.stream()
-                .filter(s -> s.getAccountStatus() == null || "Active".equalsIgnoreCase(s.getAccountStatus()))
-                .count();
+        Query activeQuery = new Query(new Criteria().orOperator(
+                Criteria.where("accountStatus").isNull(),
+                Criteria.where("accountStatus").regex("^Active$", "i")
+        ));
+        long totalActive = mongoTemplate.count(activeQuery, Staff.class);
 
-        long onDuty = allStaff.stream()
-                .filter(s -> "On Duty".equalsIgnoreCase(s.getDutyStatus()))
-                .count();
+        long onDuty = mongoTemplate.count(new Query(Criteria.where("dutyStatus").regex("^On Duty$", "i")), Staff.class);
 
-        long newThisMonth = allStaff.stream()
-                .filter(s -> s.getCreatedAt() != null && s.getCreatedAt().isAfter(LocalDateTime.now().minusDays(30)))
-                .count();
+        long newThisMonth = mongoTemplate.count(new Query(Criteria.where("createdAt").gt(LocalDateTime.now().minusDays(30))), Staff.class);
 
-        long openShiftAlerts = allStaff.stream()
-                .filter(s -> "Emergency Cover".equalsIgnoreCase(s.getDutyStatus()))
-                .count();
+        long openShiftAlerts = mongoTemplate.count(new Query(Criteria.where("dutyStatus").regex("^Emergency Cover$", "i")), Staff.class);
 
-        long pendingLeaveRequests = allStaff.stream()
-                .filter(s -> "On Leave".equalsIgnoreCase(s.getDutyStatus()))
-                .count();
+        long pendingLeaveRequests = mongoTemplate.count(new Query(Criteria.where("dutyStatus").regex("^On Leave$", "i")), Staff.class);
+
+        long totalCount = mongoTemplate.count(new Query(), Staff.class);
 
         return StaffStatsDto.builder()
-                .totalActiveStaff(totalActive > 0 ? totalActive : allStaff.size())
+                .totalActiveStaff(totalActive > 0 ? totalActive : totalCount)
                 .newThisMonth(newThisMonth)
                 .onDutyCount(onDuty)
                 .openShiftAlerts(openShiftAlerts)
