@@ -1,6 +1,5 @@
 HELP.md
 target/
-.env
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -31,15 +30,13 @@ build/
 !**/src/test/**/build/
 
 ### VS Code ###
-.vscode/
 
 # Environment files
-.env
-.env.*
-.env.local
 !.env.example
 
 # Application configuration (contains secrets)
 src/main/resources/application.properties
 application.properties
 
+config.bat
+node_modules
