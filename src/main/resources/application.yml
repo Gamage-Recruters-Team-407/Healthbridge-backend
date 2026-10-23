@@ -1,0 +1,4 @@
+# The local .env contains Java properties and stays outside version control.
+spring:
+  config:
+    import: "optional:file:./.env[.properties]"
