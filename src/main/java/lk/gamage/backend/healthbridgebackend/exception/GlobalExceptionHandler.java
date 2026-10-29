@@ -2,6 +2,7 @@ package lk.gamage.backend.healthbridgebackend.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lk.gamage.backend.healthbridgebackend.dto.ErrorResponseDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -14,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler({org.springframework.dao.DataAccessResourceFailureException.class,
@@ -97,9 +99,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleGenericException(Exception ex, HttpServletRequest request) {
-        return buildError(HttpStatus.INTERNAL_SERVER_ERROR,
-            "An unexpected server error occurred.", request);
-        }
+        log.error("[GlobalExceptionHandler] Unhandled exception processing {} {}: ", request.getMethod(), request.getRequestURI(), ex);
+        String message = (ex.getMessage() != null && !ex.getMessage().isBlank())
+                ? ex.getMessage()
+                : "An unexpected server error occurred: " + ex.getClass().getSimpleName();
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, message, request);
+    }
 
         private ResponseEntity<ErrorResponseDto> buildError(
             HttpStatus status, String message, HttpServletRequest request) {

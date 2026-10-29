@@ -62,6 +62,7 @@ public class SecurityConfig {
                                 "/api/medical-records/**",
                                 "/api/medical-documents/**"
                         ).hasAnyRole("PATIENT", "DOCTOR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/api/super-admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
